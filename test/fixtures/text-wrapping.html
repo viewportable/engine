@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      ul {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      li {
+        min-width: 0;
+        font: 16px/20px Arial, sans-serif;
+      }
+
+      #target {
+        white-space: normal;
+      }
+    </style>
+  </head>
+  <body>
+    <ul id="footer-links">
+      <li id="about">About</li>
+      <li id="jobs">Jobs</li>
+      <li id="help">Help</li>
+      <li id="target">Terms &amp; Privacy</li>
+    </ul>
+  </body>
+</html>
