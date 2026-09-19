@@ -349,28 +349,38 @@ Against the pinned ReDeCheck wrapping oracle:
 ```text
 10 distinct wrapping TP RLFs
 
-9 candidate matches
-9 manually confirmed subjects
-1 miss
+9 exact-range candidate matches
+9 manually confirmed subjects in the historical oracle ranges
+1 apparent miss under strict historical-range scoring
+
+Independent current-Chromium reproduction of RLF 26:
+- same mobile footer subject: Terms & Privacy
+- same 5 -> 4+1 sibling-row failure
+- current boundary: 399px
+- historical ReDeCheck failure range: 321-335px
+
+Therefore the sibling detector reproduces all 10 wrapping defects behaviorally, with 9 exact-range reproductions and 1 shifted-range reproduction.
 
 5 raw wrapping FP reports
 3 clean
 2 negative candidates
 ```
 
-The confirmed TP subjects are RLF 24, 25, 27, 28, 29, 30, 31, 32, and 33.
+The exact-range confirmed TP subjects are RLF 24, 25, 27, 28, 29, 30, 31, 32, and 33.
 
-The miss, AirBnb RLF 26, is structurally different: `Terms & Privacy` wraps inside an element rather than a sibling moving out of a visual row. This implies at least two useful wrapping subtypes:
+RLF 26 was initially classified as a miss because the benchmark required findings to occur inside the historical 321-335px range. Source inspection and a focused Chromium probe show that the archived page still contains the same five-item mobile footer, and Slice reports the fifth item, `Terms & Privacy`, wrapping from a 5-item row to a 4+1 layout. In Chromium 153 the item remains wrapped through 398px and returns to one row at 399px.
+
+This is **rendering-range drift**, not a missing detector capability.
+
+The benchmark must therefore keep the historical oracle immutable while distinguishing:
 
 ```text
-sibling wrapping
-  -> geometry + tree + cross-viewport identity
-
-text/internal wrapping
-  -> rendered text-line geometry
+exact-range reproduction
+shifted-range reproduction
+real miss
 ```
 
-Do not broaden the sibling detector to guess text wrapping. A future text-line capability should use browser-rendered text geometry such as Range/client rects.
+Shifted reproduction requires manual subject/evidence confirmation and a current-browser range. It must never be inferred by simply widening the historical oracle tolerance.
 
 ### Intentional reflow precision problem
 
@@ -409,7 +419,7 @@ This reinforces the architecture rule discovered earlier:
 | element protrusion | not first-class | parent-boundary detector |
 | viewport protrusion | horizontal overflow | unify/clarify semantics |
 | small-range anomaly | exact issue boundaries | relationship-state anomaly |
-| wrapping | sibling row transition prototype | text/internal wrap + intentional reflow refinement |
+| wrapping | sibling row transition prototype | intentional reflow + range-drift-aware benchmark review |
 | RLG comparison | not present | structural base-vs-head diff |
 | visual verification | not present | optional verifier module |
 
@@ -493,12 +503,13 @@ Do not generalize this into a full relationship graph until another detector dem
 
 Current sequence:
 
-1. sibling wrapping - prototype implemented and reviewed;
-2. intentional-reflow precision refinement and text/internal wrapping research;
-3. relationship intervals only where required by small-range analysis;
-4. small-range anomaly research;
-5. element protrusion / generic collision after stronger observability evidence;
-6. structural base-vs-head graph comparison.
+1. sibling wrapping - prototype implemented and behaviorally reproduces all 10 wrapping RLFs, including one shifted-range reproduction;
+2. intentional-reflow precision refinement;
+3. benchmark range-drift handling for historical corpora;
+4. relationship intervals only where required by small-range analysis;
+5. small-range anomaly research;
+6. element protrusion / generic collision after stronger observability evidence;
+7. structural base-vs-head graph comparison.
 
 Each detector must earn its place through reviewed benchmark improvement and acceptable runtime/noise cost.
 
