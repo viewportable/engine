@@ -93,19 +93,13 @@ describe('detectTextWrappingTransitions', () => {
 
   it('does not flag text that is already multiline at the wider viewport', () => {
     expect(
-      detectTextWrappingTransitions([
-        sample(430, [1, 1, 1, 2]),
-        sample(320, [1, 1, 1, 3]),
-      ]),
+      detectTextWrappingTransitions([sample(430, [1, 1, 1, 2]), sample(320, [1, 1, 1, 3])]),
     ).toEqual([]);
   });
 
   it('does not flag coordinated text reflow affecting most siblings', () => {
     expect(
-      detectTextWrappingTransitions([
-        sample(430, [1, 1, 1, 1]),
-        sample(320, [2, 2, 2, 1]),
-      ]),
+      detectTextWrappingTransitions([sample(430, [1, 1, 1, 1]), sample(320, [2, 2, 2, 1])]),
     ).toEqual([]);
   });
 });
