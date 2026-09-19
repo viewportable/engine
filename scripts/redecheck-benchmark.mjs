@@ -317,13 +317,7 @@ const sources = JSON.parse(await readFile(sourcesPath, 'utf8'));
 const review = JSON.parse(await readFile(reviewPath, 'utf8'));
 const reviewById = new Map(review.reviews.map((entry) => [entry.id, entry]));
 const antiReviewKey = (entry) =>
-  [
-    entry.sourceClassification,
-    entry.type,
-    entry.page,
-    entry.range.min,
-    entry.range.max,
-  ].join('|');
+  [entry.sourceClassification, entry.type, entry.page, entry.range.min, entry.range.max].join('|');
 const antiReviewByKey = new Map(
   (review.antiReviews ?? []).map((entry) => [antiReviewKey(entry), entry]),
 );
@@ -574,8 +568,7 @@ const report = {
     ).length,
     unreviewedNegativeCandidates: scoredAntiOracle.filter(
       (report) =>
-        report.classification === 'negative-candidate' &&
-        report.review.status === 'unreviewed',
+        report.classification === 'negative-candidate' && report.review.status === 'unreviewed',
     ).length,
     antiOracleUnsupported: scoredAntiOracle.filter(
       (report) => report.classification === 'unsupported',
