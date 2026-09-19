@@ -584,8 +584,7 @@ const report = {
     ).length,
     confirmedReproductions: scoredFailures.filter(
       (failure) =>
-        (failure.classification === 'candidate-match' &&
-          failure.review.status === 'confirmed') ||
+        (failure.classification === 'candidate-match' && failure.review.status === 'confirmed') ||
         (failure.classification === 'reproduced-shifted' &&
           failure.review.status === 'confirmed-shifted'),
     ).length,
