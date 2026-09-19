@@ -107,11 +107,31 @@ export interface WrappingIssue {
   };
 }
 
+export interface TextWrappingIssue {
+  id: string;
+  type: 'text-wrapping';
+  severity: 'error';
+  selector: string;
+  parentSelector: string;
+  tagName: string;
+  parentTagName: string;
+  viewportWidth: number;
+  previousViewportWidth: number;
+  bbox: [number, number, number, number];
+  evidence: {
+    previousLineCount: number;
+    currentLineCount: number;
+    stableSiblingCount: number;
+    changedSiblingCount: number;
+  };
+}
+
 export type Issue =
   | HorizontalOverflowIssue
   | FixedElementCollisionIssue
   | FixedContentOcclusionIssue
-  | WrappingIssue;
+  | WrappingIssue
+  | TextWrappingIssue;
 
 export interface ViewportResult {
   width: number;
