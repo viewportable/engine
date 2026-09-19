@@ -719,9 +719,7 @@ async function addWrappingIssues(
 
     captured.issues.push(...partitioned.issues);
     captured.suppressedIssues.push(...partitioned.suppressedIssues);
-    viewport.issues.push(...partitioned.issues);
-    viewport.suppressedIssues.push(...partitioned.suppressedIssues);
-    viewport.status = viewport.issues.length > 0 ? 'fail' : 'pass';
+    viewport.status = captured.issues.length > 0 ? 'fail' : 'pass';
   }
 }
 
