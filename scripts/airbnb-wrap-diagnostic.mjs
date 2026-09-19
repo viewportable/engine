@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process';
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import http from 'node:http';
@@ -55,6 +56,27 @@ if (!address || typeof address === 'string') throw new Error('No diagnostic serv
 
 const url = `http://127.0.0.1:${address.port}/index.html`;
 const widths = [320, 321, 328, 335, 341, 356, 375, 390, 395, 398, 399, 400, 405, 410, 430];
+function runProcess(command, args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    child.once('error', reject);
+    child.once('close', (status) => resolve({ status, stdout, stderr }));
+  });
+}
+
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 375, height: 900 } });
 
@@ -91,6 +113,22 @@ try {
 
     process.stdout.write(`${width}: ${JSON.stringify(state)}\n`);
   }
+  const cli = await runProcess(process.execPath, [
+    'dist/cli.mjs',
+    url,
+    '--widths',
+    '390,430',
+    '--wait',
+    '0',
+    '--no-boundary',
+    '--json',
+    '--out',
+    '.slice/airbnb-wrap-diagnostic',
+  ]);
+
+  process.stdout.write(`CLI_EXIT: ${cli.status}\n`);
+  process.stdout.write(`CLI_STDOUT:\n${cli.stdout}\n`);
+  if (cli.stderr) process.stdout.write(`CLI_STDERR:\n${cli.stderr}\n`);
 } finally {
   await browser.close();
   await new Promise((resolve) => server.close(resolve));
