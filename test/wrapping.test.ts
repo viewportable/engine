@@ -42,7 +42,6 @@ function surface(
   };
 }
 
-
 function identifiedSurface(
   width: number,
   indexOffset: number,
@@ -91,29 +90,20 @@ describe('detectWrappingTransitions', () => {
     ]);
   });
 
-
   it('matches elements by stable identity when snapshot indices change', () => {
     const findings = detectWrappingTransitions([
-      identifiedSurface(
-        430,
-        0,
-        [
-          [0, 10],
-          [90, 10],
-          [180, 10],
-          [270, 10],
-        ],
-      ),
-      identifiedSurface(
-        320,
-        100,
-        [
-          [0, 10],
-          [90, 10],
-          [180, 10],
-          [0, 50],
-        ],
-      ),
+      identifiedSurface(430, 0, [
+        [0, 10],
+        [90, 10],
+        [180, 10],
+        [270, 10],
+      ]),
+      identifiedSurface(320, 100, [
+        [0, 10],
+        [90, 10],
+        [180, 10],
+        [0, 50],
+      ]),
     ]);
 
     expect(findings).toEqual([
