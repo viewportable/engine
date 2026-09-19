@@ -9,6 +9,7 @@ import {
   STANDARD_WIDTHS,
   classifyAntiOracleReport,
   classifyFailure,
+  compatibleFindingsInRange,
   parseAntiOracle,
   parseOracle,
   widthsForPage,
@@ -172,8 +173,10 @@ function renderSummary(report) {
     '## Summary',
     '',
     `- Oracle distinct RLFs: **${report.summary.oracleFailures}**`,
-    `- Candidate matches: **${report.summary.candidateMatches}**`,
-    `- Reviewed confirmed detections: **${report.summary.confirmedDetections}**`,
+    `- Exact-range candidate matches: **${report.summary.candidateMatches}**`,
+    `- Reviewed shifted-range reproductions: **${report.summary.shiftedReproductions}**`,
+    `- Reviewed confirmed reproductions: **${report.summary.confirmedReproductions}**`,
+    `- Reviewed confirmed exact detections: **${report.summary.confirmedDetections}**`,
     `- Reviewed incidental candidates: **${report.summary.rejectedIncidental}**`,
     `- Unreviewed candidate matches: **${report.summary.unreviewedCandidates}**`,
     `- Missed within currently compatible rule families: **${report.summary.missed}**`,
@@ -193,13 +196,13 @@ function renderSummary(report) {
     '',
     '## By support level',
     '',
-    '| Support | Distinct RLFs | Candidate | Missed | Environment |',
-    '| --- | ---: | ---: | ---: | ---: |',
+    '| Support | Distinct RLFs | Exact candidate | Shifted | Missed | Environment |',
+    '| --- | ---: | ---: | ---: | ---: | ---: |',
   ];
 
   for (const entry of report.bySupport) {
     lines.push(
-      `| ${entry.support} | ${entry.total} | ${entry.candidateMatch} | ${entry.missed} | ${entry.environmentError} |`,
+      `| ${entry.support} | ${entry.total} | ${entry.candidateMatch} | ${entry.shifted} | ${entry.missed} | ${entry.environmentError} |`,
     );
   }
 
@@ -422,8 +425,40 @@ try {
 }
 
 const scoredFailures = oracleFailures.map((failure) => {
-  const automatic = classifyFailure(failure, pageRuns.get(failure.page));
+  const pageRun = pageRuns.get(failure.page);
+  const automatic = classifyFailure(failure, pageRun);
   const reviewed = reviewById.get(failure.id);
+
+  if (
+    automatic.classification === 'missed' &&
+    reviewed?.status === 'confirmed-shifted' &&
+    reviewed.currentRange
+  ) {
+    const shiftedMatches =
+      pageRun?.status === 'ok'
+        ? compatibleFindingsInRange(pageRun.result, failure, reviewed.currentRange)
+        : [];
+
+    if (shiftedMatches.length === 0) {
+      throw new Error(
+        `Shifted review for RLF ${failure.id} has no compatible finding in ` +
+          `${reviewed.currentRange.min}-${reviewed.currentRange.max}px`,
+      );
+    }
+
+    return {
+      ...failure,
+      ...automatic,
+      classification: 'reproduced-shifted',
+      matches: shiftedMatches,
+      review: {
+        status: reviewed.status,
+        reason: reviewed.reason,
+        currentRange: reviewed.currentRange,
+        currentBoundary: reviewed.currentBoundary ?? null,
+      },
+    };
+  }
 
   let reviewedStatus = 'unreviewed';
   if (automatic.classification === 'candidate-match' && reviewed) {
@@ -475,6 +510,7 @@ const scoredAntiOracle = antiOracleReports.map((antiReport) => {
 
 const classifications = {
   'candidate-match': 0,
+  'reproduced-shifted': 0,
   missed: 0,
   unsupported: 0,
   'environment-error': 0,
@@ -492,6 +528,7 @@ const bySupport = ['compatible', 'partial', 'unsupported'].map((support) => {
     total: failures.length,
     candidateMatch: failures.filter((failure) => failure.classification === 'candidate-match')
       .length,
+    shifted: failures.filter((failure) => failure.classification === 'reproduced-shifted').length,
     missed: failures.filter((failure) => failure.classification === 'missed').length,
     environmentError: failures.filter((failure) => failure.classification === 'environment-error')
       .length,
@@ -540,9 +577,17 @@ const report = {
   summary: {
     oracleFailures: oracleFailures.length,
     candidateMatches: classifications['candidate-match'],
+    shiftedReproductions: classifications['reproduced-shifted'],
     confirmedDetections: scoredFailures.filter(
       (failure) =>
         failure.classification === 'candidate-match' && failure.review.status === 'confirmed',
+    ).length,
+    confirmedReproductions: scoredFailures.filter(
+      (failure) =>
+        (failure.classification === 'candidate-match' &&
+          failure.review.status === 'confirmed') ||
+        (failure.classification === 'reproduced-shifted' &&
+          failure.review.status === 'confirmed-shifted'),
     ).length,
     rejectedIncidental: scoredFailures.filter(
       (failure) =>
@@ -615,7 +660,8 @@ process.stdout.write(
   [
     '',
     'ReDeCheck baseline complete',
-    `  candidate matches: ${report.summary.candidateMatches}`,
+    `  exact candidates:   ${report.summary.candidateMatches}`,
+    `  shifted reproduced:  ${report.summary.shiftedReproductions}`,
     `  missed:            ${report.summary.missed}`,
     `  unsupported:       ${report.summary.unsupported}`,
     `  environment error: ${report.summary.environmentErrors}`,
