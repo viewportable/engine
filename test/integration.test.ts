@@ -154,9 +154,7 @@ describe('slice CLI', () => {
     const report = JSON.parse(await readFile(path.join(out, 'results.json'), 'utf8'));
     const narrow = report.viewports.find((viewport: { width: number }) => viewport.width === 335);
 
-    expect(
-      narrow.issues.filter((issue: { type: string }) => issue.type === 'wrapping'),
-    ).toEqual([
+    expect(narrow.issues.filter((issue: { type: string }) => issue.type === 'wrapping')).toEqual([
       expect.objectContaining({
         type: 'wrapping',
         selector: '#terms',
