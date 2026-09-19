@@ -372,6 +372,7 @@ try {
         '--out',
         pageOut,
         '--no-boundary',
+        '--text-wrap',
         '--wait',
         String(WAIT_MS),
         '--timeout',
