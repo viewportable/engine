@@ -1,5 +1,5 @@
 import type { CDPSession } from 'playwright';
-import type { SurfaceSnapshot } from './surface.js';
+import type { SurfaceSnapshot, SurfaceTextBox } from './surface.js';
 import type { LayoutNode, Viewport } from './types.js';
 
 const COMPUTED_STYLES = [
@@ -81,7 +81,19 @@ function nearestCapturedParentIndex(
   return -1;
 }
 
-export async function captureLayout(cdp: CDPSession): Promise<LayoutNode[]> {
+interface CaptureLayoutOptions {
+  includeTextRanges?: boolean;
+}
+
+interface CapturedLayout {
+  nodes: LayoutNode[];
+  textBoxes: SurfaceTextBox[];
+}
+
+export async function captureLayout(
+  cdp: CDPSession,
+  options: CaptureLayoutOptions = {},
+): Promise<CapturedLayout> {
   const snapshot = await cdp.send('DOMSnapshot.captureSnapshot', {
     computedStyles: [...COMPUTED_STYLES],
     includeDOMRects: true,
@@ -89,7 +101,7 @@ export async function captureLayout(cdp: CDPSession): Promise<LayoutNode[]> {
   });
 
   const document = snapshot.documents[0];
-  if (!document) return [];
+  if (!document) return { nodes: [], textBoxes: [] };
 
   const { nodes, layout } = document;
   const nthChildren = computeNthChildren(nodes);
@@ -138,22 +150,72 @@ export async function captureLayout(cdp: CDPSession): Promise<LayoutNode[]> {
 
   const capturedIndices = new Set(result.map((node) => node.index));
 
-  return result.map((node) => ({
+  const normalizedNodes = result.map((node) => ({
     ...node,
     parentIndex: nearestCapturedParentIndex(node.parentIndex, capturedIndices, nodes.parentIndex),
   }));
+  const normalizedByIndex = new Map(normalizedNodes.map((node) => [node.index, node]));
+  const textBoxes: SurfaceTextBox[] = [];
+
+  if (options.includeTextRanges) {
+    const textBoxSnapshot = document.textBoxes;
+
+    for (let textBoxIndex = 0; textBoxIndex < textBoxSnapshot.layoutIndex.length; textBoxIndex += 1) {
+      const layoutIndex = textBoxSnapshot.layoutIndex[textBoxIndex];
+      if (layoutIndex === undefined) continue;
+
+      const rawNodeIndex = layout.nodeIndex[layoutIndex];
+      if (rawNodeIndex === undefined) continue;
+
+      const ownerIndex = capturedIndices.has(rawNodeIndex)
+        ? rawNodeIndex
+        : nearestCapturedParentIndex(
+            nodes.parentIndex?.[rawNodeIndex] ?? -1,
+            capturedIndices,
+            nodes.parentIndex,
+          );
+      const owner = normalizedByIndex.get(ownerIndex);
+      const bounds = textBoxSnapshot.bounds[textBoxIndex];
+
+      if (!owner?.identity || !bounds) continue;
+
+      const [x, y, width, height] = bounds;
+      if (width <= 0 || height <= 0) continue;
+
+      textBoxes.push({
+        ownerIdentity: owner.identity,
+        rect: { x, y, width, height },
+        start: textBoxSnapshot.start[textBoxIndex] ?? 0,
+        length: textBoxSnapshot.length[textBoxIndex] ?? 0,
+      });
+    }
+  }
+
+  return {
+    nodes: normalizedNodes,
+    textBoxes,
+  };
 }
 
 export async function captureBrowserSurface(
   cdp: CDPSession,
   viewport: Viewport,
+  options: CaptureLayoutOptions = {},
 ): Promise<SurfaceSnapshot<LayoutNode>> {
-  const nodes = await captureLayout(cdp);
+  const captured = await captureLayout(cdp, options);
+  const capabilities = ['geometry', 'computed-styles', 'paint-order', 'tree'] as const;
 
   return {
     platform: 'web',
     viewport,
-    capabilities: ['geometry', 'computed-styles', 'paint-order', 'tree'],
-    nodes,
+    capabilities: options.includeTextRanges ? [...capabilities, 'text-ranges'] : capabilities,
+    nodes: captured.nodes,
+    ...(options.includeTextRanges
+      ? {
+          evidence: {
+            textBoxes: captured.textBoxes,
+          },
+        }
+      : {}),
   };
 }
