@@ -54,7 +54,7 @@ const address = server.address();
 if (!address || typeof address === 'string') throw new Error('No diagnostic server port');
 
 const url = `http://127.0.0.1:${address.port}/index.html`;
-const widths = [320, 321, 328, 335, 341, 356, 375];
+const widths = [320, 321, 328, 335, 341, 356, 375, 390, 395, 398, 399, 400, 405, 410, 430];
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 375, height: 900 } });
 
