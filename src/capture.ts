@@ -160,7 +160,11 @@ export async function captureLayout(
   if (options.includeTextRanges) {
     const textBoxSnapshot = document.textBoxes;
 
-    for (let textBoxIndex = 0; textBoxIndex < textBoxSnapshot.layoutIndex.length; textBoxIndex += 1) {
+    for (
+      let textBoxIndex = 0;
+      textBoxIndex < textBoxSnapshot.layoutIndex.length;
+      textBoxIndex += 1
+    ) {
       const layoutIndex = textBoxSnapshot.layoutIndex[textBoxIndex];
       if (layoutIndex === undefined) continue;
 
