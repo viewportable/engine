@@ -59,6 +59,16 @@
       "reason": "ReDeCheck describes The Atlantic logo wrapping. Slice reports li.featured.theatlantic in the same failure range."
     },
     {
+      "id": 26,
+      "status": "confirmed-shifted",
+      "currentRange": {
+        "min": 320,
+        "max": 398
+      },
+      "currentBoundary": 399,
+      "reason": "ReDeCheck describes the mobile footer Terms & Privacy item wrapping at 321-335px. In Chromium 153 the same archived subject remains wrapped through 398px and becomes single-row at 399px; Slice reports the fifth list item at 390px with a 5 -> 4+1 row transition. This is the same defect with a shifted rendering boundary."
+    },
+    {
       "id": 27,
       "status": "confirmed",
       "reason": "ReDeCheck describes the Instagram footer icon wrapping. Slice reports the last social-list item containing Instagram in the same range."
