@@ -42,6 +42,24 @@ function surface(
   };
 }
 
+
+function identifiedSurface(
+  width: number,
+  indexOffset: number,
+  positions: Array<[number, number]>,
+): { width: number; nodes: LayoutNode[] } {
+  const parent = node(1 + indexOffset, -1, 0, 0, width, 120);
+  parent.identity = 'parent';
+
+  const children = positions.map(([x, y], offset) => {
+    const child = node(offset + 2 + indexOffset, parent.index, x, y);
+    child.identity = `item-${offset + 1}`;
+    return child;
+  });
+
+  return { width, nodes: [parent, ...children] };
+}
+
 describe('detectWrappingTransitions', () => {
   it('detects one sibling dropping out of a previously stable row', () => {
     const findings = detectWrappingTransitions([
@@ -69,6 +87,41 @@ describe('detectWrappingTransitions', () => {
         currentRowSize: 1,
         stableSiblingCount: 3,
         verticalShiftPx: 40,
+      }),
+    ]);
+  });
+
+
+  it('matches elements by stable identity when snapshot indices change', () => {
+    const findings = detectWrappingTransitions([
+      identifiedSurface(
+        430,
+        0,
+        [
+          [0, 10],
+          [90, 10],
+          [180, 10],
+          [270, 10],
+        ],
+      ),
+      identifiedSurface(
+        320,
+        100,
+        [
+          [0, 10],
+          [90, 10],
+          [180, 10],
+          [0, 50],
+        ],
+      ),
+    ]);
+
+    expect(findings).toEqual([
+      expect.objectContaining({
+        nodeIndex: 105,
+        parentIndex: 101,
+        viewportWidth: 320,
+        stableSiblingCount: 3,
       }),
     ]);
   });
