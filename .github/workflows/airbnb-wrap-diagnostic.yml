@@ -42,5 +42,8 @@ jobs:
       - name: Prepare pinned ReDeCheck corpus
         run: npm run benchmark:redecheck:prepare
 
+      - name: Build Slice
+        run: npm run build --silent
+
       - name: Probe AirBnb mobile footer geometry
         run: node scripts/airbnb-wrap-diagnostic.mjs
