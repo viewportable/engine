@@ -127,7 +127,7 @@ describe('slice CLI', () => {
         selector: '#item-4',
         parentSelector: '#actions',
         viewportWidth: 320,
-        previousViewportWidth: 430,
+        previousViewportWidth: 600,
         evidence: expect.objectContaining({
           previousRowSize: 4,
           currentRowSize: 1,
@@ -142,7 +142,7 @@ describe('slice CLI', () => {
     const disabledOut = await makeOutDir();
     const disabled = await runCli('text-wrapping.html', [
       '--widths',
-      '320,430',
+      '320,600',
       '--wait',
       '0',
       '--no-boundary',
@@ -163,7 +163,7 @@ describe('slice CLI', () => {
     const enabledOut = await makeOutDir();
     const enabled = await runCli('text-wrapping.html', [
       '--widths',
-      '320,430',
+      '320,600',
       '--wait',
       '0',
       '--no-boundary',
@@ -200,7 +200,7 @@ describe('slice CLI', () => {
     const out = await makeOutDir();
     const result = await runCli('text-wrapping-coordinated.html', [
       '--widths',
-      '320,430',
+      '320,600',
       '--wait',
       '0',
       '--no-boundary',
