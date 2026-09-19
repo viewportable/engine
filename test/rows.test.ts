@@ -37,7 +37,7 @@ describe('inferSiblingRows', () => {
       node(3, 1, 90, 10),
       node(4, 1, 180, 10),
       node(5, 1, 270, 10),
-    ]).get(1);
+    ]).get('snapshot:1');
 
     expect(rows?.rows).toHaveLength(1);
     expect(rows?.rows[0]?.nodeIndices).toEqual([2, 3, 4, 5]);
@@ -50,7 +50,7 @@ describe('inferSiblingRows', () => {
       node(3, 1, 90, 10),
       node(4, 1, 180, 10),
       node(5, 1, 0, 50),
-    ]).get(1);
+    ]).get('snapshot:1');
 
     expect(rows?.rows).toHaveLength(2);
     expect(rows?.rows[0]?.nodeIndices).toEqual([2, 3, 4]);
@@ -67,7 +67,7 @@ describe('inferSiblingRows', () => {
       node(3, 1, 90, 10),
       node(4, 1, 180, 10),
       absolute,
-    ]).get(1);
+    ]).get('snapshot:1');
 
     expect(rows?.rows).toHaveLength(1);
     expect(rows?.rows[0]?.nodeIndices).toEqual([2, 3, 4]);
