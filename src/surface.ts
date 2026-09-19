@@ -22,6 +22,17 @@ export type SurfaceCapability =
   | 'screenshot'
   | 'pixels';
 
+export interface SurfaceTextBox {
+  ownerIdentity: string;
+  rect: SurfaceRect;
+  start: number;
+  length: number;
+}
+
+export interface SurfaceEvidence {
+  textBoxes?: SurfaceTextBox[];
+}
+
 export interface SurfaceNode {
   index: number;
   parentIndex: number;
@@ -35,4 +46,5 @@ export interface SurfaceSnapshot<TNode extends SurfaceNode = SurfaceNode> {
   viewport: SurfaceViewport;
   capabilities: readonly SurfaceCapability[];
   nodes: TNode[];
+  evidence?: SurfaceEvidence;
 }
