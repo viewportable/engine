@@ -19,7 +19,7 @@ export const CLASS_MAPPING = {
   },
   Wrapping: {
     support: 'compatible',
-    issueTypes: ['wrapping'],
+    issueTypes: ['wrapping', 'text-wrapping'],
   },
 };
 
