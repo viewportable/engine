@@ -28,11 +28,18 @@ const wrappingSuppressionSchema = z.object({
   parentSelector: z.string().min(1).optional(),
 });
 
+const textWrappingSuppressionSchema = z.object({
+  type: z.literal('text-wrapping'),
+  selector: z.string().min(1),
+  parentSelector: z.string().min(1).optional(),
+});
+
 export const suppressionRuleSchema = z.discriminatedUnion('type', [
   horizontalOverflowSuppressionSchema,
   fixedElementCollisionSuppressionSchema,
   fixedContentOcclusionSuppressionSchema,
   wrappingSuppressionSchema,
+  textWrappingSuppressionSchema,
 ]);
 
 const sliceConfigSchema = z
