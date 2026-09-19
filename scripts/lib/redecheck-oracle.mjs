@@ -168,15 +168,13 @@ export function compatibleFindings(pageResult, failure) {
   return matches;
 }
 
-
 export function compatibleFindingsInRange(pageResult, failure, range) {
-  const mappedTypes = failure.reportTypes
-    .flatMap((type) =>
-      (CLASS_MAPPING[type]?.issueTypes ?? []).map((issueType) => ({
-        reportType: type,
-        issueType,
-      })),
-    );
+  const mappedTypes = failure.reportTypes.flatMap((type) =>
+    (CLASS_MAPPING[type]?.issueTypes ?? []).map((issueType) => ({
+      reportType: type,
+      issueType,
+    })),
+  );
 
   if (mappedTypes.length === 0) return [];
 
