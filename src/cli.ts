@@ -8,6 +8,7 @@ import {
   launchBrowser,
   type DocumentMetrics,
 } from './browser.js';
+import { detectTextWrappingTransitions } from './analyze/text-wrapping.js';
 import { detectWrappingTransitions } from './analyze/wrapping.js';
 import { findBoundary } from './boundary.js';
 import { captureBrowserSurface } from './capture.js';
@@ -34,6 +35,7 @@ import type {
   RootCauseDiagnosis,
   RootCauseObservation,
   SliceResults,
+  TextWrappingIssue,
   ViewportResult,
   WrappingIssue,
 } from './types.js';
@@ -50,6 +52,7 @@ interface CliOptions {
   out: string;
   json: boolean;
   boundary: boolean;
+  textWrap: boolean;
   timeout: string;
   wait: string;
   readySelector?: string;
@@ -186,6 +189,13 @@ function renderIssue(issue: Issue): string {
     return (
       `${truncate(issue.selector, 48)} wraps below siblings | ` +
       `${issue.evidence.stableSiblingCount} stay / ${issue.evidence.currentRowSize} wrap`
+    );
+  }
+
+  if (issue.type === 'text-wrapping') {
+    return (
+      `${truncate(issue.selector, 48)} text wraps | ` +
+      `${issue.evidence.previousLineCount} -> ${issue.evidence.currentLineCount} lines`
     );
   }
 
@@ -373,6 +383,10 @@ function occlusionIssueKey(selector: string, targetSelector: string): string {
 
 function wrappingIssueKey(selector: string, parentSelector: string): string {
   return `wrapping|${parentSelector}|${selector}`;
+}
+
+function textWrappingIssueKey(selector: string, parentSelector: string): string {
+  return `text-wrapping|${parentSelector}|${selector}`;
 }
 
 function rootCauseKey(selector: string, side: 'right' | 'left'): string {
@@ -630,10 +644,15 @@ async function captureAtWidth(
   issueIds: Map<string, string>,
   rootCauseIds: Map<string, string>,
   suppressions: SuppressionRule[],
+  includeTextRanges = false,
 ): Promise<CaptureResult> {
   await stabilizeViewport(runtime.page, width, height, waitMs);
   const metrics = await getDocumentMetrics(runtime.page);
-  const surface = await captureBrowserSurface(runtime.cdp, { width, height });
+  const surface = await captureBrowserSurface(
+    runtime.cdp,
+    { width, height },
+    { includeTextRanges },
+  );
   const captured = await enrichIssues(runtime.page, surface, metrics, issueIds, rootCauseIds);
   const { issues, suppressedIssues } = partitionSuppressedIssues(captured.issues, suppressions);
   const activeIssueIds = new Set(issues.map((issue) => issue.id));
@@ -713,6 +732,72 @@ async function addWrappingIssues(
         previousRowIndex: finding.previousRowIndex,
         currentRowIndex: finding.currentRowIndex,
         verticalShiftPx: finding.verticalShiftPx,
+      },
+    };
+    const partitioned = partitionSuppressedIssues([issue], suppressions);
+
+    captured.issues.push(...partitioned.issues);
+    captured.suppressedIssues.push(...partitioned.suppressedIssues);
+    viewport.status = captured.issues.length > 0 ? 'fail' : 'pass';
+  }
+}
+
+async function addTextWrappingIssues(
+  page: Page,
+  sampleCaptures: Map<number, CaptureResult>,
+  viewports: ViewportResult[],
+  issueIds: Map<string, string>,
+  suppressions: SuppressionRule[],
+): Promise<void> {
+  const findings = detectTextWrappingTransitions(
+    [...sampleCaptures].map(([width, captured]) => ({
+      width,
+      nodes: captured.surface.nodes,
+      textBoxes: captured.surface.evidence?.textBoxes ?? [],
+    })),
+  );
+  if (findings.length === 0) return;
+
+  const isUnique = makePageUniquenessCheck((selector) =>
+    page.evaluate((value) => document.querySelectorAll(value).length, selector),
+  );
+
+  for (const finding of findings) {
+    const captured = sampleCaptures.get(finding.viewportWidth);
+    const viewport = viewports.find((entry) => entry.width === finding.viewportWidth);
+    if (!captured || !viewport) continue;
+
+    const byIndex = new Map(captured.surface.nodes.map((node) => [node.index, node]));
+    const node = byIndex.get(finding.nodeIndex);
+    const parent = byIndex.get(finding.parentIndex);
+    if (!node || !parent) continue;
+
+    const selector = await buildStableSelector(node, captured.surface.nodes, isUnique);
+    const parentSelector = await buildStableSelector(parent, captured.surface.nodes, isUnique);
+    const key = textWrappingIssueKey(selector, parentSelector);
+    let id = issueIds.get(key);
+
+    if (!id) {
+      id = `issue-${issueIds.size + 1}`;
+      issueIds.set(key, id);
+    }
+
+    const issue: TextWrappingIssue = {
+      id,
+      type: 'text-wrapping',
+      severity: 'error',
+      selector,
+      parentSelector,
+      tagName: node.tagName,
+      parentTagName: parent.tagName,
+      viewportWidth: finding.viewportWidth,
+      previousViewportWidth: finding.previousViewportWidth,
+      bbox: finding.bbox,
+      evidence: {
+        previousLineCount: finding.previousLineCount,
+        currentLineCount: finding.currentLineCount,
+        stableSiblingCount: finding.stableSiblingCount,
+        changedSiblingCount: finding.changedSiblingCount,
       },
     };
     const partitioned = partitionSuppressedIssues([issue], suppressions);
@@ -841,6 +926,7 @@ async function runSlice(url: string, options: RunOptions): Promise<number> {
         issueIds,
         rootCauseIds,
         options.suppressions,
+        options.textWrap,
       );
       sampleCaptures.set(width, captured);
       rootCauseObservations.push(...captured.rootCauses);
@@ -862,6 +948,16 @@ async function runSlice(url: string, options: RunOptions): Promise<number> {
       options.suppressions,
     );
 
+    if (options.textWrap) {
+      await addTextWrappingIssues(
+        runtime.page,
+        sampleCaptures,
+        viewports,
+        issueIds,
+        options.suppressions,
+      );
+    }
+
     const boundaries: BoundaryResult[] = [];
     const rootCauseBoundaries: RootCauseBoundaryResult[] = [];
     const boundaryDisplays: BoundaryDisplay[] = [];
@@ -882,6 +978,7 @@ async function runSlice(url: string, options: RunOptions): Promise<number> {
           issueIds,
           rootCauseIds,
           options.suppressions,
+          options.textWrap,
         );
         boundaryCaptureCache.set(width, captured);
         return captured;
@@ -908,7 +1005,7 @@ async function runSlice(url: string, options: RunOptions): Promise<number> {
           const issue =
             current.issues.find((candidate) => candidate.id === issueId) ??
             next.issues.find((candidate) => candidate.id === issueId);
-          if (!issue || issue.type === 'wrapping') continue;
+          if (!issue || issue.type === 'wrapping' || issue.type === 'text-wrapping') continue;
 
           const currentBroken = currentIssueIds.has(issueId);
           const passWidth = currentBroken ? next.width : current.width;
@@ -1036,6 +1133,7 @@ program
   .option('--out <dir>', 'artifact output directory', DEFAULT_OUT_DIR)
   .option('--json', 'print JSON to stdout instead of the table', false)
   .option('--no-boundary', 'skip binary boundary search')
+  .option('--text-wrap', 'enable experimental rendered text wrapping analysis', false)
   .option('--timeout <ms>', 'page load timeout', String(DEFAULT_TIMEOUT_MS))
   .option('--wait <ms>', 'delay after resize', String(DEFAULT_WAIT_MS))
   .option('--ready-selector <selector>', 'require a visible selector before scanning')
