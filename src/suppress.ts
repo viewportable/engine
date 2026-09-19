@@ -37,6 +37,13 @@ export function isIssueSuppressed(issue: Issue, rules: SuppressionRule[]): boole
       );
     }
 
+    if (issue.type === 'text-wrapping' && rule.type === 'text-wrapping') {
+      return (
+        rule.selector === issue.selector &&
+        (rule.parentSelector === undefined || rule.parentSelector === issue.parentSelector)
+      );
+    }
+
     return false;
   });
 }
