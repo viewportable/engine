@@ -6,6 +6,7 @@ on:
     branches:
       - benchmark/redecheck-baseline
       - engine/wrapping-detector
+      - engine/wrapping-inline-regression
     paths:
       - benchmark/redecheck/**
       - scripts/redecheck-prepare.mjs
