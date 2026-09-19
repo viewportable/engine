@@ -138,6 +138,86 @@ describe('slice CLI', () => {
     expect(result.stdout).toContain('#item-4 wraps below siblings');
   });
 
+  it('captures internal text wrapping only when text analysis is enabled', async () => {
+    const disabledOut = await makeOutDir();
+    const disabled = await runCli('text-wrapping.html', [
+      '--widths',
+      '320,430',
+      '--wait',
+      '0',
+      '--no-boundary',
+      '--out',
+      disabledOut,
+    ]);
+
+    expect(disabled.code).toBe(0);
+    const disabledReport = JSON.parse(
+      await readFile(path.join(disabledOut, 'results.json'), 'utf8'),
+    );
+    expect(
+      disabledReport.viewports.flatMap((viewport: { issues: Array<{ type: string }> }) =>
+        viewport.issues.filter((issue) => issue.type === 'text-wrapping'),
+      ),
+    ).toEqual([]);
+
+    const enabledOut = await makeOutDir();
+    const enabled = await runCli('text-wrapping.html', [
+      '--widths',
+      '320,430',
+      '--wait',
+      '0',
+      '--no-boundary',
+      '--text-wrap',
+      '--out',
+      enabledOut,
+    ]);
+
+    expect(enabled.code).toBe(1);
+    const report = JSON.parse(await readFile(path.join(enabledOut, 'results.json'), 'utf8'));
+    const narrow = report.viewports.find((viewport: { width: number }) => viewport.width === 320);
+
+    expect(
+      narrow.issues.filter((issue: { type: string }) => issue.type === 'text-wrapping'),
+    ).toEqual([
+      expect.objectContaining({
+        type: 'text-wrapping',
+        selector: '#target',
+        parentSelector: '#footer-links',
+        viewportWidth: 320,
+        previousViewportWidth: 430,
+        evidence: expect.objectContaining({
+          previousLineCount: 1,
+          currentLineCount: 2,
+          stableSiblingCount: 3,
+          changedSiblingCount: 1,
+        }),
+      }),
+    ]);
+    expect(enabled.stdout).toContain('#target text wraps');
+  });
+
+  it('does not flag coordinated text reflow across most siblings', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('text-wrapping-coordinated.html', [
+      '--widths',
+      '320,430',
+      '--wait',
+      '0',
+      '--no-boundary',
+      '--text-wrap',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(0);
+    const report = JSON.parse(await readFile(path.join(out, 'results.json'), 'utf8'));
+    expect(
+      report.viewports.flatMap((viewport: { issues: Array<{ type: string }> }) =>
+        viewport.issues.filter((issue) => issue.type === 'text-wrapping'),
+      ),
+    ).toEqual([]);
+  });
+
   it('attributes nested overflow to exactly one deepest element', async () => {
     const out = await makeOutDir();
     const result = await runCli('nested.html', [
