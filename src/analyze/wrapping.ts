@@ -21,17 +21,21 @@ export interface DetectedWrappingTransition {
   tagName: string;
 }
 
-function rowGroups(
-  nodeIndices: number[],
-  rowByNodeIndex: Map<number, number>,
-): Map<number, number[]> {
-  const groups = new Map<number, number[]>();
+function identityOf(node: LayoutNode): string {
+  return node.identity ?? `snapshot:${node.index}`;
+}
 
-  for (const nodeIndex of nodeIndices) {
-    const rowIndex = rowByNodeIndex.get(nodeIndex);
+function rowGroups(
+  identities: string[],
+  rowByIdentity: Map<string, number>,
+): Map<number, string[]> {
+  const groups = new Map<number, string[]>();
+
+  for (const identity of identities) {
+    const rowIndex = rowByIdentity.get(identity);
     if (rowIndex === undefined) continue;
     const members = groups.get(rowIndex) ?? [];
-    members.push(nodeIndex);
+    members.push(identity);
     groups.set(rowIndex, members);
   }
 
@@ -50,24 +54,25 @@ export function detectWrappingTransitions(samples: WrappingSample[]): DetectedWr
 
     const widerRows = inferSiblingRows(wider.nodes);
     const narrowerRows = inferSiblingRows(narrower.nodes);
-    const widerByIndex = new Map(wider.nodes.map((node) => [node.index, node]));
-    const narrowerByIndex = new Map(narrower.nodes.map((node) => [node.index, node]));
+    const widerByIdentity = new Map(wider.nodes.map((node) => [identityOf(node), node]));
+    const narrowerByIdentity = new Map(narrower.nodes.map((node) => [identityOf(node), node]));
 
-    for (const [parentIndex, widerParent] of widerRows) {
-      const narrowerParent = narrowerRows.get(parentIndex);
-      if (!narrowerParent) continue;
+    for (const [parentIdentity, widerParent] of widerRows) {
+      const narrowerParent = narrowerRows.get(parentIdentity);
+      const currentParent = narrowerByIdentity.get(parentIdentity);
+      if (!narrowerParent || !currentParent) continue;
 
       for (let widerRowIndex = 0; widerRowIndex < widerParent.rows.length; widerRowIndex += 1) {
         const widerRow = widerParent.rows[widerRowIndex];
-        if (!widerRow || widerRow.nodeIndices.length < 3) continue;
+        if (!widerRow || widerRow.nodeIdentities.length < 3) continue;
 
-        const commonNodes = widerRow.nodeIndices.filter(
-          (nodeIndex) =>
-            narrowerByIndex.has(nodeIndex) && narrowerParent.rowByNodeIndex.has(nodeIndex),
+        const commonIdentities = widerRow.nodeIdentities.filter(
+          (identity) =>
+            narrowerByIdentity.has(identity) && narrowerParent.rowByIdentity.has(identity),
         );
-        if (commonNodes.length < 3) continue;
+        if (commonIdentities.length < 3) continue;
 
-        const groups = rowGroups(commonNodes, narrowerParent.rowByNodeIndex);
+        const groups = rowGroups(commonIdentities, narrowerParent.rowByIdentity);
         if (groups.size < 2) continue;
 
         const rankedGroups = [...groups.entries()].sort(
@@ -76,29 +81,29 @@ export function detectWrappingTransitions(samples: WrappingSample[]): DetectedWr
         const stableGroup = rankedGroups[0];
         if (!stableGroup || stableGroup[1].length < 2) continue;
 
-        for (const [currentRowIndex, movedNodes] of rankedGroups.slice(1)) {
-          if (movedNodes.length >= stableGroup[1].length) continue;
+        for (const [currentRowIndex, movedIdentities] of rankedGroups.slice(1)) {
+          if (movedIdentities.length >= stableGroup[1].length) continue;
           if (currentRowIndex <= stableGroup[0]) continue;
 
-          for (const nodeIndex of movedNodes) {
-            const previousNode = widerByIndex.get(nodeIndex);
-            const currentNode = narrowerByIndex.get(nodeIndex);
+          for (const identity of movedIdentities) {
+            const previousNode = widerByIdentity.get(identity);
+            const currentNode = narrowerByIdentity.get(identity);
             if (!previousNode || !currentNode) continue;
 
             const verticalShiftPx = Math.round(currentNode.rect.y - previousNode.rect.y);
             if (verticalShiftPx <= 4) continue;
 
-            const key = `${narrower.width}|${parentIndex}|${nodeIndex}`;
+            const key = `${narrower.width}|${parentIdentity}|${identity}`;
             if (seen.has(key)) continue;
             seen.add(key);
 
             findings.push({
-              nodeIndex,
-              parentIndex,
+              nodeIndex: currentNode.index,
+              parentIndex: currentParent.index,
               viewportWidth: narrower.width,
               previousViewportWidth: wider.width,
-              previousRowSize: commonNodes.length,
-              currentRowSize: movedNodes.length,
+              previousRowSize: commonIdentities.length,
+              currentRowSize: movedIdentities.length,
               stableSiblingCount: stableGroup[1].length,
               previousRowIndex: widerRowIndex,
               currentRowIndex,
