@@ -7,12 +7,18 @@ export interface InferredRow {
   top: number;
   bottom: number;
   nodeIndices: number[];
+  nodeIdentities: string[];
 }
 
 export interface ParentRows {
   parentIndex: number;
+  parentIdentity: string;
   rows: InferredRow[];
-  rowByNodeIndex: Map<number, number>;
+  rowByIdentity: Map<string, number>;
+}
+
+function identityOf(node: LayoutNode): string {
+  return node.identity ?? `snapshot:${node.index}`;
 }
 
 function verticalOverlapRatio(
@@ -49,7 +55,8 @@ function participatesInFlow(node: LayoutNode): boolean {
   return node.isVisible && node.rect.width > 0 && node.rect.height > 0;
 }
 
-export function inferSiblingRows(nodes: LayoutNode[]): Map<number, ParentRows> {
+export function inferSiblingRows(nodes: LayoutNode[]): Map<string, ParentRows> {
+  const nodesByIndex = new Map(nodes.map((node) => [node.index, node]));
   const childrenByParent = new Map<number, LayoutNode[]>();
 
   for (const node of nodes) {
@@ -60,11 +67,15 @@ export function inferSiblingRows(nodes: LayoutNode[]): Map<number, ParentRows> {
     childrenByParent.set(node.parentIndex, children);
   }
 
-  const result = new Map<number, ParentRows>();
+  const result = new Map<string, ParentRows>();
 
   for (const [parentIndex, children] of childrenByParent) {
     if (children.length < 3) continue;
 
+    const parent = nodesByIndex.get(parentIndex);
+    if (!parent) continue;
+
+    const parentIdentity = identityOf(parent);
     const sorted = [...children].sort(
       (first, second) => first.rect.y - second.rect.y || first.rect.x - second.rect.x,
     );
@@ -78,6 +89,7 @@ export function inferSiblingRows(nodes: LayoutNode[]): Map<number, ParentRows> {
           top: node.rect.y,
           bottom: node.rect.y + node.rect.height,
           nodeIndices: [node.index],
+          nodeIdentities: [identityOf(node)],
         });
         rowIndex = rows.length - 1;
       } else {
@@ -86,18 +98,20 @@ export function inferSiblingRows(nodes: LayoutNode[]): Map<number, ParentRows> {
         row.top = Math.min(row.top, node.rect.y);
         row.bottom = Math.max(row.bottom, node.rect.y + node.rect.height);
         row.nodeIndices.push(node.index);
+        row.nodeIdentities.push(identityOf(node));
       }
     }
 
-    const rowByNodeIndex = new Map<number, number>();
+    const rowByIdentity = new Map<string, number>();
     rows.forEach((row, rowIndex) => {
-      row.nodeIndices.forEach((nodeIndex) => rowByNodeIndex.set(nodeIndex, rowIndex));
+      row.nodeIdentities.forEach((identity) => rowByIdentity.set(identity, rowIndex));
     });
 
-    result.set(parentIndex, {
+    result.set(parentIdentity, {
       parentIndex,
+      parentIdentity,
       rows,
-      rowByNodeIndex,
+      rowByIdentity,
     });
   }
 
