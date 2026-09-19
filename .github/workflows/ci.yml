@@ -34,9 +34,7 @@ jobs:
 
       # Fast deterministic gates first. Browser setup does not start unless these pass.
       - name: Format check
-        run: |
-          npm run fmt
-          git diff --exit-code
+        run: npm run fmt:check
 
       - name: Lint
         run: npm run lint
