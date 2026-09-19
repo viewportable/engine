@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      ul {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      li {
+        min-width: 0;
+        font: 16px/20px Arial, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <ul id="coordinated-links">
+      <li>Account Settings</li>
+      <li>Privacy Settings</li>
+      <li>Billing Settings</li>
+      <li>Notification Settings</li>
+    </ul>
+  </body>
+</html>
