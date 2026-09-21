@@ -5,6 +5,9 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { launchBrowser } from '../src/browser.js';
+import { captureBrowserSurface } from '../src/capture.js';
+import { compareStructuralSurfaces } from '../src/compare/structural-diff.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixturesDir = path.join(here, 'fixtures');
@@ -81,6 +84,50 @@ afterEach(async () => {
 
   await Promise.all(tempDirs.map((dir) => rm(dir, { recursive: true, force: true })));
   tempDirs = [];
+});
+
+describe('structural browser diff', () => {
+  it('detects relationships introduced by the candidate render', async () => {
+    const runtime = await launchBrowser({ width: 390, height: 900 });
+
+    try {
+      await runtime.page.goto(`${baseUrl}/structural-diff-baseline.html`);
+      const baseline = await captureBrowserSurface(runtime.cdp, { width: 390, height: 900 });
+
+      await runtime.page.goto(`${baseUrl}/structural-diff-candidate.html`);
+      const candidate = await captureBrowserSurface(runtime.cdp, { width: 390, height: 900 });
+
+      const diff = compareStructuralSurfaces(baseline, candidate);
+
+      expect(diff.changes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'sibling-overlap',
+            direction: 'introduced',
+            baselineState: 'separate',
+            candidateState: 'overlap',
+            subjects: [
+              expect.objectContaining({ key: 'id:first' }),
+              expect.objectContaining({ key: 'id:second' }),
+            ],
+          }),
+          expect.objectContaining({
+            kind: 'parent-containment',
+            direction: 'introduced',
+            baselineState: 'contained',
+            candidateState: 'protruding',
+            subject: expect.objectContaining({ key: 'id:second' }),
+            candidateEvidence: expect.objectContaining({
+              sides: ['right'],
+              protrusionPx: expect.objectContaining({ right: 20 }),
+            }),
+          }),
+        ]),
+      );
+    } finally {
+      await runtime.browser.close();
+    }
+  });
 });
 
 describe('slice CLI', () => {
