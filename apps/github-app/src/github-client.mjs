@@ -63,10 +63,10 @@ export class GitHubAppClient {
       appId: this.appId,
       privateKey: this.privateKey,
     });
-    const result = await this.request(
-      `/app/installations/${installationId}/access_tokens`,
-      { token: jwt, method: 'POST' },
-    );
+    const result = await this.request(`/app/installations/${installationId}/access_tokens`, {
+      token: jwt,
+      method: 'POST',
+    });
     const expiresAt = Date.parse(result.expires_at);
     this.installationTokens.set(installationId, {
       token: result.token,
@@ -80,13 +80,7 @@ export class GitHubAppClient {
     return this.request(path, { ...options, token });
   }
 
-  async createCheckRun({
-    installationId,
-    repositoryFullName,
-    headSha,
-    externalId,
-    detailsUrl,
-  }) {
+  async createCheckRun({ installationId, repositoryFullName, headSha, externalId, detailsUrl }) {
     const body = {
       name: 'Viewportable Engine',
       head_sha: headSha,
@@ -99,11 +93,10 @@ export class GitHubAppClient {
       },
     };
 
-    return this.installationRequest(
-      installationId,
-      `/repos/${repositoryFullName}/check-runs`,
-      { method: 'POST', body },
-    );
+    return this.installationRequest(installationId, `/repos/${repositoryFullName}/check-runs`, {
+      method: 'POST',
+      body,
+    });
   }
 
   async completeCheckRun({
