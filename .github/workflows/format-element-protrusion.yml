@@ -1,0 +1,25 @@
+name: Format Element Protrusion
+
+on:
+  push:
+    branches:
+      - research/element-protrusion-gate
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Format research files
+        run: npx oxfmt --write src/analyze/element-protrusion.ts test/element-protrusion.test.ts test/integration.test.ts scripts/redecheck-benchmark.mjs
+      - name: Print formatter diff
+        run: git diff -- src/analyze/element-protrusion.ts test/element-protrusion.test.ts test/integration.test.ts scripts/redecheck-benchmark.mjs
