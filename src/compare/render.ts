@@ -22,6 +22,31 @@ function renderChange(change: StructuralChange): string {
   );
 }
 
+function renderRangeWidth(
+  firstWidth: number,
+  lastWidth: number,
+  boundaries: StructuralCompareReport['ranges'][number]['boundaries'],
+): string {
+  const sampled =
+    firstWidth === lastWidth ? `${firstWidth}px` : `${firstWidth}-${lastWidth}px`;
+  const lower = boundaries.find((boundary) => boundary.edge === 'lower');
+  const upper = boundaries.find((boundary) => boundary.edge === 'upper');
+
+  if (lower && upper) {
+    return `${lower.boundary}-${upper.boundary}px exact | sampled ${sampled}`;
+  }
+
+  if (lower) {
+    return `${sampled} sampled | lower edge ${lower.boundary}px exact`;
+  }
+
+  if (upper) {
+    return `${sampled} sampled | upper edge ${upper.boundary}px exact`;
+  }
+
+  return `${sampled} sampled`;
+}
+
 export function renderStructuralCompareReport(
   report: StructuralCompareReport,
   outputPath: string,
@@ -53,10 +78,7 @@ export function renderStructuralCompareReport(
 
     for (const range of report.ranges) {
       const symbol = range.direction === 'introduced' ? '+' : '-';
-      const width =
-        range.firstWidth === range.lastWidth
-          ? `${range.firstWidth}px`
-          : `${range.firstWidth}-${range.lastWidth}px`;
+      const width = renderRangeWidth(range.firstWidth, range.lastWidth, range.boundaries);
       const samples = range.sampleCount > 1 ? ` | ${range.sampleCount} sampled widths` : '';
 
       process.stdout.write(`    ${symbol} ${width}  ${renderChange(range.change)}${samples}\n`);
@@ -68,7 +90,9 @@ export function renderStructuralCompareReport(
       '',
       `  ${report.summary.introducedRanges} introduced ranges | ` +
         `${report.summary.resolvedRanges} resolved ranges | ` +
-        `${report.summary.totalChanges} raw observations in ` +
+        `${report.summary.totalChanges} raw observations | ` +
+        `${report.summary.exactBoundaries} exact boundaries / ` +
+        `${report.summary.boundaryProbes} probes in ` +
         `${report.summary.viewportsChecked} viewports | ` +
         `${(report.summary.durationMs / 1000).toFixed(1)}s`,
       `  ${outputPath}`,
