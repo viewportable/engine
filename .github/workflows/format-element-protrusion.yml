@@ -23,3 +23,12 @@ jobs:
         run: npx oxfmt --write src/analyze/element-protrusion.ts test/element-protrusion.test.ts test/integration.test.ts scripts/redecheck-benchmark.mjs
       - name: Print formatter diff
         run: git diff -- src/analyze/element-protrusion.ts test/element-protrusion.test.ts test/integration.test.ts scripts/redecheck-benchmark.mjs
+      - name: Upload formatted files
+        uses: actions/upload-artifact@v7
+        with:
+          name: formatted-element-protrusion
+          path: |
+            src/analyze/element-protrusion.ts
+            test/element-protrusion.test.ts
+            test/integration.test.ts
+            scripts/redecheck-benchmark.mjs
