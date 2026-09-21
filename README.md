@@ -25,7 +25,11 @@ The positional URL is the **candidate**. `--baseline-url` is the reference rende
 V1 compares:
 
 - sibling overlap: `separate -> overlap` and `overlap -> separate`;
-- parent containment: `contained -> protruding` and `protruding -> contained`.
+- parent containment: `contained -> protruding` and `protruding -> contained`;
+- reparenting when the subject and both old/new parents have unique authored identity and both parent identities persist across versions;
+- explicit-identity presence: `visible -> missing` is introduced, while `missing -> visible` is resolved evidence.
+
+Presence changes deliberately ignore structural-path-only identities and ambiguous duplicate authored keys. Reparenting also stays silent when either parent cannot be proven to persist across both versions.
 
 Only **introduced** structural changes make the command exit with code `1`. Resolved changes remain in the report but do not fail the run. Setup/capture failures still use exit code `2`.
 
@@ -37,7 +41,7 @@ The compare report is written separately from ordinary scan output:
 
 Repeated observations of the same relationship across adjacent sampled widths are also grouped into canonical sampled ranges. Raw per-viewport changes remain in `viewports[].changes`, while top-level `ranges[]` gives one product-facing unit such as `375-430px`. A missing observation at an intermediate sampled width splits the range.
 
-When an introduced range is bracketed by a sampled viewport where that exact structural fingerprint is absent, the Engine reuses binary boundary search to refine the sampled edge to an exact pixel boundary. For a band observed at `375` and `430`, with clean samples at `320` and `520`, the report can therefore say `350-499px exact | sampled 375-430px`. Exact probing is cached by viewport width across fingerprints and can be disabled with `--no-boundary`.
+When an introduced range is bracketed by a sampled viewport where that exact structural fingerprint is absent, the Engine reuses binary boundary search to refine the sampled edge to an exact pixel boundary. For a band observed at `375` and `430`, with clean samples at `320` and `520`, the report can therefore say `350-499px exact | sampled 375-430px`. This applies to overlap, protrusion, disappearance, and reparenting fingerprints through the same range/boundary pipeline. Exact probing is cached by viewport width across fingerprints and can be disabled with `--no-boundary`.
 
 Example:
 
