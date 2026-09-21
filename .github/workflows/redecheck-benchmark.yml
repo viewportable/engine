@@ -6,6 +6,7 @@ on:
     branches:
       - benchmark/redecheck-baseline
       - engine/wrapping-*
+      - research/redecheck-*
     paths:
       - benchmark/redecheck/**
       - scripts/redecheck-prepare.mjs
