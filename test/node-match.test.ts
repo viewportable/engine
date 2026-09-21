@@ -2,11 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { matchCrossVersionNodes } from '../src/compare/node-match.js';
 import type { LayoutNode } from '../src/types.js';
 
-function node(
-  index: number,
-  parentIndex: number,
-  overrides: Partial<LayoutNode> = {},
-): LayoutNode {
+function node(index: number, parentIndex: number, overrides: Partial<LayoutNode> = {}): LayoutNode {
   return {
     index,
     parentIndex,
