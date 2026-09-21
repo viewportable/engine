@@ -31,6 +31,56 @@ function issueText(issue) {
   return `${issue.type}: ${issue.selector}`;
 }
 
+function rootCauseObservationAtWidth(rootCause, width) {
+  return (
+    rootCause.observations?.find((observation) => observation.viewportWidth === width) ?? null
+  );
+}
+
+function rootCauseText(rootCause, observation) {
+  if (rootCause.type === 'wrapping') {
+    const authored = rootCause.evidence?.authoredFlexWrap ? '; authored flex-wrap' : '';
+    const count = observation.wrappedSiblingCount ?? observation.issueIds?.length ?? '?';
+    const suffix = count === 1 ? 'sibling' : 'siblings';
+
+    return (
+      `wrapping: ${rootCause.selector} (${count} ${suffix} wrap; ` +
+      `${observation.stableSiblingCount ?? '?'} stay${authored})`
+    );
+  }
+
+  if (rootCause.type === 'horizontal-overflow') {
+    const affected = observation.issueIds?.length ?? rootCause.issueIds?.length ?? '?';
+    return (
+      `horizontal-overflow: ${rootCause.selector} ` +
+      `(${observation.overflowPx ?? '?'}px ${rootCause.side}; ${affected} affected)`
+    );
+  }
+
+  return `${rootCause.type}: ${rootCause.selector}`;
+}
+
+function viewportFindingTexts(viewport, rootCauses) {
+  const rootsAtWidth = (rootCauses ?? [])
+    .map((rootCause) => ({
+      rootCause,
+      observation: rootCauseObservationAtWidth(rootCause, viewport.width),
+    }))
+    .filter((entry) => entry.observation !== null);
+
+  const groupedIssueIds = new Set(
+    rootsAtWidth.flatMap(({ observation }) => observation.issueIds ?? []),
+  );
+  const ungroupedIssues = (viewport.issues ?? []).filter(
+    (issue) => !groupedIssueIds.has(issue.id),
+  );
+
+  return [
+    ...rootsAtWidth.map(({ rootCause, observation }) => rootCauseText(rootCause, observation)),
+    ...ungroupedIssues.map(issueText),
+  ];
+}
+
 export function renderGitHubSummary(results) {
   const lines = ['## Slice', ''];
   const summary = results.summary ?? {};
@@ -45,9 +95,10 @@ export function renderGitHubSummary(results) {
 
   lines.push('| Width | Status | Findings |', '| ---: | :---: | --- |');
   for (const viewport of results.viewports ?? []) {
+    const findingTexts = viewportFindingTexts(viewport, results.rootCauses);
     const findings =
-      viewport.issues?.length > 0
-        ? viewport.issues.map((issue) => cell(issueText(issue))).join('<br>')
+      findingTexts.length > 0
+        ? findingTexts.map((finding) => cell(finding)).join('<br>')
         : viewport.suppressedIssues?.length > 0
           ? `${viewport.suppressedIssues.length} suppressed`
           : 'Clean';
