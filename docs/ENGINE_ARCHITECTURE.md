@@ -104,7 +104,7 @@ The execution planner unions the requirements of enabled modules:
 ```text
 overflow detector     -> geometry + computed styles
 occlusion detector    -> geometry + paint order
-future wrapping       -> geometry + relationships
+wrapping detector     -> geometry + relationships
 future axe adapter    -> aria
 future pixel verifier -> screenshot + pixels
 ```
@@ -174,6 +174,32 @@ A finding should answer:
 - what confidence or proof level applies, if we introduce such a concept.
 
 Internal module versions can change without forcing consumers to understand the internal pipeline.
+
+## Observation and canonical-finding separation
+
+Detector output is evidence, not necessarily the final user-facing unit.
+
+A responsive defect can produce several leaf observations at one or more viewport transitions. The engine should preserve those observations while grouping them under a stable canonical subject when deterministic structure supports that grouping.
+
+The wrapping implementation is the first explicit example:
+
+```text
+moved sibling observations
+        |
+        v
+stable parent identity
+        |
+        v
+canonical wrapping root cause
+        |
+        +-- raw issue IDs / selectors
+        +-- cross-width transitions
+        +-- authored flow evidence
+```
+
+Grouping must not silently change detector truth conditions. Evidence such as `flex-wrap: wrap` or repeated reflow can inform later classification, but remains separate from automatic suppression until a general rule is justified.
+
+This boundary should generalize to future multi-observation detectors without forcing all detectors into one graph abstraction.
 
 ## Performance rules
 
