@@ -61,11 +61,9 @@ export function detectElementProtrusionCandidates(
     if (hasTranslatedTransform(parent)) continue;
 
     const left = parent.rect.x - child.rect.x;
-    const right =
-      child.rect.x + child.rect.width - (parent.rect.x + parent.rect.width);
+    const right = child.rect.x + child.rect.width - (parent.rect.x + parent.rect.width);
     const top = parent.rect.y - child.rect.y;
-    const bottom =
-      child.rect.y + child.rect.height - (parent.rect.y + parent.rect.height);
+    const bottom = child.rect.y + child.rect.height - (parent.rect.y + parent.rect.height);
 
     const protrusionPx = {
       left: left > ELEMENT_PROTRUSION_TOLERANCE_PX ? Math.round(left) : 0,
