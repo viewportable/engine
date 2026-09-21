@@ -95,6 +95,38 @@ jobs:
           artifact-name: slice-release-action-smoke
           install-browser: 'false'
 
+      - name: Tagged GitHub Action compare smoke
+        id: compare-action
+        continue-on-error: true
+        uses: ./
+        with:
+          url: http://127.0.0.1:4173/action-compare-candidate.html
+          baseline-url: http://127.0.0.1:4173/action-compare-baseline.html
+          config: examples/github/action-compare.config.json
+          out: .slice/release-action-compare-smoke
+          artifact-name: slice-release-action-compare-smoke
+          install-browser: 'false'
+
+      - name: Verify tagged GitHub Action compare smoke
+        env:
+          SLICE_COMPARE_OUTCOME: ${{ steps.compare-action.outcome }}
+          SLICE_COMPARE_EXIT_CODE: ${{ steps.compare-action.outputs.exit_code }}
+          SLICE_COMPARE_RESULT_PATH: ${{ steps.compare-action.outputs.result_path }}
+        run: |
+          test "$SLICE_COMPARE_OUTCOME" = "failure"
+          test "$SLICE_COMPARE_EXIT_CODE" = "1"
+          test "$SLICE_COMPARE_RESULT_PATH" = ".slice/release-action-compare-smoke/structural-diff.json"
+          node <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(
+            fs.readFileSync('.slice/release-action-compare-smoke/structural-diff.json', 'utf8'),
+          );
+
+          if (report.summary.introducedRanges !== 2 || report.summary.exactBoundaries !== 4) {
+            throw new Error(`unexpected compare summary: ${JSON.stringify(report.summary)}`);
+          }
+          NODE
+
       - name: Stop GitHub Action fixture server
         if: ${{ always() }}
         run: |

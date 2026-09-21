@@ -358,7 +358,21 @@ jobs:
 
 The action uploads `.slice/results.json` as `slice-results` by default. Use the `out` and `artifact-name` inputs to change those values. Set `install-browser: 'false'` only when Playwright Chromium and its OS dependencies are already installed earlier in the job.
 
-The copy-ready workflow lives at `examples/github/slice.yml`. The repository CI also invokes `uses: ./` against the built-in fixed demo so the published Action surface is exercised end to end.
+For structural PR comparison, pass the candidate URL as `url` and the reference render as `baseline-url`:
+
+```yaml
+- name: Compare baseline and candidate
+  uses: viewportable/engine@v0.1.0-rc.1
+  with:
+    url: http://127.0.0.1:3001
+    baseline-url: http://127.0.0.1:3000
+    out: .slice/compare
+    artifact-name: slice-structural-diff
+```
+
+When `baseline-url` is set, the Action switches to structural compare mode, writes `structural-diff.json`, renders introduced/resolved structural ranges in the GitHub job summary, uploads that report, and preserves the same exit contract: `0` no introduced changes, `1` introduced changes, `2` scanner/setup failure. The `result_path` output automatically points to either `results.json` or `structural-diff.json` depending on the mode.
+
+The copy-ready single-render workflow lives at `examples/github/slice.yml`. A full pull-request example that checks out `base.sha` and `head.sha`, starts both versions, and compares them lives at `examples/github/compare.yml`. The repository CI exercises both Action modes end to end.
 
 ## Openings Golden Acceptance
 

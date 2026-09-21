@@ -1,0 +1,91 @@
+name: Viewportable Engine Compare
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: slice-compare-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  structural-compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+
+      - name: Checkout baseline
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: baseline
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            baseline/package-lock.json
+            candidate/package-lock.json
+
+      - name: Start baseline
+        run: |
+          cd baseline
+          npm ci
+          npm run build
+          npm run start -- --host 127.0.0.1 --port 3000 > /tmp/viewportable-baseline.log 2>&1 &
+          echo $! > /tmp/viewportable-baseline.pid
+
+          for attempt in {1..60}; do
+            if curl -fsS http://127.0.0.1:3000 >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat /tmp/viewportable-baseline.log
+          exit 1
+
+      - name: Start candidate
+        run: |
+          cd candidate
+          npm ci
+          npm run build
+          npm run start -- --host 127.0.0.1 --port 3001 > /tmp/viewportable-candidate.log 2>&1 &
+          echo $! > /tmp/viewportable-candidate.pid
+
+          for attempt in {1..60}; do
+            if curl -fsS http://127.0.0.1:3001 >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat /tmp/viewportable-candidate.log
+          exit 1
+
+      - name: Compare baseline and candidate
+        uses: viewportable/engine@v0.1.0-rc.1
+        with:
+          url: http://127.0.0.1:3001
+          baseline-url: http://127.0.0.1:3000
+          out: .slice/compare
+          artifact-name: slice-structural-diff
+
+      - name: Stop applications
+        if: ${{ always() }}
+        run: |
+          if [[ -f /tmp/viewportable-baseline.pid ]]; then
+            kill "$(cat /tmp/viewportable-baseline.pid)" 2>/dev/null || true
+          fi
+          if [[ -f /tmp/viewportable-candidate.pid ]]; then
+            kill "$(cat /tmp/viewportable-candidate.pid)" 2>/dev/null || true
+          fi

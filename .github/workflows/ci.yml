@@ -91,6 +91,50 @@ jobs:
           artifact-name: slice-action-smoke
           install-browser: 'false'
 
+      - name: GitHub Action compare smoke
+        id: compare-action
+        continue-on-error: true
+        uses: ./
+        with:
+          url: http://127.0.0.1:4173/action-compare-candidate.html
+          baseline-url: http://127.0.0.1:4173/action-compare-baseline.html
+          config: examples/github/action-compare.config.json
+          out: .slice/action-compare-smoke
+          artifact-name: slice-action-compare-smoke
+          install-browser: 'false'
+
+      - name: Verify GitHub Action compare smoke
+        env:
+          SLICE_COMPARE_OUTCOME: ${{ steps.compare-action.outcome }}
+          SLICE_COMPARE_EXIT_CODE: ${{ steps.compare-action.outputs.exit_code }}
+          SLICE_COMPARE_RESULT_PATH: ${{ steps.compare-action.outputs.result_path }}
+        run: |
+          test "$SLICE_COMPARE_OUTCOME" = "failure"
+          test "$SLICE_COMPARE_EXIT_CODE" = "1"
+          test "$SLICE_COMPARE_RESULT_PATH" = ".slice/action-compare-smoke/structural-diff.json"
+          node <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(
+            fs.readFileSync('.slice/action-compare-smoke/structural-diff.json', 'utf8'),
+          );
+
+          if (report.summary.introducedRanges !== 2) {
+            throw new Error(`expected 2 introduced ranges, got ${report.summary.introducedRanges}`);
+          }
+          if (report.summary.exactBoundaries !== 4) {
+            throw new Error(`expected 4 exact boundaries, got ${report.summary.exactBoundaries}`);
+          }
+
+          for (const range of report.ranges) {
+            const boundaries = Object.fromEntries(
+              range.boundaries.map((boundary) => [boundary.edge, boundary.boundary]),
+            );
+            if (boundaries.lower !== 350 || boundaries.upper !== 499) {
+              throw new Error(`unexpected boundaries: ${JSON.stringify(boundaries)}`);
+            }
+          }
+          NODE
+
       - name: Stop GitHub Action fixture server
         if: ${{ always() }}
         run: |

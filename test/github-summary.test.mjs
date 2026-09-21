@@ -56,6 +56,86 @@ describe('GitHub summary', () => {
     expect(markdown).toContain('| issue-2 | fixed-content-occlusion | 768px |');
   });
 
+  it('renders structural compare ranges and exact boundaries', () => {
+    const markdown = renderGitHubSummary({
+      baselineUrl: 'http://127.0.0.1:3000',
+      candidateUrl: 'http://127.0.0.1:3001',
+      summary: {
+        viewportsChecked: 4,
+        introducedRanges: 2,
+        resolvedRanges: 0,
+        exactBoundaries: 4,
+      },
+      viewports: [
+        {
+          viewport: { width: 320, height: 900 },
+          changes: [],
+        },
+        {
+          viewport: { width: 375, height: 900 },
+          changes: [
+            {
+              kind: 'node-presence',
+              direction: 'introduced',
+              subject: { key: 'id:checkout-button' },
+              baselineState: 'visible',
+              candidateState: 'missing',
+            },
+            {
+              kind: 'reparenting',
+              direction: 'introduced',
+              subject: { key: 'id:cta' },
+              baselineParent: { key: 'id:pricing-card' },
+              candidateParent: { key: 'id:page-root' },
+            },
+          ],
+        },
+      ],
+      ranges: [
+        {
+          direction: 'introduced',
+          firstWidth: 375,
+          lastWidth: 430,
+          boundaries: [
+            { edge: 'lower', boundary: 350 },
+            { edge: 'upper', boundary: 499 },
+          ],
+          change: {
+            kind: 'node-presence',
+            direction: 'introduced',
+            subject: { key: 'id:checkout-button' },
+            baselineState: 'visible',
+            candidateState: 'missing',
+          },
+        },
+        {
+          direction: 'introduced',
+          firstWidth: 375,
+          lastWidth: 430,
+          boundaries: [
+            { edge: 'lower', boundary: 350 },
+            { edge: 'upper', boundary: 499 },
+          ],
+          change: {
+            kind: 'reparenting',
+            direction: 'introduced',
+            subject: { key: 'id:cta' },
+            baselineParent: { key: 'id:pricing-card' },
+            candidateParent: { key: 'id:page-root' },
+          },
+        },
+      ],
+    });
+
+    expect(markdown).toContain('## Viewportable Engine compare');
+    expect(markdown).toContain('**2 introduced ranges / 0 resolved ranges** · 4 exact boundaries');
+    expect(markdown).toContain('| 320px | PASS | No structural changes |');
+    expect(markdown).toContain('id:checkout-button disappeared');
+    expect(markdown).toContain('id:cta reparented id:pricing-card -> id:page-root');
+    expect(markdown).toContain('350-499px exact');
+    expect(markdown).toContain('sampled 375-430px');
+  });
+
   it('renders canonical wrapping findings without duplicating grouped leaves', () => {
     const markdown = renderGitHubSummary({
       summary: {

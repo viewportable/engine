@@ -47,6 +47,7 @@ for (const required of [
   'tsdown.config.ts',
   'src/cli.ts',
   'scripts/github-summary.mjs',
+  'examples/github/compare.yml',
 ]) {
   await requireFile(required);
 }
@@ -58,6 +59,8 @@ for (const requiredFragment of [
   'dist/cli.mjs',
   'scripts/github-summary.mjs',
   'actions/upload-artifact@v7',
+  'baseline-url',
+  'structural-diff.json',
 ]) {
   if (!action.includes(requiredFragment)) {
     throw new Error(`action.yml is missing required release fragment: ${requiredFragment}`);
@@ -76,14 +79,16 @@ if (expectedTag) {
     );
   }
 
-  const [readme, example] = await Promise.all([
+  const [readme, example, compareExample] = await Promise.all([
     read('README.md'),
     read('examples/github/slice.yml'),
+    read('examples/github/compare.yml'),
   ]);
 
   for (const [name, content] of [
     ['README.md', readme],
     ['examples/github/slice.yml', example],
+    ['examples/github/compare.yml', compareExample],
   ]) {
     if (content.includes('viewportable/engine@main')) {
       throw new Error(`${name} still points to viewportable/engine@main for a tagged release`);
