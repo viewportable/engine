@@ -6,6 +6,7 @@ on:
 permissions:
   contents: read
   issues: write
+  checks: write
 
 concurrency:
   group: slice-compare-${{ github.workflow }}-${{ github.event.pull_request.number }}
@@ -81,6 +82,7 @@ jobs:
           out: .slice/compare
           artifact-name: slice-structural-diff
           pr-comment: 'true'
+          check-run: 'true'
 
       - name: Stop applications
         if: ${{ always() }}
