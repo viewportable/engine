@@ -95,6 +95,37 @@ exit 2 -> infra_failure   (MCP tool error)
 
 `viewportable_compare` returns introduced canonical `findings[]` directly to the agent; resolved evidence remains in the retained full structural report. `viewportable_scan` returns failing viewports and canonical root causes while retaining the complete scan report.
 
+### MCP golden agent flow
+
+The repository includes a real stdio MCP acceptance flow using the official MCP client SDK:
+
+```bash
+npm run golden:mcp-agent
+```
+
+It performs one continuous agent-style lifecycle:
+
+```text
+MCP client connects over stdio
+        ↓
+viewportable_compare
+        ↓
+broken candidate
+        ↓
+2 findings @ 350-499px exact
+(disappearance + reparenting)
+        ↓
+candidate is fixed
+        ↓
+same MCP connection
+        ↓
+viewportable_compare
+        ↓
+0 findings
+```
+
+The acceptance harness does not call Engine internals directly. It launches the packaged `dist/mcp.mjs`, performs the MCP initialize/list-tools/call-tool protocol through `StdioClientTransport`, and verifies structured output. Full before/after Engine reports plus a compact acceptance record are retained in `.slice/mcp-golden-agent/`.
+
 ### Structural baseline comparison
 
 Viewportable Engine can also compare the same UI state between a baseline and candidate URL. This mode reports structural relationship changes instead of treating unusual geometry in one render as a defect by itself.

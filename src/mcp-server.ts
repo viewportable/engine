@@ -30,6 +30,20 @@ const commonShape = {
     .describe('Directory under which MCP evidence directories are retained'),
 };
 
+const outputSchema = z
+  .object({
+    mode: z.enum(['scan', 'compare']),
+    outcome: z.enum(['clean', 'findings', 'infra_failure']),
+    exitCode: z.number().int(),
+    reportPath: z.string(),
+    summary: z.record(z.string(), z.unknown()).nullable(),
+    findings: z.array(z.record(z.string(), z.unknown())).optional(),
+    rootCauses: z.array(z.record(z.string(), z.unknown())).optional(),
+    failingViewports: z.array(z.record(z.string(), z.unknown())).optional(),
+    stderr: z.string().optional(),
+  })
+  .passthrough();
+
 function toolResult(result: Record<string, unknown>) {
   return {
     content: [{ type: 'text' as const, text: mcpTextSummary(result) }],
@@ -64,6 +78,7 @@ export function createViewportableMcpServer({
         url: z.string().url().describe('Application URL to inspect'),
         ...commonShape,
       }),
+      outputSchema,
       annotations: {
         destructiveHint: false,
         idempotentHint: false,
@@ -90,6 +105,7 @@ export function createViewportableMcpServer({
         candidateUrl: z.string().url().describe('Candidate application URL'),
         ...commonShape,
       }),
+      outputSchema,
       annotations: {
         destructiveHint: false,
         idempotentHint: false,
