@@ -1,0 +1,7 @@
+{
+  "widths": [320, 375, 430, 520],
+  "height": 900,
+  "wait": 0,
+  "timeout": 10000,
+  "boundary": true
+}

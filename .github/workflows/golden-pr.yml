@@ -1,0 +1,101 @@
+name: Golden PR Fixture
+
+on:
+  pull_request:
+    paths:
+      - 'examples/golden-pr/**'
+      - '.github/workflows/golden-pr.yml'
+
+permissions:
+  contents: read
+  issues: write
+  checks: write
+
+concurrency:
+  group: golden-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+
+      - name: Checkout baseline
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: baseline
+
+      - name: Detect baseline fixture
+        id: baseline
+        shell: bash
+        run: |
+          if [[ -f baseline/examples/golden-pr/app/index.html ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Golden fixture is not present on the PR base yet; bootstrap comparison skipped."
+          fi
+
+      - name: Start baseline
+        if: ${{ steps.baseline.outputs.available == 'true' }}
+        shell: bash
+        run: |
+          python3 -m http.server 3000             --bind 127.0.0.1             --directory baseline/examples/golden-pr/app             > /tmp/viewportable-golden-baseline.log 2>&1 &
+          echo $! > /tmp/viewportable-golden-baseline.pid
+
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:3000 >/dev/null; then
+              exit 0
+            fi
+            sleep 0.2
+          done
+
+          cat /tmp/viewportable-golden-baseline.log
+          exit 1
+
+      - name: Start candidate
+        if: ${{ steps.baseline.outputs.available == 'true' }}
+        shell: bash
+        run: |
+          python3 -m http.server 3001             --bind 127.0.0.1             --directory candidate/examples/golden-pr/app             > /tmp/viewportable-golden-candidate.log 2>&1 &
+          echo $! > /tmp/viewportable-golden-candidate.pid
+
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:3001 >/dev/null; then
+              exit 0
+            fi
+            sleep 0.2
+          done
+
+          cat /tmp/viewportable-golden-candidate.log
+          exit 1
+
+      - name: Compare baseline and candidate
+        if: ${{ steps.baseline.outputs.available == 'true' }}
+        uses: ./candidate
+        with:
+          url: http://127.0.0.1:3001
+          baseline-url: http://127.0.0.1:3000
+          config: candidate/examples/golden-pr/slice.config.json
+          out: .slice/golden-pr
+          artifact-name: viewportable-golden-pr-evidence
+          pr-comment: 'true'
+          check-run: 'true'
+
+      - name: Stop fixture servers
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if [[ -f /tmp/viewportable-golden-baseline.pid ]]; then
+            kill "$(cat /tmp/viewportable-golden-baseline.pid)" 2>/dev/null || true
+          fi
+          if [[ -f /tmp/viewportable-golden-candidate.pid ]]; then
+            kill "$(cat /tmp/viewportable-golden-candidate.pid)" 2>/dev/null || true
+          fi
