@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { groupWrappingIssues } from '../src/analyze/wrapping-group.js';
+import { assessWrappingReflow } from '../src/analyze/wrapping-reflow.js';
 import { detectWrappingTransitions } from '../src/analyze/wrapping.js';
 import type { LayoutNode, WrappingIssue } from '../src/types.js';
 
@@ -232,5 +233,32 @@ describe('groupWrappingIssues', () => {
       flexWrapValues: ['nowrap'],
     });
     expect(groups[0]?.observations).toHaveLength(2);
+  });
+});
+
+
+describe('assessWrappingReflow', () => {
+  it('marks explicit flex wrapping as a review candidate without suppressing it', () => {
+    expect(
+      assessWrappingReflow({
+        authoredFlexWrap: true,
+        repeatedAcrossWidths: false,
+      }),
+    ).toEqual({
+      classification: 'authored-reflow-candidate',
+      reasons: ['explicit-flex-wrap'],
+    });
+  });
+
+  it('does not classify repeated wrapping by itself as intentional', () => {
+    expect(
+      assessWrappingReflow({
+        authoredFlexWrap: false,
+        repeatedAcrossWidths: true,
+      }),
+    ).toEqual({
+      classification: 'unclassified',
+      reasons: [],
+    });
   });
 });
