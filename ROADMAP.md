@@ -55,7 +55,7 @@ Merged as `6b719cf`.
 
 Completed:
 
-- Repository references moved to `viewportable/slice`.
+- Repository references moved to `viewportable/engine`.
 - Repository/homepage/bugs package metadata.
 - Explicit `AGPL-3.0-only` license.
 - Full `LICENSE` file.
