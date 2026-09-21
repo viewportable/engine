@@ -10,6 +10,48 @@ After package publication, the intended one-shot form is:
 npx @viewportable/slice http://localhost:3000
 ```
 
+### Structural baseline comparison
+
+Viewportable Engine can also compare the same UI state between a baseline and candidate URL. This mode reports structural relationship changes instead of treating unusual geometry in one render as a defect by itself.
+
+```bash
+slice http://localhost:3001 \
+  --baseline-url http://localhost:3000 \
+  --widths 390,768,1024
+```
+
+The positional URL is the **candidate**. `--baseline-url` is the reference render.
+
+V1 compares:
+
+- sibling overlap: `separate -> overlap` and `overlap -> separate`;
+- parent containment: `contained -> protruding` and `protruding -> contained`.
+
+Only **introduced** structural changes make the command exit with code `1`. Resolved changes remain in the report but do not fail the run. Setup/capture failures still use exit code `2`.
+
+The compare report is written separately from ordinary scan output:
+
+```text
+.slice/structural-diff.json
+```
+
+Example:
+
+```text
+  Viewportable Engine compare
+  baseline  http://localhost:3000
+  candidate http://localhost:3001
+
+  390   FAIL  2 introduced | 0 resolved | 84 matched nodes
+        + id:first <> id:second separate -> overlap
+        + id:cta in id:card contained -> protruding (right)
+
+  2 introduced | 0 resolved in 1 viewports
+  .slice/structural-diff.json
+```
+
+Cross-version matching does not rely on Chromium backend node IDs. It prefers stable authored IDs and test attributes, then uses a conservative structural-path fallback with match quality retained in the evidence.
+
 ```text
   Viewportable Engine · http://localhost:3000
 

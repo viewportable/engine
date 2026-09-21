@@ -12,6 +12,9 @@ import { groupWrappingIssues } from './analyze/wrapping-group.js';
 import { assessWrappingReflow } from './analyze/wrapping-reflow.js';
 import { detectWrappingTransitions } from './analyze/wrapping.js';
 import { findBoundary } from './boundary.js';
+import { renderStructuralCompareReport } from './compare/render.js';
+import { writeStructuralCompareReport } from './compare/report.js';
+import { runStructuralCompare } from './compare/run.js';
 import { captureBrowserSurface } from './capture.js';
 import { loadSliceConfig, type SliceConfig, type SuppressionRule } from './config.js';
 import { findUniqueCssSource } from './css-source.js';
@@ -60,6 +63,7 @@ interface CliOptions {
   wait: string;
   researchSmallRangeOverlap: boolean;
   researchElementProtrusion: boolean;
+  baselineUrl?: string;
   readySelector?: string;
   config?: string;
 }
@@ -914,6 +918,34 @@ function aggregateRootCauses(
   });
 }
 
+async function runCompare(
+  candidateUrl: string,
+  baselineUrl: string,
+  options: RunOptions,
+): Promise<number> {
+  const widths = parseWidths(options.widths);
+  const height = parsePositiveInteger(options.height, '--height');
+  const timeoutMs = parsePositiveInteger(options.timeout, '--timeout');
+  const waitMs = parsePositiveInteger(options.wait, '--wait', true);
+
+  const report = await runStructuralCompare(baselineUrl, candidateUrl, {
+    widths,
+    height,
+    waitMs,
+    timeoutMs,
+    ...(options.readySelector ? { readySelector: options.readySelector } : {}),
+  });
+  const outputPath = await writeStructuralCompareReport(options.out, report);
+
+  if (options.json) {
+    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+  } else {
+    renderStructuralCompareReport(report, outputPath);
+  }
+
+  return report.summary.introducedChanges > 0 ? 1 : 0;
+}
+
 async function runSlice(url: string, options: RunOptions): Promise<number> {
   const widths = parseWidths(options.widths);
   const height = parsePositiveInteger(options.height, '--height');
@@ -1181,13 +1213,17 @@ program
     'write research-only parent-boundary protrusion candidates',
     false,
   )
+  .option('--baseline-url <url>', 'compare candidate URL against a baseline URL')
   .option('--ready-selector <selector>', 'require a visible selector before scanning')
   .option('--config <path>', 'project config path; defaults to slice.config.json when present')
   .exitOverride()
   .action(async (url: string, options: CliOptions, command: Command) => {
     const loaded = await loadSliceConfig(options.config);
     const resolved = resolveRunOptions(command, options, loaded.config);
-    process.exitCode = await runSlice(url, resolved);
+
+    process.exitCode = resolved.baselineUrl
+      ? await runCompare(url, resolved.baselineUrl, resolved)
+      : await runSlice(url, resolved);
   });
 
 try {
