@@ -28,13 +28,13 @@ const { stdout: status } = await execFileAsync('git', ['status', '--porcelain'])
 
 if (status.trim() && process.env.SLICE_PREFLIGHT_ALLOW_DIRTY !== '1') {
   throw new Error(
-    'Slice working tree is dirty. Commit/stash changes or set SLICE_PREFLIGHT_ALLOW_DIRTY=1 deliberately.',
+    'Viewportable Engine working tree is dirty. Commit/stash changes or set SLICE_PREFLIGHT_ALLOW_DIRTY=1 deliberately.',
   );
 }
 
 process.stdout.write(
   '\n========================================\n' +
-    ' Slice RC preflight\n' +
+    ' Viewportable Engine RC preflight\n' +
     '========================================\n',
 );
 
