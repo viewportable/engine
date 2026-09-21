@@ -46,26 +46,29 @@ export function renderStructuralCompareReport(
         `${introduced.length} introduced | ${resolved.length} resolved | ` +
         `${viewport.matchedNodes} matched nodes\n`,
     );
+  }
 
-    for (const change of introduced.slice(0, 4)) {
-      process.stdout.write(`        + ${renderChange(change)}\n`);
-    }
+  if (report.ranges.length > 0) {
+    process.stdout.write('\n  Structural ranges\n');
 
-    for (const change of resolved.slice(0, 2)) {
-      process.stdout.write(`        - ${renderChange(change)}\n`);
-    }
+    for (const range of report.ranges) {
+      const symbol = range.direction === 'introduced' ? '+' : '-';
+      const width =
+        range.firstWidth === range.lastWidth
+          ? `${range.firstWidth}px`
+          : `${range.firstWidth}-${range.lastWidth}px`;
+      const samples = range.sampleCount > 1 ? ` | ${range.sampleCount} sampled widths` : '';
 
-    const hidden = Math.max(0, viewport.changes.length - 6);
-    if (hidden > 0) {
-      process.stdout.write(`        ... ${hidden} more changes\n`);
+      process.stdout.write(`    ${symbol} ${width}  ${renderChange(range.change)}${samples}\n`);
     }
   }
 
   process.stdout.write(
     [
       '',
-      `  ${report.summary.introducedChanges} introduced | ` +
-        `${report.summary.resolvedChanges} resolved in ` +
+      `  ${report.summary.introducedRanges} introduced ranges | ` +
+        `${report.summary.resolvedRanges} resolved ranges | ` +
+        `${report.summary.totalChanges} raw observations in ` +
         `${report.summary.viewportsChecked} viewports | ` +
         `${(report.summary.durationMs / 1000).toFixed(1)}s`,
       `  ${outputPath}`,

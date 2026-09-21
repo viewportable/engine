@@ -35,6 +35,8 @@ The compare report is written separately from ordinary scan output:
 .slice/structural-diff.json
 ```
 
+Repeated observations of the same relationship across adjacent sampled widths are also grouped into canonical sampled ranges. Raw per-viewport changes remain in `viewports[].changes`, while top-level `ranges[]` gives one product-facing unit such as `375-430px`. A missing observation at an intermediate sampled width splits the range; the Engine does not imply an exact breakpoint between samples.
+
 Example:
 
 ```text

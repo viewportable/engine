@@ -137,7 +137,7 @@ describe('slice CLI', () => {
       '--baseline-url',
       `${baseUrl}/structural-diff-baseline.html`,
       '--widths',
-      '390',
+      '375,390,430',
       '--wait',
       '0',
       '--out',
@@ -148,25 +148,37 @@ describe('slice CLI', () => {
     const report = JSON.parse(await readFile(path.join(out, 'structural-diff.json'), 'utf8'));
 
     expect(report.summary).toMatchObject({
-      viewportsChecked: 1,
-      introducedChanges: 2,
+      viewportsChecked: 3,
+      introducedChanges: 6,
       resolvedChanges: 0,
-      totalChanges: 2,
+      totalChanges: 6,
+      introducedRanges: 2,
+      resolvedRanges: 0,
+      totalRanges: 2,
     });
-    expect(report.viewports[0].changes).toEqual(
+    expect(report.ranges).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           kind: 'sibling-overlap',
           direction: 'introduced',
+          firstWidth: 375,
+          lastWidth: 430,
+          sampleWidths: [375, 390, 430],
+          sampleCount: 3,
         }),
         expect.objectContaining({
           kind: 'parent-containment',
           direction: 'introduced',
+          firstWidth: 375,
+          lastWidth: 430,
+          sampleWidths: [375, 390, 430],
+          sampleCount: 3,
         }),
       ]),
     );
     expect(result.stdout).toContain('Viewportable Engine compare');
-    expect(result.stdout).toContain('2 introduced');
+    expect(result.stdout).toContain('Structural ranges');
+    expect(result.stdout).toContain('375-430px');
   });
 
   it('does not fail when structural changes are only resolved', async () => {
@@ -175,7 +187,7 @@ describe('slice CLI', () => {
       '--baseline-url',
       `${baseUrl}/structural-diff-candidate.html`,
       '--widths',
-      '390',
+      '375,390,430',
       '--wait',
       '0',
       '--out',
@@ -185,7 +197,9 @@ describe('slice CLI', () => {
     expect(result.code).toBe(0);
     const report = JSON.parse(await readFile(path.join(out, 'structural-diff.json'), 'utf8'));
     expect(report.summary.introducedChanges).toBe(0);
-    expect(report.summary.resolvedChanges).toBe(2);
+    expect(report.summary.resolvedChanges).toBe(6);
+    expect(report.summary.introducedRanges).toBe(0);
+    expect(report.summary.resolvedRanges).toBe(2);
   });
 
   it('returns exit 0 and empty issues for a clean page', async () => {
