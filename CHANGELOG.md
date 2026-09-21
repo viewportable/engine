@@ -11,6 +11,7 @@ All notable changes to Viewportable Engine are documented here.
 - `--baseline-url` CLI mode with `.slice/structural-diff.json`; introduced changes fail the run while resolved-only changes remain non-failing evidence.
 - Canonical sampled-width range aggregation for repeated structural relationship changes while preserving raw per-viewport evidence.
 - Exact binary boundary refinement for introduced structural ranges with shared width-level probe caching and `--no-boundary` support.
+- Conservative structural reparenting plus explicit-identity appearance/disappearance changes, integrated with canonical ranges and exact boundary refinement.
 
 
 
