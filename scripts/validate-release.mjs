@@ -48,6 +48,7 @@ for (const required of [
   'src/cli.ts',
   'scripts/github-summary.mjs',
   'scripts/github-pr-comment.mjs',
+  'scripts/github-check-run.mjs',
   'examples/github/compare.yml',
 ]) {
   await requireFile(required);
@@ -64,6 +65,8 @@ for (const requiredFragment of [
   'structural-diff.json',
   'pr-comment',
   'scripts/github-pr-comment.mjs',
+  'check-run',
+  'scripts/github-check-run.mjs',
 ]) {
   if (!action.includes(requiredFragment)) {
     throw new Error(`action.yml is missing required release fragment: ${requiredFragment}`);
