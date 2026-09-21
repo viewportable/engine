@@ -47,6 +47,7 @@ for (const required of [
   'tsdown.config.ts',
   'src/cli.ts',
   'scripts/github-summary.mjs',
+  'scripts/github-pr-comment.mjs',
   'examples/github/compare.yml',
 ]) {
   await requireFile(required);
@@ -61,6 +62,8 @@ for (const requiredFragment of [
   'actions/upload-artifact@v7',
   'baseline-url',
   'structural-diff.json',
+  'pr-comment',
+  'scripts/github-pr-comment.mjs',
 ]) {
   if (!action.includes(requiredFragment)) {
     throw new Error(`action.yml is missing required release fragment: ${requiredFragment}`);

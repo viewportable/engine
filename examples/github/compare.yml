@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: slice-compare-${{ github.workflow }}-${{ github.event.pull_request.number }}
@@ -79,6 +80,7 @@ jobs:
           baseline-url: http://127.0.0.1:3000
           out: .slice/compare
           artifact-name: slice-structural-diff
+          pr-comment: 'true'
 
       - name: Stop applications
         if: ${{ always() }}

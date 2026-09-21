@@ -43,6 +43,22 @@ Repeated observations of the same relationship across adjacent sampled widths ar
 
 When an introduced range is bracketed by a sampled viewport where that exact structural fingerprint is absent, the Engine reuses binary boundary search to refine the sampled edge to an exact pixel boundary. For a band observed at `375` and `430`, with clean samples at `320` and `520`, the report can therefore say `350-499px exact | sampled 375-430px`. This applies to overlap, protrusion, disappearance, and reparenting fingerprints through the same range/boundary pipeline. Exact probing is cached by viewport width across fingerprints and can be disabled with `--no-boundary`.
 
+The compare report also exposes top-level `findings[]`, a product-facing contract derived from canonical ranges. Consumers such as GitHub comments do not need detector-specific `StructuralChange` shapes. Each finding carries a deterministic ID, normalized type (`overlap`, `protrusion`, `reparenting`, `disappearance`, or `appearance`), subject and related subjects, sampled/exact width range, baseline/candidate state, and raw evidence fingerprint/boundaries.
+
+```json
+{
+  "id": "structural-...",
+  "category": "structural",
+  "type": "reparenting",
+  "direction": "introduced",
+  "subject": { "key": "id:cta" },
+  "sampledRange": { "minWidth": 375, "maxWidth": 430, "widths": [375, 430] },
+  "exactRange": { "minWidth": 350, "maxWidth": 499 },
+  "baseline": { "state": "parented", "parent": { "key": "id:pricing-card" } },
+  "candidate": { "state": "parented", "parent": { "key": "id:page-root" } }
+}
+```
+
 Example:
 
 ```text
@@ -371,6 +387,22 @@ For structural PR comparison, pass the candidate URL as `url` and the reference 
 ```
 
 When `baseline-url` is set, the Action switches to structural compare mode, writes `structural-diff.json`, renders introduced/resolved structural ranges in the GitHub job summary, uploads that report, and preserves the same exit contract: `0` no introduced changes, `1` introduced changes, `2` scanner/setup failure. The `result_path` output automatically points to either `results.json` or `structural-diff.json` depending on the mode.
+
+Set `pr-comment: 'true'` to create one managed PR evidence comment. The Action finds its previous marker comment and updates it on subsequent runs instead of creating duplicates. The comment is rendered from canonical `findings[]`, includes exact ranges, baseline/candidate states, base/head SHAs, Engine ref, duration, and a link to the uploaded artifact. Grant `issues: write` in the workflow:
+
+```yaml
+permissions:
+  contents: read
+  issues: write
+
+# ...
+with:
+  url: http://127.0.0.1:3001
+  baseline-url: http://127.0.0.1:3000
+  pr-comment: 'true'
+```
+
+PR commenting is deliberately non-blocking: a read-only token, such as on some fork PRs, does not hide or replace the Engine result. The scan/report/artifact and exit code remain authoritative.
 
 The copy-ready single-render workflow lives at `examples/github/slice.yml`. A full pull-request example that checks out `base.sha` and `head.sha`, starts both versions, and compares them lives at `examples/github/compare.yml`. The repository CI exercises both Action modes end to end.
 
