@@ -145,7 +145,7 @@ Root causes
   root-1  section.plan-grid · breaks at 742px
 ```
 
-The JSON report preserves every leaf issue in `viewports[].issues`, links grouped leaves with `rootCauseId`, and exposes the aggregate in top-level `rootCauses[]`.
+The JSON report preserves every leaf issue in `viewports[].issues`, links grouped leaves with `rootCauseId`, and exposes canonical aggregates in top-level `rootCauses[]`. Horizontal-overflow roots carry diagnosis/boundary evidence; wrapping roots carry parent-level flow and transition evidence.
 
 ### Deterministic CSS diagnosis
 
@@ -222,6 +222,26 @@ Supported suppression shapes are:
   }
 ]
 ```
+
+### Sibling wrapping and canonical groups
+
+Slice detects a minority group of stable siblings moving onto a lower visual row between sampled viewport widths. Cross-viewport identity comes from the normalized browser surface, so snapshot-local node indices are not treated as stable identities.
+
+Raw moved elements remain in `viewports[].issues` as `type: "wrapping"`. Related observations are also grouped by their stable parent into a canonical `type: "wrapping"` entry in top-level `rootCauses[]`, and each active leaf issue links back through `rootCauseId`.
+
+```text
+390   FAIL  #footer-links wraps 1 sibling | 4 stay
+      evidence: #terms wraps below siblings | 4 stay / 1 wrap
+```
+
+The canonical group records structural flow evidence without guessing product intent:
+
+- explicit parent `display: flex|inline-flex` with `flex-wrap: wrap|wrap-reverse`;
+- the number of distinct cross-width wrap transitions;
+- whether the same parent reflows repeatedly across sampled widths;
+- the raw selectors and issue IDs behind every grouped observation.
+
+Authored or repeated reflow is evidence, not an automatic suppression. A deliberately wrapping component can still contain a real responsive defect, so Slice preserves the failure until a stronger intentional-reflow policy can distinguish expected flow from suspicious wrapping.
 
 ### Fixed-element collision detector
 
