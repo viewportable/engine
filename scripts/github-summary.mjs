@@ -80,7 +80,134 @@ function viewportFindingTexts(viewport, rootCauses) {
   ];
 }
 
-export function renderGitHubSummary(results) {
+function structuralChangeText(change) {
+  if (change.kind === 'sibling-overlap') {
+    return (
+      `${change.subjects?.[0]?.key ?? '?'} <> ${change.subjects?.[1]?.key ?? '?'} ` +
+      `${change.baselineState} -> ${change.candidateState}`
+    );
+  }
+
+  if (change.kind === 'parent-containment') {
+    const sides =
+      change.candidateState === 'protruding'
+        ? change.candidateEvidence?.sides
+        : change.baselineEvidence?.sides;
+    const suffix = sides?.length > 0 ? ` (${sides.join('/')})` : '';
+
+    return (
+      `${change.subject?.key ?? '?'} in ${change.parent?.key ?? '?'} ` +
+      `${change.baselineState} -> ${change.candidateState}${suffix}`
+    );
+  }
+
+  if (change.kind === 'reparenting') {
+    return (
+      `${change.subject?.key ?? '?'} reparented ` +
+      `${change.baselineParent?.key ?? '?'} -> ${change.candidateParent?.key ?? '?'}`
+    );
+  }
+
+  if (change.kind === 'node-presence') {
+    return change.candidateState === 'missing'
+      ? `${change.subject?.key ?? '?'} disappeared`
+      : `${change.subject?.key ?? '?'} appeared`;
+  }
+
+  return change.kind ?? 'structural-change';
+}
+
+function structuralRangeWidth(range) {
+  const sampled =
+    range.firstWidth === range.lastWidth
+      ? `${range.firstWidth}px`
+      : `${range.firstWidth}-${range.lastWidth}px`;
+  const lower = range.boundaries?.find((boundary) => boundary.edge === 'lower');
+  const upper = range.boundaries?.find((boundary) => boundary.edge === 'upper');
+
+  if (lower && upper) {
+    return `${lower.boundary}-${upper.boundary}px exact | sampled ${sampled}`;
+  }
+
+  if (lower) {
+    return `${sampled} sampled | lower ${lower.boundary}px exact`;
+  }
+
+  if (upper) {
+    return `${sampled} sampled | upper ${upper.boundary}px exact`;
+  }
+
+  return `${sampled} sampled`;
+}
+
+function isStructuralCompareReport(results) {
+  return (
+    typeof results?.baselineUrl === 'string' &&
+    typeof results?.candidateUrl === 'string' &&
+    Array.isArray(results?.ranges)
+  );
+}
+
+export function renderStructuralGitHubSummary(results) {
+  const lines = [
+    '## Viewportable Engine compare',
+    '',
+    `**Baseline:** \`${cell(results.baselineUrl)}\``,
+    '',
+    `**Candidate:** \`${cell(results.candidateUrl)}\``,
+    '',
+  ];
+  const summary = results.summary ?? {};
+
+  lines.push(
+    `**${summary.introducedRanges ?? 0} introduced ranges / ` +
+      `${summary.resolvedRanges ?? 0} resolved ranges** · ` +
+      `${summary.exactBoundaries ?? 0} exact boundaries · ` +
+      `${summary.viewportsChecked ?? 0} viewports checked`,
+    '',
+    '| Width | Status | Structural changes |',
+    '| ---: | :---: | --- |',
+  );
+
+  for (const viewport of results.viewports ?? []) {
+    const introduced = (viewport.changes ?? []).filter(
+      (change) => change.direction === 'introduced',
+    );
+    const resolved = (viewport.changes ?? []).filter((change) => change.direction === 'resolved');
+    const status = introduced.length > 0 ? 'FAIL' : 'PASS';
+    const changes = [
+      ...introduced.map((change) => `+ ${structuralChangeText(change)}`),
+      ...resolved.map((change) => `- ${structuralChangeText(change)}`),
+    ];
+
+    lines.push(
+      `| ${viewport.viewport?.width ?? '?'}px | ${status} | ` +
+        `${cell(changes.join('<br>') || 'No structural changes')} |`,
+    );
+  }
+
+  if ((results.ranges?.length ?? 0) > 0) {
+    lines.push(
+      '',
+      '### Structural ranges',
+      '',
+      '| Range | Direction | Change |',
+      '| --- | :---: | --- |',
+    );
+
+    for (const range of results.ranges) {
+      lines.push(
+        `| ${cell(structuralRangeWidth(range))} | ${cell(range.direction)} | ` +
+          `${cell(structuralChangeText(range.change))} |`,
+      );
+    }
+  }
+
+  lines.push('');
+  return `${lines.join('\n')}\n`;
+}
+
+function renderScanGitHubSummary(results) {
   const lines = ['## Viewportable Engine', ''];
   const summary = results.summary ?? {};
   const failing = results.viewports?.filter((viewport) => viewport.status === 'fail') ?? [];
@@ -151,6 +278,12 @@ export function renderGitHubSummary(results) {
 
   lines.push('');
   return `${lines.join('\n')}\n`;
+}
+
+export function renderGitHubSummary(results) {
+  return isStructuralCompareReport(results)
+    ? renderStructuralGitHubSummary(results)
+    : renderScanGitHubSummary(results);
 }
 
 async function main() {
