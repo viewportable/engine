@@ -98,14 +98,10 @@ describe('refineIntroducedStructuralRangeBoundaries', () => {
     const ranges = aggregateStructuralChangeRanges(viewports);
     let probes = 0;
 
-    const refined = await refineIntroducedStructuralRangeBoundaries(
-      ranges,
-      viewports,
-      async () => {
-        probes += 1;
-        return false;
-      },
-    );
+    const refined = await refineIntroducedStructuralRangeBoundaries(ranges, viewports, async () => {
+      probes += 1;
+      return false;
+    });
 
     expect(refined[0]?.boundaries).toEqual([]);
     expect(probes).toBe(0);
