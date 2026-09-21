@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Viewportable Golden PR Fixture</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #f7f7f8;
+        color: #151515;
+      }
+      #page-root {
+        width: min(100% - 32px, 720px);
+        margin: 48px auto;
+      }
+      #pricing-card {
+        width: min(100%, 360px);
+        padding: 24px;
+        border: 1px solid #d9d9dd;
+        border-radius: 16px;
+        background: white;
+      }
+      #cta,
+      #checkout-button {
+        display: block;
+        width: 100%;
+        min-height: 44px;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="page-root">
+      <h1>Golden PR fixture</h1>
+      <p id="fixture-status">Baseline structure is intentionally stable.</p>
+
+      <section id="pricing-card">
+        <h2>Pro plan</h2>
+        <button id="cta">Choose plan</button>
+        <button id="checkout-button">Checkout</button>
+      </section>
+    </main>
+  </body>
+</html>
