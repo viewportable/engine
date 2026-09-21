@@ -45,7 +45,8 @@ export function renderResult(report, exitCode) {
     return {
       conclusion,
       title: 'Comparison could not complete',
-      summary: 'Viewportable could not complete structural comparison. Review executor evidence and retry.',
+      summary:
+        'Viewportable could not complete structural comparison. Review executor evidence and retry.',
     };
   }
 
