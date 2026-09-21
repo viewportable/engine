@@ -192,6 +192,55 @@ function smallRangeEvidence(matches) {
     .join('<br>');
 }
 
+function elementProtrusionMatches(pageRun, reports) {
+  if (!pageRun || pageRun.status !== 'ok') return [];
+
+  const ranges = reports
+    .filter((report) => report.type === 'Element Protrusion')
+    .map((report) => report.range);
+  if (ranges.length === 0) return [];
+
+  return (pageRun.elementProtrusionResearch?.candidates ?? []).filter((candidate) =>
+    ranges.some(
+      (range) => candidate.viewportWidth >= range.min && candidate.viewportWidth <= range.max,
+    ),
+  );
+}
+
+function elementProtrusionEvidence(matches) {
+  const unique = [
+    ...new Map(
+      matches.map((match) => [
+        `${match.parentIdentity}|${match.childIdentity}|${match.sides.join(',')}`,
+        match,
+      ]),
+    ).values(),
+  ];
+
+  return unique
+    .slice(0, 4)
+    .map(
+      (match) =>
+        `${match.viewportWidth}px: ${match.childLabel} outside ${match.parentLabel} ` +
+        `(${match.sides.join('/')})`,
+    )
+    .join('<br>');
+}
+
+function uniqueElementProtrusionGroups(entries) {
+  const groups = new Set();
+
+  for (const entry of entries) {
+    for (const match of entry.matches) {
+      groups.add(
+        `${entry.page}|${match.parentIdentity}|${match.childIdentity}|${match.sides.join(',')}`,
+      );
+    }
+  }
+
+  return groups.size;
+}
+
 function renderSummary(report) {
   const lines = [
     '# ReDeCheck Baseline',
@@ -244,6 +293,32 @@ function renderSummary(report) {
     ),
     '',
     '> Research candidates are sampled structural evidence only. They do not change Engine findings, exit codes, or the baseline Small-Range support classification.',
+    '',
+    '## Element protrusion research gate',
+    '',
+    `- Distinct oracle RLFs carrying Element Protrusion: **${report.research.elementProtrusion.summary.oracleDistinctFailures}**`,
+    `- Oracle RLFs with parent-boundary candidate: **${report.research.elementProtrusion.summary.oracleCandidateFailures}**`,
+    `- Anti-oracle raw Element Protrusion reports: **${report.research.elementProtrusion.summary.antiOracleReports}**`,
+    `- Anti-oracle reports with candidate: **${report.research.elementProtrusion.summary.antiOracleCandidateReports}**`,
+    `- Unique anti-oracle candidate groups: **${report.research.elementProtrusion.summary.uniqueAntiCandidateGroups}**`,
+    '',
+    '| Oracle ID | Page | Range(s) | Candidate evidence |',
+    '| ---: | --- | --- | --- |',
+    ...report.research.elementProtrusion.oracle.map(
+      (entry) =>
+        `| ${entry.id} | ${entry.page} | ${entry.reports
+          .map((item) => `${item.range.min}-${item.range.max}px`)
+          .join('<br>')} | ${elementProtrusionEvidence(entry.matches)} |`,
+    ),
+    '',
+    '| Anti source | Page | Range | Candidate evidence |',
+    '| --- | --- | --- | --- |',
+    ...report.research.elementProtrusion.antiOracle.map(
+      (entry) =>
+        `| ${entry.sourceClassification} | ${entry.page} | ${entry.range.min}-${entry.range.max}px | ${elementProtrusionEvidence(entry.matches)} |`,
+    ),
+    '',
+    '> Parent-boundary candidates are research evidence only. They do not change Engine findings, exit codes, or the baseline Element Protrusion support classification.',
     '',
     '> Candidate match means compatible rule family + same page + sampled width inside the oracle range. It still requires evidence/identity review before being called a confirmed detection.',
     '',
@@ -429,6 +504,7 @@ try {
         pageOut,
         '--no-boundary',
         '--research-small-range-overlap',
+        '--research-element-protrusion',
         '--wait',
         String(WAIT_MS),
         '--timeout',
@@ -458,6 +534,9 @@ try {
       const smallRangeResearch = JSON.parse(
         await readFile(path.join(pageOut, 'small-range-overlap.json'), 'utf8'),
       );
+      const elementProtrusionResearch = JSON.parse(
+        await readFile(path.join(pageOut, 'element-protrusion.json'), 'utf8'),
+      );
       pageRuns.set(oraclePage, {
         status: 'ok',
         corpusPage,
@@ -465,6 +544,7 @@ try {
         exitCode: child.status,
         result,
         smallRangeResearch,
+        elementProtrusionResearch,
       });
     } catch (error) {
       pageRuns.set(oraclePage, {
@@ -586,6 +666,28 @@ const smallRangeAntiOracle = antiOracleReports
     range: report.range,
     reason: report.reason,
     matches: smallRangeMatches(pageRuns.get(report.page), [report]),
+  }));
+
+const elementProtrusionOracle = oracleFailures
+  .filter((failure) => failure.reports.some((report) => report.type === 'Element Protrusion'))
+  .map((failure) => {
+    const reports = failure.reports.filter((report) => report.type === 'Element Protrusion');
+    return {
+      id: failure.id,
+      page: failure.page,
+      reports,
+      matches: elementProtrusionMatches(pageRuns.get(failure.page), reports),
+    };
+  });
+
+const elementProtrusionAntiOracle = antiOracleReports
+  .filter((report) => report.type === 'Element Protrusion')
+  .map((report) => ({
+    sourceClassification: report.classification,
+    page: report.page,
+    range: report.range,
+    reason: report.reason,
+    matches: elementProtrusionMatches(pageRuns.get(report.page), [report]),
   }));
 
 const classifications = {
@@ -732,6 +834,25 @@ const report = {
       },
       oracle: smallRangeOracle,
       antiOracle: smallRangeAntiOracle,
+    },
+    elementProtrusion: {
+      methodology: {
+        relation: 'visible captured child outside visible captured parent',
+        tolerancePx: 1,
+        verdict: false,
+      },
+      summary: {
+        oracleDistinctFailures: elementProtrusionOracle.length,
+        oracleCandidateFailures: elementProtrusionOracle.filter((entry) => entry.matches.length > 0)
+          .length,
+        antiOracleReports: elementProtrusionAntiOracle.length,
+        antiOracleCandidateReports: elementProtrusionAntiOracle.filter(
+          (entry) => entry.matches.length > 0,
+        ).length,
+        uniqueAntiCandidateGroups: uniqueElementProtrusionGroups(elementProtrusionAntiOracle),
+      },
+      oracle: elementProtrusionOracle,
+      antiOracle: elementProtrusionAntiOracle,
     },
   },
   failures: scoredFailures,
