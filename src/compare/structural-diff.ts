@@ -1,0 +1,281 @@
+import type { SurfaceSnapshot } from '../surface.js';
+import type { LayoutNode } from '../types.js';
+import {
+  containmentRelationshipEvidence,
+  type ContainmentRelationshipEvidence,
+  type ContainmentRelationshipState,
+} from '../relationships/containment.js';
+import {
+  overlapRelationshipState,
+  type OverlapRelationshipState,
+} from '../relationships/overlap.js';
+import {
+  matchCrossVersionNodes,
+  type CrossVersionMatchQuality,
+  type CrossVersionNodeMatch,
+} from './node-match.js';
+
+export type StructuralChangeDirection = 'introduced' | 'resolved';
+
+export interface StructuralSubject {
+  key: string;
+  quality: CrossVersionMatchQuality;
+  tagName: string;
+}
+
+export interface SiblingOverlapStructuralChange {
+  kind: 'sibling-overlap';
+  direction: StructuralChangeDirection;
+  viewport: { width: number; height: number };
+  parent: StructuralSubject;
+  subjects: [StructuralSubject, StructuralSubject];
+  baselineState: OverlapRelationshipState;
+  candidateState: OverlapRelationshipState;
+}
+
+export interface ParentContainmentStructuralChange {
+  kind: 'parent-containment';
+  direction: StructuralChangeDirection;
+  viewport: { width: number; height: number };
+  parent: StructuralSubject;
+  subject: StructuralSubject;
+  baselineState: ContainmentRelationshipState;
+  candidateState: ContainmentRelationshipState;
+  baselineEvidence: ContainmentRelationshipEvidence;
+  candidateEvidence: ContainmentRelationshipEvidence;
+}
+
+export type StructuralChange =
+  | SiblingOverlapStructuralChange
+  | ParentContainmentStructuralChange;
+
+export interface StructuralDiff {
+  platform: SurfaceSnapshot['platform'];
+  viewport: { width: number; height: number };
+  matchedNodes: number;
+  changes: StructuralChange[];
+}
+
+function subject(match: CrossVersionNodeMatch): StructuralSubject {
+  return {
+    key: match.key,
+    quality: match.quality,
+    tagName: match.candidate.tagName,
+  };
+}
+
+function direction(
+  baselineState: 'separate' | 'overlap' | 'contained' | 'protruding',
+  candidateState: 'separate' | 'overlap' | 'contained' | 'protruding',
+): StructuralChangeDirection {
+  const candidateBad = candidateState === 'overlap' || candidateState === 'protruding';
+  const baselineBad = baselineState === 'overlap' || baselineState === 'protruding';
+
+  if (!baselineBad && candidateBad) return 'introduced';
+  return 'resolved';
+}
+
+function comparableContainmentNode(node: LayoutNode): boolean {
+  const position = node.styles.position?.toLowerCase();
+  const transform = node.styles.transform?.trim().toLowerCase();
+
+  if (!node.isVisible) return false;
+  if (position === 'fixed') return false;
+  if (transform && transform !== 'none') return false;
+  if (node.attributes['aria-hidden']?.toLowerCase() === 'true') return false;
+
+  return true;
+}
+
+function compareParentContainment(
+  matches: CrossVersionNodeMatch[],
+  baselineMatchedByIndex: Map<number, CrossVersionNodeMatch>,
+  candidateMatchedByIndex: Map<number, CrossVersionNodeMatch>,
+  viewport: { width: number; height: number },
+): ParentContainmentStructuralChange[] {
+  const changes: ParentContainmentStructuralChange[] = [];
+
+  for (const match of matches) {
+    if (!comparableContainmentNode(match.baseline) || !comparableContainmentNode(match.candidate)) {
+      continue;
+    }
+
+    const baselineParent = baselineMatchedByIndex.get(match.baseline.parentIndex);
+    const candidateParent = candidateMatchedByIndex.get(match.candidate.parentIndex);
+    if (!baselineParent || !candidateParent) continue;
+    if (baselineParent.key !== candidateParent.key) continue;
+    if (
+      baselineParent.baseline.tagName === 'HTML' ||
+      baselineParent.baseline.tagName === 'BODY' ||
+      candidateParent.candidate.tagName === 'HTML' ||
+      candidateParent.candidate.tagName === 'BODY'
+    ) {
+      continue;
+    }
+    if (
+      !comparableContainmentNode(baselineParent.baseline) ||
+      !comparableContainmentNode(candidateParent.candidate)
+    ) {
+      continue;
+    }
+
+    const baselineEvidence = containmentRelationshipEvidence(
+      baselineParent.baseline.rect,
+      match.baseline.rect,
+    );
+    const candidateEvidence = containmentRelationshipEvidence(
+      candidateParent.candidate.rect,
+      match.candidate.rect,
+    );
+    if (baselineEvidence.state === candidateEvidence.state) continue;
+
+    changes.push({
+      kind: 'parent-containment',
+      direction: direction(baselineEvidence.state, candidateEvidence.state),
+      viewport,
+      parent: subject(baselineParent),
+      subject: subject(match),
+      baselineState: baselineEvidence.state,
+      candidateState: candidateEvidence.state,
+      baselineEvidence,
+      candidateEvidence,
+    });
+  }
+
+  return changes;
+}
+
+function groupMatchedChildrenByParent(
+  matches: CrossVersionNodeMatch[],
+  baselineMatchedByIndex: Map<number, CrossVersionNodeMatch>,
+  candidateMatchedByIndex: Map<number, CrossVersionNodeMatch>,
+): Map<string, { parent: CrossVersionNodeMatch; children: CrossVersionNodeMatch[] }> {
+  const groups = new Map<
+    string,
+    { parent: CrossVersionNodeMatch; children: CrossVersionNodeMatch[] }
+  >();
+
+  for (const match of matches) {
+    const baselineParent = baselineMatchedByIndex.get(match.baseline.parentIndex);
+    const candidateParent = candidateMatchedByIndex.get(match.candidate.parentIndex);
+    if (!baselineParent || !candidateParent) continue;
+    if (baselineParent.key !== candidateParent.key) continue;
+
+    const group = groups.get(baselineParent.key) ?? {
+      parent: baselineParent,
+      children: [],
+    };
+    group.children.push(match);
+    groups.set(baselineParent.key, group);
+  }
+
+  return groups;
+}
+
+function compareSiblingOverlap(
+  matches: CrossVersionNodeMatch[],
+  baselineMatchedByIndex: Map<number, CrossVersionNodeMatch>,
+  candidateMatchedByIndex: Map<number, CrossVersionNodeMatch>,
+  viewport: { width: number; height: number },
+): SiblingOverlapStructuralChange[] {
+  const changes: SiblingOverlapStructuralChange[] = [];
+  const groups = groupMatchedChildrenByParent(
+    matches,
+    baselineMatchedByIndex,
+    candidateMatchedByIndex,
+  );
+
+  for (const { parent, children } of groups.values()) {
+    for (let firstIndex = 0; firstIndex < children.length; firstIndex += 1) {
+      const first = children[firstIndex];
+      if (!first) continue;
+
+      for (let secondIndex = firstIndex + 1; secondIndex < children.length; secondIndex += 1) {
+        const second = children[secondIndex];
+        if (!second) continue;
+
+        const baselineState = overlapRelationshipState(first.baseline.rect, second.baseline.rect);
+        const candidateState = overlapRelationshipState(first.candidate.rect, second.candidate.rect);
+        if (baselineState === candidateState) continue;
+
+        changes.push({
+          kind: 'sibling-overlap',
+          direction: direction(baselineState, candidateState),
+          viewport,
+          parent: subject(parent),
+          subjects: [subject(first), subject(second)],
+          baselineState,
+          candidateState,
+        });
+      }
+    }
+  }
+
+  return changes;
+}
+
+export function compareStructuralSurfaces(
+  baseline: SurfaceSnapshot<LayoutNode>,
+  candidate: SurfaceSnapshot<LayoutNode>,
+): StructuralDiff {
+  if (baseline.platform !== candidate.platform) {
+    throw new Error(
+      `Cannot compare structural surfaces from different platforms: ${baseline.platform} vs ${candidate.platform}`,
+    );
+  }
+
+  if (
+    baseline.viewport.width !== candidate.viewport.width ||
+    baseline.viewport.height !== candidate.viewport.height
+  ) {
+    throw new Error(
+      `Cannot compare structural surfaces at different viewports: ` +
+        `${baseline.viewport.width}x${baseline.viewport.height} vs ` +
+        `${candidate.viewport.width}x${candidate.viewport.height}`,
+    );
+  }
+
+  const matched = matchCrossVersionNodes(baseline.nodes, candidate.nodes);
+  const viewport = {
+    width: candidate.viewport.width,
+    height: candidate.viewport.height,
+  };
+
+  const changes: StructuralChange[] = [
+    ...compareParentContainment(
+      matched.matches,
+      matched.baselineMatchedByIndex,
+      matched.candidateMatchedByIndex,
+      viewport,
+    ),
+    ...compareSiblingOverlap(
+      matched.matches,
+      matched.baselineMatchedByIndex,
+      matched.candidateMatchedByIndex,
+      viewport,
+    ),
+  ];
+
+  changes.sort((first, second) => {
+    const kind = first.kind.localeCompare(second.kind);
+    if (kind !== 0) return kind;
+
+    const firstKey =
+      first.kind === 'parent-containment'
+        ? `${first.parent.key}|${first.subject.key}`
+        : `${first.parent.key}|${first.subjects.map((item) => item.key).join('|')}`;
+    const secondKey =
+      second.kind === 'parent-containment'
+        ? `${second.parent.key}|${second.subject.key}`
+        : `${second.parent.key}|${second.subjects.map((item) => item.key).join('|')}`;
+
+    return firstKey.localeCompare(secondKey);
+  });
+
+  return {
+    platform: candidate.platform,
+    viewport,
+    matchedNodes: matched.matches.length,
+    changes,
+  };
+}
