@@ -8,6 +8,7 @@ import {
   launchBrowser,
   type DocumentMetrics,
 } from './browser.js';
+import { groupWrappingIssues } from './analyze/wrapping-group.js';
 import { detectWrappingTransitions } from './analyze/wrapping.js';
 import { findBoundary } from './boundary.js';
 import { captureBrowserSurface } from './capture.js';
@@ -27,6 +28,7 @@ import type { SurfaceSnapshot } from './surface.js';
 import type {
   BoundaryResult,
   HorizontalOverflowIssue,
+  HorizontalOverflowRootCause,
   Issue,
   LayoutNode,
   RootCause,
@@ -36,6 +38,7 @@ import type {
   SliceResults,
   ViewportResult,
   WrappingIssue,
+  WrappingRootCause,
 } from './types.js';
 
 const DEFAULT_WIDTHS = [320, 375, 390, 430, 768, 1024, 1280, 1440];
@@ -713,6 +716,8 @@ async function addWrappingIssues(
         previousRowIndex: finding.previousRowIndex,
         currentRowIndex: finding.currentRowIndex,
         verticalShiftPx: finding.verticalShiftPx,
+        parentDisplay: parent.styles.display ?? '',
+        parentFlexWrap: parent.styles['flex-wrap'] ?? '',
       },
     };
     const partitioned = partitionSuppressedIssues([issue], suppressions);
@@ -723,10 +728,57 @@ async function addWrappingIssues(
   }
 }
 
+function aggregateWrappingRootCauses(
+  viewports: ViewportResult[],
+  rootCauseIds: Map<string, string>,
+): WrappingRootCause[] {
+  const wrappingIssues = viewports.flatMap((viewport) =>
+    viewport.issues.filter((issue): issue is WrappingIssue => issue.type === 'wrapping'),
+  );
+  const groups = groupWrappingIssues(wrappingIssues);
+  const rootCauseIdByIssueId = new Map<string, string>();
+
+  const rootCauses = groups.map((group): WrappingRootCause => {
+    const key = `wrapping-root|${group.parentSelector}`;
+    let id = rootCauseIds.get(key);
+
+    if (!id) {
+      id = `root-${rootCauseIds.size + 1}`;
+      rootCauseIds.set(key, id);
+    }
+
+    for (const issueId of group.issueIds) {
+      rootCauseIdByIssueId.set(issueId, id);
+    }
+
+    return {
+      id,
+      type: 'wrapping',
+      severity: 'error',
+      selector: group.parentSelector,
+      tagName: group.parentTagName,
+      issueIds: group.issueIds,
+      observations: group.observations,
+      boundaries: [],
+      evidence: group.evidence,
+    };
+  });
+
+  for (const viewport of viewports) {
+    for (const issue of viewport.issues) {
+      if (issue.type !== 'wrapping') continue;
+      const rootCauseId = rootCauseIdByIssueId.get(issue.id);
+      if (rootCauseId) issue.rootCauseId = rootCauseId;
+    }
+  }
+
+  return rootCauses;
+}
+
 function aggregateRootCauses(
   observations: CapturedRootCause[],
   boundaries: RootCauseBoundaryResult[],
-): RootCause[] {
+): HorizontalOverflowRootCause[] {
   const byId = new Map<
     string,
     {
@@ -986,7 +1038,9 @@ async function runSlice(url: string, options: RunOptions): Promise<number> {
       }
     }
 
-    const rootCauses = aggregateRootCauses(rootCauseObservations, rootCauseBoundaries);
+    const overflowRootCauses = aggregateRootCauses(rootCauseObservations, rootCauseBoundaries);
+    const wrappingRootCauses = aggregateWrappingRootCauses(viewports, rootCauseIds);
+    const rootCauses: RootCause[] = [...overflowRootCauses, ...wrappingRootCauses];
     const durationMs = Date.now() - startedAt;
     const failed = viewports.filter((viewport) => viewport.status === 'fail').length;
     const results: SliceResults = {
