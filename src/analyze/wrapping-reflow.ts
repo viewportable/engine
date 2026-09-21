@@ -10,9 +10,7 @@ export interface WrappingFlowEvidence {
   repeatedAcrossWidths: boolean;
 }
 
-export function assessWrappingReflow(
-  evidence: WrappingFlowEvidence,
-): WrappingReflowAssessment {
+export function assessWrappingReflow(evidence: WrappingFlowEvidence): WrappingReflowAssessment {
   if (evidence.authoredFlexWrap) {
     return {
       classification: 'authored-reflow-candidate',
