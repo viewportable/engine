@@ -31,6 +31,7 @@ describe('GitHub summary', () => {
       ],
       rootCauses: [
         {
+          type: 'horizontal-overflow',
           selector: 'section.grid',
           boundaries: [{ boundary: 742 }],
           diagnosis: {
@@ -53,5 +54,55 @@ describe('GitHub summary', () => {
     expect(markdown).toContain('| 768px | PASS | 1 suppressed |');
     expect(markdown).toContain('| section.grid | 742px | width: 720px |');
     expect(markdown).toContain('| issue-2 | fixed-content-occlusion | 768px |');
+  });
+
+  it('renders wrapping issues and canonical wrapping groups', () => {
+    const markdown = renderGitHubSummary({
+      summary: {
+        viewportsChecked: 2,
+        suppressedIssues: 0,
+      },
+      viewports: [
+        {
+          width: 390,
+          status: 'fail',
+          issues: [
+            {
+              type: 'wrapping',
+              selector: '#terms',
+              parentSelector: '#footer-links',
+              evidence: {
+                stableSiblingCount: 4,
+              },
+            },
+          ],
+          suppressedIssues: [],
+        },
+        {
+          width: 430,
+          status: 'pass',
+          issues: [],
+          suppressedIssues: [],
+        },
+      ],
+      rootCauses: [
+        {
+          type: 'wrapping',
+          selector: '#footer-links',
+          boundaries: [],
+          evidence: {
+            authoredFlexWrap: true,
+            transitionCount: 2,
+          },
+        },
+      ],
+      boundaries: [],
+    });
+
+    expect(markdown).toContain('wrapping: #terms wraps below siblings (4 stay)');
+    expect(markdown).toContain(
+      '| #footer-links | - | Grouped sibling wrapping · authored flex-wrap · 2 transitions |',
+    );
+    expect(markdown).not.toContain('undefined');
   });
 });
