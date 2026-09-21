@@ -35,9 +35,9 @@ const { server, baseUrl } = await startDemoServer();
 try {
   process.stdout.write(
     '\n========================================\n' +
-      ' Slice local demo\n' +
+      ' Viewportable Engine local demo\n' +
       '========================================\n\n' +
-      'This is not a test fixture. Slice is scanning a small standalone demo site\n' +
+      'This is not a test fixture. Viewportable Engine is scanning a small standalone demo site\n' +
       'through its built production CLI.\n\n' +
       '1) Intentionally broken responsive pricing page\n',
   );
@@ -74,7 +74,7 @@ try {
 
   process.stdout.write(
     '\n========================================\n' +
-      ' Slice demo PASS\n' +
+      ' Viewportable Engine demo PASS\n' +
       '========================================\n\n' +
       'Reports:\n' +
       '  .slice/demo/broken/results.json\n' +

@@ -1,8 +1,8 @@
-# Slice
+# Viewportable Engine
 
-Slice is deterministic responsive QA for coding agents and CI. It opens one URL in Chromium, scans a configured viewport matrix, detects horizontal overflow, fixed-element collisions, and fixed-content occlusion, searches exact per-issue breakpoint boundaries, groups deterministic layout root causes, and writes machine-readable evidence to `.slice/results.json` - without screenshots or AI-based visual judgment.
+Viewportable Engine is deterministic responsive QA for coding agents and CI. It opens one URL in Chromium, scans a configured viewport matrix, detects horizontal overflow, fixed-element collisions, and fixed-content occlusion, searches exact per-issue breakpoint boundaries, groups deterministic layout root causes, and writes machine-readable evidence to `.slice/results.json` - without screenshots or AI-based visual judgment.
 
-The package identity is reserved as **`@viewportable/slice`** and the executable remains **`slice`**. Publishing is intentionally disabled with `"private": true` until the v0.1 release decision.
+The repository and product are **Viewportable Engine**. The compatibility CLI package remains **`@viewportable/slice`** and the executable remains **`slice`**. Publishing is intentionally disabled with `"private": true` until the v0.1 release decision.
 
 After package publication, the intended one-shot form is:
 
@@ -11,7 +11,7 @@ npx @viewportable/slice http://localhost:3000
 ```
 
 ```text
-  Slice · http://localhost:3000
+  Viewportable Engine · http://localhost:3000
 
   320   PASS
   375   PASS
@@ -62,11 +62,11 @@ npx @viewportable/slice http://localhost:3000
 
 ## Five-minute local demo
 
-The first demo is intentionally framework-neutral. Slice consumes a URL, so a static page exercises the same browser/CDP path as Rails, React, or Next.js without adding another framework to debug.
+The first demo is intentionally framework-neutral. Viewportable Engine consumes a URL, so a static page exercises the same browser/CDP path as Rails, React, or Next.js without adding another framework to debug.
 
 ```bash
-git clone https://github.com/viewportable/slice.git
-cd slice
+git clone https://github.com/viewportable/engine.git
+cd engine
 npm ci
 npm run demo
 ```
@@ -92,7 +92,7 @@ npm run demo:scan
 
 ## Visual demo with Responsively
 
-Slice and Responsively can inspect the exact same local URL. Responsively provides the visual multi-device view; Slice provides deterministic evidence for the same page: failing widths, CSS selector, overflow pixels, and the exact breakpoint boundary.
+Viewportable Engine and Responsively can inspect the exact same local URL. Responsively provides the visual multi-device view; Viewportable Engine provides deterministic evidence for the same page: failing widths, CSS selector, overflow pixels, and the exact breakpoint boundary.
 
 Install and launch Responsively App once. On macOS:
 
@@ -106,12 +106,12 @@ Then run:
 npm run demo:visual
 ```
 
-The command prefers `http://127.0.0.1:4173`. If that port is already occupied, it automatically selects a free local port, prints the chosen URL, opens `broken.html` in Responsively through its `responsively://` protocol, and scans that exact same URL with Slice. The server remains running until you press Ctrl-C.
+The command prefers `http://127.0.0.1:4173`. If that port is already occupied, it automatically selects a free local port, prints the chosen URL, opens `broken.html` in Responsively through its `responsively://` protocol, and scans that exact same URL with Viewportable Engine. The server remains running until you press Ctrl-C.
 
 The key comparison is:
 
 ```text
-Responsively                   Slice
+Responsively                   Viewportable Engine
 visual overflow                horizontal-overflow
 narrow device previews    <=>  failing widths
 wide preview is clean     <=>  768 / 1024 PASS
@@ -119,22 +119,22 @@ transition point           <=>  exact boundary
 visible element            <=>  CSS selector + overflowPx
 ```
 
-Open `http://127.0.0.1:4173/fixed.html` in Responsively to compare the corrected version. Slice writes the broken-page evidence to `.slice/demo-responsively/results.json`.
+Open `http://127.0.0.1:4173/fixed.html` in Responsively to compare the corrected version. Viewportable Engine writes the broken-page evidence to `.slice/demo-responsively/results.json`.
 
-For the exact boundary experiment, Slice also scans `742`, `743`, and `744` pixels. A ready-to-import Responsively backup lives at:
+For the exact boundary experiment, Viewportable Engine also scans `742`, `743`, and `744` pixels. A ready-to-import Responsively backup lives at:
 
 ```text
 examples/responsively/slice-boundary-suite.json
 ```
 
-Import it from Responsively's device/suite manager, then activate **Slice Boundary 742-744**. This gives three side-by-side previews around the same boundary that Slice reports. With the shared 1px overflow tolerance, the golden result is `742 FAIL / 743 PASS / 744 PASS`, and the reported boundary is `742px` - the last bad width when moving from wide to narrow.
+Import it from Responsively's device/suite manager, then activate **Viewportable Engine Boundary 742-744**. This gives three side-by-side previews around the same boundary that Viewportable Engine reports. With the shared 1px overflow tolerance, the golden result is `742 FAIL / 743 PASS / 744 PASS`, and the reported boundary is `742px` - the last bad width when moving from wide to narrow.
 
 
 This intentionally exposes an important current product limitation too: a human may perceive one overflowing pricing grid while the current deepest-element detector can report several leaf elements that share the same breakpoint. That is useful evidence for the next root-cause grouping slice.
 
 ### Grouped root causes
 
-Slice keeps the deepest overflowing elements as raw evidence, but groups repeated manifestations under a shared overflowing grid or flex layout root when that attribution is deterministic. For the built-in pricing demo, the human-visible problem and machine result now converge:
+Viewportable Engine keeps the deepest overflowing elements as raw evidence, but groups repeated manifestations under a shared overflowing grid or flex layout root when that attribution is deterministic. For the built-in pricing demo, the human-visible problem and machine result now converge:
 
 ```text
 390   FAIL  section.plan-grid overflows right ... · affected elements
@@ -149,7 +149,7 @@ The JSON report preserves every leaf issue in `viewports[].issues`, links groupe
 
 ### Deterministic CSS diagnosis
 
-For grouped layout roots, Slice can explain conservative CSS causes without AI. It recognizes a pixel `min-width` constraint that is wider than the available viewport space, and an authored fixed pixel `width` when that declaration can be attributed uniquely. Because computed `width` is often resolved to pixels even for responsive layouts, Slice does not claim a fixed-width cause unless it can find exactly one matching authored CSS declaration.
+For grouped layout roots, Viewportable Engine can explain conservative CSS causes without AI. It recognizes a pixel `min-width` constraint that is wider than the available viewport space, and an authored fixed pixel `width` when that declaration can be attributed uniquely. Because computed `width` is often resolved to pixels even for responsive layouts, Viewportable Engine does not claim a fixed-width cause unless it can find exactly one matching authored CSS declaration.
 
 ```text
 390   FAIL  section.plan-grid overflows right by 348px | 8 affected elements
@@ -166,13 +166,13 @@ Source attribution is intentionally conservative: ambiguous or inaccessible styl
 
 ### Application readiness
 
-For SPAs or authenticated/local harnesses, require a visible element that proves the intended application state mounted before Slice scans it:
+For SPAs or authenticated/local harnesses, require a visible element that proves the intended application state mounted before Viewportable Engine scans it:
 
 ```sh
 slice http://127.0.0.1:4173 --ready-selector 'main[data-app-ready]'
 ```
 
-If the selector does not become visible within `--timeout`, Slice exits with code `2` and does not write a partial report. This prevents a login, error, or loading shell from being mistaken for a clean application scan.
+If the selector does not become visible within `--timeout`, Viewportable Engine exits with code `2` and does not write a partial report. This prevents a login, error, or loading shell from being mistaken for a clean application scan.
 
 ### Project configuration and suppressions
 
@@ -197,7 +197,7 @@ Put project defaults in `slice.config.json` at the working directory root:
 }
 ```
 
-Slice automatically loads this file when it exists. Use `--config path/to/config.json` for another location. Explicit CLI options override config values.
+Viewportable Engine automatically loads this file when it exists. Use `--config path/to/config.json` for another location. Explicit CLI options override config values.
 
 Suppressions are exact and detector-specific rather than heuristic allowlists. A suppressed finding does not fail the viewport, contribute to boundary search, or make the CLI exit with code `1`. The evidence is not discarded: it remains in `viewports[].suppressedIssues`, and the aggregate count is stored in `summary.suppressedIssues`.
 
@@ -225,7 +225,7 @@ Supported suppression shapes are:
 
 ### Sibling wrapping and canonical groups
 
-Slice detects a minority group of stable siblings moving onto a lower visual row between sampled viewport widths. Cross-viewport identity comes from the normalized browser surface, so snapshot-local node indices are not treated as stable identities.
+Viewportable Engine detects a minority group of stable siblings moving onto a lower visual row between sampled viewport widths. Cross-viewport identity comes from the normalized browser surface, so snapshot-local node indices are not treated as stable identities.
 
 Raw moved elements remain in `viewports[].issues` as `type: "wrapping"`. Related observations are also grouped by their stable parent into a canonical `type: "wrapping"` entry in top-level `rootCauses[]`, and each active leaf issue links back through `rootCauseId`.
 
@@ -241,11 +241,11 @@ The canonical group records structural flow evidence without guessing product in
 - whether the same parent reflows repeatedly across sampled widths;
 - the raw selectors and issue IDs behind every grouped observation.
 
-Explicit flex wrapping is surfaced as an `authored-reflow-candidate` review hint, but the finding remains active. Repeated wrapping alone is not classified as intentional because confirmed failures can also persist across several sampled transitions. Slice does not change severity, exit code, or suppression behavior from this assessment.
+Explicit flex wrapping is surfaced as an `authored-reflow-candidate` review hint, but the finding remains active. Repeated wrapping alone is not classified as intentional because confirmed failures can also persist across several sampled transitions. Viewportable Engine does not change severity, exit code, or suppression behavior from this assessment.
 
 ### Fixed-element collision detector
 
-Slice also reports deterministic collisions between independent visible `position: fixed` elements. It ignores full-viewport backdrops, ancestor/descendant fixed pairs, `aria-hidden` subtrees, and overlaps of 1px or less.
+Viewportable Engine also reports deterministic collisions between independent visible `position: fixed` elements. It ignores full-viewport backdrops, ancestor/descendant fixed pairs, `aria-hidden` subtrees, and overlaps of 1px or less.
 
 ```text
 390   FAIL  button.target-profile overlaps button.role-shapes | 80x40px
@@ -255,7 +255,7 @@ Collision issues are stored as `type: "fixed-element-collision"` with both stabl
 
 ### Fixed-content occlusion detector
 
-Slice reports a fixed element when it paints above and meaningfully covers a visible enabled interactive target from another DOM branch. The rule is intentionally conservative: the target must be actionable, the fixed element must accept pointer events, overlap must exceed the 1px tolerance, and at least 20% of the target's visible area must be covered.
+Viewportable Engine reports a fixed element when it paints above and meaningfully covers a visible enabled interactive target from another DOM branch. The rule is intentionally conservative: the target must be actionable, the fixed element must accept pointer events, overlap must exceed the 1px tolerance, and at least 20% of the target's visible area must be covered.
 
 ```text
 390   FAIL  button.target-profile covers button.apply | 63% (100x48px)
@@ -265,10 +265,10 @@ Occlusion issues are stored as `type: "fixed-content-occlusion"` with the occlud
 
 ## GitHub Action
 
-Slice can run as a composite GitHub Action using the same CLI and report schema as local development. The action writes a job summary, uploads the machine-readable report, and preserves the CLI exit semantics: `0` clean, `1` findings, `2` scanner/setup failure.
+Viewportable Engine can run as a composite GitHub Action using the same CLI and report schema as local development. The action writes a job summary, uploads the machine-readable report, and preserves the CLI exit semantics: `0` clean, `1` findings, `2` scanner/setup failure.
 
 ```yaml
-name: Slice
+name: Viewportable Engine
 
 on:
   pull_request:
@@ -300,7 +300,7 @@ jobs:
           exit 1
 
       - name: Responsive QA
-        uses: viewportable/slice@v0.1.0-rc.1
+        uses: viewportable/engine@v0.1.0-rc.1
         with:
           url: http://127.0.0.1:3000
           config: slice.config.json
@@ -353,7 +353,7 @@ npm ci
 npm run preflight:rc
 ```
 
-The preflight requires a clean Slice checkout and runs:
+The preflight requires a clean Viewportable Engine checkout and runs:
 
 1. formatting, lint, typecheck, unit tests, build, npm package validation, and release-layout validation;
 2. Playwright Chromium availability;
@@ -370,7 +370,7 @@ The first RC is prepared only after that pass:
 npm version 0.1.0-rc.1 --no-git-tag-version
 ```
 
-Then finalize the changelog date and replace the temporary `viewportable/slice@v0.1.0-rc.1` references in this README and `examples/github/slice.yml` with the immutable `viewportable/slice@v0.1.0-rc.1` reference.
+Then finalize the changelog date and confirm release-facing Action examples in this README and `examples/github/slice.yml` use the immutable `viewportable/engine@v0.1.0-rc.1` reference.
 
 Validate that exact tag contract before committing:
 
@@ -424,4 +424,4 @@ npm run smoke
 
 ## License
 
-Slice is licensed under the GNU Affero General Public License v3.0 only (`AGPL-3.0-only`). See [LICENSE](LICENSE) for the full terms.
+Viewportable Engine is licensed under the GNU Affero General Public License v3.0 only (`AGPL-3.0-only`). See [LICENSE](LICENSE) for the full terms.

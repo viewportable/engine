@@ -85,13 +85,13 @@ if (expectedTag) {
     ['README.md', readme],
     ['examples/github/slice.yml', example],
   ]) {
-    if (content.includes('viewportable/slice@main')) {
-      throw new Error(`${name} still points to viewportable/slice@main for a tagged release`);
+    if (content.includes('viewportable/engine@main')) {
+      throw new Error(`${name} still points to viewportable/engine@main for a tagged release`);
     }
 
-    if (!content.includes(`viewportable/slice@${expectedTag}`)) {
+    if (!content.includes(`viewportable/engine@${expectedTag}`)) {
       throw new Error(
-        `${name} must contain the immutable Action reference viewportable/slice@${expectedTag}`,
+        `${name} must contain the immutable Action reference viewportable/engine@${expectedTag}`,
       );
     }
   }

@@ -224,7 +224,7 @@ relevant state dimensions
 
 Coordinates alone should not define identity.
 
-Exact fingerprint design is deferred until current Slice identity is compared with SARIF and GitHub expectations.
+Exact fingerprint design is deferred until current Viewportable Engine identity is compared with SARIF and GitHub expectations.
 
 ## RenderState
 

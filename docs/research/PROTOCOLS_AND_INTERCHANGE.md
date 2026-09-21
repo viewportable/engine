@@ -24,7 +24,7 @@ W3C WebDriver defines language- and platform-neutral browser automation semantic
 
 WebDriver BiDi adds a bidirectional event-oriented protocol.
 
-Playwright provides a higher-level automation API and already supports the browser lifecycle Slice uses today.
+Playwright provides a higher-level automation API and already supports the browser lifecycle Viewportable Engine uses today.
 
 Decision implication:
 
@@ -42,7 +42,7 @@ References:
 
 Chrome DevTools Protocol exposes DOM, DOMSnapshot, CSS, Accessibility, Page and related domains.
 
-Slice already uses `DOMSnapshot.captureSnapshot` with DOM rectangles and paint order.
+Viewportable Engine already uses `DOMSnapshot.captureSnapshot` with DOM rectangles and paint order.
 
 Decision implication:
 

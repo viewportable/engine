@@ -240,7 +240,7 @@ await mkdir(goldenRoot, { recursive: true });
 
 process.stdout.write(
   `\nSlice Golden Acceptance · Openings\n\n` +
-    `  Slice:           ${root}\n` +
+    `  Engine:          ${root}\n` +
     `  Openings:        ${openingsRepo}\n` +
     `  Broken ref:      ${brokenRef}\n` +
     `  Fixed HEAD:      ${fixedHead}\n` +
@@ -285,7 +285,7 @@ try {
 
   if (brokenCode !== 1) {
     throw new Error(
-      `Historical broken Openings returned Slice exit code ${brokenCode}; expected findings exit code 1.`,
+      `Historical broken Openings returned Engine CLI exit code ${brokenCode}; expected findings exit code 1.`,
     );
   }
 

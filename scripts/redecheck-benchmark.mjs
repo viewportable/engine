@@ -217,8 +217,8 @@ function renderSummary(report) {
     `- Anti-oracle clean comparable reports: **${report.summary.antiOracleClean}**`,
     `- Corpus pages scanned: **${report.summary.pagesScanned}/${report.summary.corpusPages}**`,
     `- Sampled viewport renders: **${report.summary.viewportsChecked}**`,
-    `- Raw Slice issues emitted: **${report.summary.rawIssues}**`,
-    `- Aggregate Slice scan time: **${(report.summary.sliceDurationMs / 1000).toFixed(1)}s**`,
+    `- Raw Engine issues emitted: **${report.summary.rawIssues}**`,
+    `- Aggregate Engine scan time: **${(report.summary.sliceDurationMs / 1000).toFixed(1)}s**`,
     '',
     '## Small-range overlap research gate',
     '',
@@ -243,7 +243,7 @@ function renderSummary(report) {
         `| ${entry.sourceClassification} | ${entry.page} | ${entry.range.min}-${entry.range.max}px | ${smallRangeEvidence(entry.matches)} |`,
     ),
     '',
-    '> Research candidates are sampled structural evidence only. They do not change Slice findings, exit codes, or the baseline Small-Range support classification.',
+    '> Research candidates are sampled structural evidence only. They do not change Engine findings, exit codes, or the baseline Small-Range support classification.',
     '',
     '> Candidate match means compatible rule family + same page + sampled width inside the oracle range. It still requires evidence/identity review before being called a confirmed detection.',
     '',
@@ -263,7 +263,7 @@ function renderSummary(report) {
     '',
     '## Oracle report classes',
     '',
-    '| ReDeCheck report class | Distinct RLFs carrying class | Current Slice mapping | Support |',
+    '| ReDeCheck report class | Distinct RLFs carrying class | Current Engine mapping | Support |',
     '| --- | ---: | --- | --- |',
   );
 
@@ -279,7 +279,7 @@ function renderSummary(report) {
     '',
     '## Anti-oracle',
     '',
-    'ReDeCheck also classified raw reports as false positives (FP) or non-observable issues (NOI). A negative candidate means Slice emitted a compatible rule in the same page/range; it is a review candidate, not an automatically proven false positive.',
+    'ReDeCheck also classified raw reports as false positives (FP) or non-observable issues (NOI). A negative candidate means the Engine emitted a compatible rule in the same page/range; it is a review candidate, not an automatically proven false positive.',
     '',
     '| Source classification | Raw reports | Negative candidate | Clean | Unsupported | Environment |',
     '| --- | ---: | ---: | ---: | ---: | ---: |',
@@ -472,7 +472,7 @@ try {
         corpusPage,
         widths,
         exitCode: child.status,
-        stderr: `Could not read Slice results: ${
+        stderr: `Could not read Engine results: ${
           error instanceof Error ? error.message : String(error)
         }`,
       });

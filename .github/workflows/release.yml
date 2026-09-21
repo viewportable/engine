@@ -117,7 +117,7 @@ jobs:
             release create "$GITHUB_REF_NAME"
             .release/*.tgz
             --verify-tag
-            --title "Slice $GITHUB_REF_NAME"
+            --title "Viewportable Engine $GITHUB_REF_NAME"
             --generate-notes
           )
 

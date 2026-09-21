@@ -1,4 +1,4 @@
-name: Slice
+name: Viewportable Engine
 
 on:
   pull_request:
@@ -32,8 +32,8 @@ jobs:
           cat /tmp/app.log
           exit 1
 
-      - name: Run Slice
-        uses: viewportable/slice@v0.1.0-rc.1
+      - name: Run Viewportable Engine
+        uses: viewportable/engine@v0.1.0-rc.1
         with:
           url: http://127.0.0.1:3000
           config: slice.config.json

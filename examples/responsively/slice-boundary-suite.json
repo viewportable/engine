@@ -2,7 +2,7 @@
   "customDevices": [
     {
       "id": "9c85ca39-0f3a-4ff9-b742-000000000742",
-      "name": "Slice 742",
+      "name": "Viewportable Engine 742",
       "width": 742,
       "height": 900,
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
@@ -15,7 +15,7 @@
     },
     {
       "id": "9c85ca39-0f3a-4ff9-b743-000000000743",
-      "name": "Slice 743",
+      "name": "Viewportable Engine 743",
       "width": 743,
       "height": 900,
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
@@ -28,7 +28,7 @@
     },
     {
       "id": "9c85ca39-0f3a-4ff9-b744-000000000744",
-      "name": "Slice 744",
+      "name": "Viewportable Engine 744",
       "width": 744,
       "height": 900,
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
@@ -43,7 +43,7 @@
   "suites": [
     {
       "id": "slice-boundary-742-744",
-      "name": "Slice Boundary 742-744",
+      "name": "Viewportable Engine Boundary 742-744",
       "devices": [
         "9c85ca39-0f3a-4ff9-b742-000000000742",
         "9c85ca39-0f3a-4ff9-b743-000000000743",

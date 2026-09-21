@@ -33,7 +33,7 @@
 
 - [x] `npm run validate:release` checks package identity, license, Action runtime files, and publication safety.
 - [x] Tagged validation requires the tag to equal `v<package.version>`.
-- [x] Tagged validation rejects `viewportable/slice@main` in release-facing Action docs.
+- [x] Tagged validation rejects `viewportable/engine@main` in release-facing Action docs.
 - [x] `npm run preflight:rc` composes repository, browser, demo, release-layout, and Openings golden gates.
 - [x] Tag-driven GitHub Release workflow verifies the tag commit is on `main`.
 - [x] Tag-driven workflow reruns browser and composite-Action smoke checks.
@@ -58,7 +58,7 @@ After all Acceptance items are green:
 
 - [x] Set package version to `0.1.0-rc.1`.
 - [x] Finalize the changelog date/content.
-- [x] Replace release-facing `viewportable/slice@main` examples with `viewportable/slice@v0.1.0-rc.1`.
+- [x] Replace release-facing `viewportable/engine@main` examples with `viewportable/engine@v0.1.0-rc.1`.
 - [ ] Run `npm run validate:release -- v0.1.0-rc.1`.
 - [ ] Commit the RC preparation to `main`.
 - [ ] Confirm CI is green on that release commit.
@@ -70,6 +70,6 @@ After all Acceptance items are green:
 Do not create the stable tag until the RC has been exercised externally or otherwise accepted.
 
 - [ ] Set package version to `0.1.0`.
-- [ ] Update immutable Action examples to `viewportable/slice@v0.1.0`.
+- [ ] Update immutable Action examples to `viewportable/engine@v0.1.0`.
 - [ ] Run `npm run validate:release -- v0.1.0`.
 - [ ] Tag `v0.1.0`.

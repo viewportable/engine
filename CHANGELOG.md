@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Slice are documented here.
+All notable changes to Viewportable Engine are documented here.
 
 ## Unreleased
 
@@ -27,7 +27,7 @@ All notable changes to Slice are documented here.
 
 ### Changed
 
-- Repository references now point to `viewportable/slice`.
+- Repository references now point to `viewportable/engine`.
 - Package metadata now declares repository, homepage, issue tracker, and AGPL licensing.
 - npm package identity is fixed as `@viewportable/slice` while the executable remains `slice`.
 - npm publication remains intentionally disabled with `"private": true` until release approval.
