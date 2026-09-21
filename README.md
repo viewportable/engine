@@ -370,7 +370,7 @@ The first RC is prepared only after that pass:
 npm version 0.1.0-rc.1 --no-git-tag-version
 ```
 
-Then finalize the changelog date and replace the temporary `viewportable/engine@v0.1.0-rc.1` references in this README and `examples/github/slice.yml` with the immutable `viewportable/engine@v0.1.0-rc.1` reference.
+Then finalize the changelog date and confirm release-facing Action examples in this README and `examples/github/slice.yml` use the immutable `viewportable/engine@v0.1.0-rc.1` reference.
 
 Validate that exact tag contract before committing:
 
