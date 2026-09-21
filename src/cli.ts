@@ -219,24 +219,17 @@ function renderTable(
       continue;
     }
 
-    const rootsAtWidth = rootCauses
-      .map((rootCause) => ({
-        rootCause,
-        observation: rootCause.observations.find(
-          (observation) => observation.viewportWidth === viewport.width,
-        ),
-      }))
-      .filter(
-        (
-          entry,
-        ): entry is {
-          rootCause: RootCause;
-          observation: RootCauseObservation;
-        } => entry.observation !== undefined,
-      );
+    const rootsAtWidth = rootCauses.filter((rootCause) =>
+      rootCause.observations.some((observation) => observation.viewportWidth === viewport.width),
+    );
 
     const groupedIssueIds = new Set(
-      rootsAtWidth.flatMap(({ observation }) => observation.issueIds),
+      rootsAtWidth.flatMap(
+        (rootCause) =>
+          rootCause.observations.find(
+            (observation) => observation.viewportWidth === viewport.width,
+          )?.issueIds ?? [],
+      ),
     );
     const ungroupedIssues = viewport.issues.filter((issue) => !groupedIssueIds.has(issue.id));
 
@@ -256,10 +249,54 @@ function renderTable(
 
     let firstLine = true;
 
-    for (const { rootCause, observation } of rootsAtWidth) {
+    for (const rootCause of rootsAtWidth) {
+      if (rootCause.type === 'horizontal-overflow') {
+        const observation = rootCause.observations.find(
+          (candidate) => candidate.viewportWidth === viewport.width,
+        );
+        if (!observation) continue;
+
+        const text =
+          `${truncate(rootCause.selector, 60)} overflows ${rootCause.side} by ` +
+          `${observation.overflowPx}px | ${observation.issueIds.length} affected elements`;
+
+        if (firstLine) {
+          process.stdout.write(`  ${width}${colors.red('FAIL')}  ${text}\n`);
+          firstLine = false;
+        } else {
+          process.stdout.write(`        ${text}\n`);
+        }
+
+        if (rootCause.diagnosis) {
+          process.stdout.write(
+            `        reason: ${rootCause.diagnosis.property}: ${rootCause.diagnosis.value} | ` +
+              `${observation.computedWidthPx}px wide vs ${observation.availableWidthPx}px available\n`,
+          );
+        }
+
+        const evidence = viewport.issues.filter(
+          (issue): issue is HorizontalOverflowIssue =>
+            issue.type === 'horizontal-overflow' && issue.rootCauseId === rootCause.id,
+        );
+        for (const issue of evidence.slice(0, 2)) {
+          process.stdout.write(`        evidence: ${renderIssue(issue)}\n`);
+        }
+        if (evidence.length > 2) {
+          process.stdout.write(`        evidence: +${evidence.length - 2} more\n`);
+        }
+        continue;
+      }
+
+      const observation = rootCause.observations.find(
+        (candidate) => candidate.viewportWidth === viewport.width,
+      );
+      if (!observation) continue;
+
+      const authoredText = rootCause.evidence.authoredFlexWrap ? ' | authored flex-wrap' : '';
       const text =
-        `${truncate(rootCause.selector, 60)} overflows ${rootCause.side} by ` +
-        `${observation.overflowPx}px | ${observation.issueIds.length} affected elements`;
+        `${truncate(rootCause.selector, 60)} wraps ${observation.wrappedSiblingCount} sibling` +
+        `${observation.wrappedSiblingCount === 1 ? '' : 's'} | ` +
+        `${observation.stableSiblingCount} stay${authoredText}`;
 
       if (firstLine) {
         process.stdout.write(`  ${width}${colors.red('FAIL')}  ${text}\n`);
@@ -268,16 +305,9 @@ function renderTable(
         process.stdout.write(`        ${text}\n`);
       }
 
-      if (rootCause.diagnosis) {
-        process.stdout.write(
-          `        reason: ${rootCause.diagnosis.property}: ${rootCause.diagnosis.value} | ` +
-            `${observation.computedWidthPx}px wide vs ${observation.availableWidthPx}px available\n`,
-        );
-      }
-
       const evidence = viewport.issues.filter(
-        (issue): issue is HorizontalOverflowIssue =>
-          issue.type === 'horizontal-overflow' && issue.rootCauseId === rootCause.id,
+        (issue): issue is WrappingIssue =>
+          issue.type === 'wrapping' && issue.rootCauseId === rootCause.id,
       );
       for (const issue of evidence.slice(0, 2)) {
         process.stdout.write(`        evidence: ${renderIssue(issue)}\n`);
@@ -315,7 +345,7 @@ function renderTable(
           `${rootCause.issueIds.length} evidence selectors\n`,
       );
 
-      if (rootCause.diagnosis) {
+      if (rootCause.type === 'horizontal-overflow' && rootCause.diagnosis) {
         process.stdout.write(
           `          reason: ${rootCause.diagnosis.property}: ${rootCause.diagnosis.value}\n`,
         );
@@ -328,6 +358,19 @@ function renderTable(
         }
 
         process.stdout.write(`          likely fix: ${rootCause.diagnosis.suggestion}\n`);
+      }
+
+      if (rootCause.type === 'wrapping') {
+        if (rootCause.evidence.authoredFlexWrap) {
+          process.stdout.write(
+            `          evidence: authored flex wrapping (${rootCause.evidence.displayValues.join(', ')}; flex-wrap: ${rootCause.evidence.flexWrapValues.join(', ')})\n`,
+          );
+        }
+        if (rootCause.evidence.repeatedAcrossWidths) {
+          process.stdout.write(
+            `          evidence: ${rootCause.evidence.transitionCount} responsive wrap transitions observed\n`,
+          );
+        }
       }
     }
   }
