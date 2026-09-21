@@ -463,6 +463,36 @@ future intentional-reflow classification policy
 
 The engine records the evidence now, but does not automatically downgrade or suppress a wrapping finding merely because the layout appears intentionally reflowable.
 
+### Conservative authored-reflow review policy
+
+The benchmark evidence does support one narrower policy boundary.
+
+Across the manually confirmed wrapping subjects, the matched parent groups do not use explicit flex wrapping. The reviewed Duolingo sitemap negative does:
+
+```text
+display: flex
+flex-wrap: wrap
+```
+
+By contrast, repeated cross-width wrapping is not discriminative enough. Confirmed failures such as AccountKiller, Ninite, BugMeNot and UserSearch also produce repeated parent transitions.
+
+Therefore the first classification policy is deliberately asymmetric:
+
+```text
+explicit flex-wrap
+  -> authored-reflow-candidate
+  -> review hint only
+  -> finding remains active
+
+repeatedAcrossWidths only
+  -> unclassified
+  -> finding remains active
+```
+
+This does not claim to infer product intent. The classification means only that the stylesheet explicitly permits the observed wrapping behavior and that a human or later structural comparator should review it before treating the observation as a regression.
+
+No severity, exit code, or suppression behavior changes as a result of this assessment.
+
 ## Initial mapping to Slice
 
 | ReDeCheck concept | Slice today | Research direction |
@@ -474,7 +504,7 @@ The engine records the evidence now, but does not automatically downgrade or sup
 | element protrusion | not first-class | parent-boundary detector |
 | viewport protrusion | horizontal overflow | unify/clarify semantics |
 | small-range anomaly | exact issue boundaries | relationship-state anomaly |
-| wrapping | sibling transition + canonical parent grouping with 10/10 behavioral TP coverage | intentional-reflow classification policy |
+| wrapping | sibling transition + canonical grouping + authored-reflow review hint | range-aware / structural regression evidence |
 | RLG comparison | not present | structural base-vs-head diff |
 | visual verification | not present | optional verifier module |
 
@@ -560,8 +590,8 @@ Current sequence:
 
 1. sibling wrapping - implemented and reviewed with 10/10 behavioral TP coverage;
 2. canonical parent grouping + authored/repeated-flow evidence - implemented and benchmarked;
-3. intentional-reflow classification policy - next, without corpus-specific thresholds;
-4. relationship intervals only where required by small-range analysis;
+3. authored-reflow review policy - implemented without suppression or corpus-specific thresholds;
+4. relationship intervals only where required by small-range analysis - next;
 5. small-range anomaly research;
 6. element protrusion / generic collision after stronger observability evidence;
 7. structural base-vs-head graph comparison.
