@@ -9,6 +9,7 @@ import {
   type DocumentMetrics,
 } from './browser.js';
 import { groupWrappingIssues } from './analyze/wrapping-group.js';
+import { assessWrappingReflow } from './analyze/wrapping-reflow.js';
 import { detectWrappingTransitions } from './analyze/wrapping.js';
 import { findBoundary } from './boundary.js';
 import { captureBrowserSurface } from './capture.js';
@@ -291,11 +292,14 @@ function renderTable(
       );
       if (!observation) continue;
 
-      const authoredText = rootCause.evidence.authoredFlexWrap ? ' | authored flex-wrap' : '';
+      const reviewText =
+        rootCause.assessment.classification === 'authored-reflow-candidate'
+          ? ' | review: authored reflow candidate'
+          : '';
       const text =
         `${truncate(rootCause.selector, 60)} wraps ${observation.wrappedSiblingCount} sibling` +
         `${observation.wrappedSiblingCount === 1 ? '' : 's'} | ` +
-        `${observation.stableSiblingCount} stay${authoredText}`;
+        `${observation.stableSiblingCount} stay${reviewText}`;
 
       if (firstLine) {
         process.stdout.write(`  ${width}${colors.red('FAIL')}  ${text}\n`);
@@ -365,6 +369,11 @@ function renderTable(
           const flexWrapValues = rootCause.evidence.flexWrapValues.join(', ');
           process.stdout.write(
             `          evidence: authored flex wrapping (${displays}; flex-wrap: ${flexWrapValues})\n`,
+          );
+        }
+        if (rootCause.assessment.classification === 'authored-reflow-candidate') {
+          process.stdout.write(
+            '          review: authored reflow candidate; finding remains active\n',
           );
         }
         if (rootCause.evidence.repeatedAcrossWidths) {
@@ -806,6 +815,7 @@ function aggregateWrappingRootCauses(
       observations: group.observations,
       boundaries: [],
       evidence: group.evidence,
+      assessment: assessWrappingReflow(group.evidence),
     };
   });
 

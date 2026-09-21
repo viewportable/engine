@@ -202,6 +202,10 @@ const wrappingRootCauseSchema = z.object({
     displayValues: z.array(z.string()),
     flexWrapValues: z.array(z.string()),
   }),
+  assessment: z.object({
+    classification: z.enum(['authored-reflow-candidate', 'unclassified']),
+    reasons: z.array(z.literal('explicit-flex-wrap')),
+  }),
 });
 
 const rootCauseSchema = z.discriminatedUnion('type', [
