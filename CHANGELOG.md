@@ -17,6 +17,7 @@ All notable changes to Viewportable Engine are documented here.
 - Opt-in managed `Viewportable Engine` Check Run on the PR head SHA, with deterministic update semantics, canonical finding summary, artifact/workflow details link, and Engine-to-Check conclusion mapping.
 - GitHub App Installation V1 control-plane slice with signed webhook ingress, installation/repository/project synchronization, deterministic PR review identity, server-side installation-token authentication, and App-owned Check Run completion from Engine results.
 - Public golden PR lifecycle proof in PR #44, showing an exact 350-499px regression caught while ordinary CI stayed green, followed by a fix verified through the same managed PR evidence lifecycle.
+- Local MCP Server V1 using the official TypeScript MCP server SDK and stdio transport, exposing `viewportable_scan` and `viewportable_compare` while reusing the production CLI/report contract and retaining full evidence under `.slice/mcp/`.
 
 
 
