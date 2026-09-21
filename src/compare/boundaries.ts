@@ -6,10 +6,7 @@ import {
 } from './ranges.js';
 import type { StructuralDiff } from './structural-diff.js';
 
-export type StructuralFingerprintCheck = (
-  width: number,
-  fingerprint: string,
-) => Promise<boolean>;
+export type StructuralFingerprintCheck = (width: number, fingerprint: string) => Promise<boolean>;
 
 function fingerprintsAtViewport(viewport: StructuralDiff): Set<string> {
   return new Set(viewport.changes.map((change) => structuralChangeFingerprint(change)));
@@ -23,9 +20,7 @@ export async function refineIntroducedStructuralRangeBoundaries(
   const ordered = [...viewports].sort(
     (first, second) => first.viewport.width - second.viewport.width,
   );
-  const indexByWidth = new Map(
-    ordered.map((viewport, index) => [viewport.viewport.width, index]),
-  );
+  const indexByWidth = new Map(ordered.map((viewport, index) => [viewport.viewport.width, index]));
 
   return Promise.all(
     ranges.map(async (range) => {
@@ -39,10 +34,7 @@ export async function refineIntroducedStructuralRangeBoundaries(
       const lowerNeighbor = ordered[firstIndex - 1];
       const upperNeighbor = ordered[lastIndex + 1];
 
-      if (
-        lowerNeighbor &&
-        !fingerprintsAtViewport(lowerNeighbor).has(range.fingerprint)
-      ) {
+      if (lowerNeighbor && !fingerprintsAtViewport(lowerNeighbor).has(range.fingerprint)) {
         const result = await findBoundary(
           (width) => check(width, range.fingerprint),
           lowerNeighbor.viewport.width,
@@ -56,10 +48,7 @@ export async function refineIntroducedStructuralRangeBoundaries(
         });
       }
 
-      if (
-        upperNeighbor &&
-        !fingerprintsAtViewport(upperNeighbor).has(range.fingerprint)
-      ) {
+      if (upperNeighbor && !fingerprintsAtViewport(upperNeighbor).has(range.fingerprint)) {
         const result = await findBoundary(
           (width) => check(width, range.fingerprint),
           upperNeighbor.viewport.width,
