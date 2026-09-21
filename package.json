@@ -47,7 +47,8 @@
     "github-app:serve": "node apps/github-app/src/server.mjs",
     "benchmark:redecheck:prepare": "node scripts/redecheck-prepare.mjs",
     "benchmark:redecheck": "npm run benchmark:redecheck:prepare && npm run build --silent && node scripts/redecheck-benchmark.mjs",
-    "mcp": "npm run build --silent && node dist/mcp.mjs"
+    "mcp": "npm run build --silent && node dist/mcp.mjs",
+    "golden:mcp-agent": "npm run build --silent && node scripts/mcp-golden-agent.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.0.0",
@@ -62,7 +63,8 @@
     "oxlint": "^1.83.0",
     "tsdown": "^0.23.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.1",
+    "@modelcontextprotocol/client": "2.0.0"
   },
   "engines": {
     "node": ">=22.18.0"
