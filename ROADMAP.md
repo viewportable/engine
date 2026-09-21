@@ -1,10 +1,10 @@
 # Standalone v0.1 Roadmap
 
-Slice v0.1 is a deterministic responsive QA CLI for coding agents. Desktop UI, Viewportable integration, Figma, screenshot diffing, AI visual judgment, multi-page crawling, and generic flow-overlap detection remain explicitly out of scope for v0.1.
+Viewportable Engine v0.1 is a deterministic responsive QA CLI for coding agents. Desktop UI, Viewportable integration, Figma, screenshot diffing, AI visual judgment, multi-page crawling, and generic flow-overlap detection remain explicitly out of scope for v0.1.
 
 ## Release finish line
 
-v0.1.0 is done when Slice can be installed, configured, run locally or in CI, produce stable actionable findings on real applications, distinguish product findings from scanner/setup failures, and reproduce its release-candidate results deterministically.
+v0.1.0 is done when Viewportable Engine can be installed, configured, run locally or in CI, produce stable actionable findings on real applications, distinguish product findings from scanner/setup failures, and reproduce its release-candidate results deterministically.
 
 ## Phase 1 - Per-issue boundaries - Complete
 
@@ -74,7 +74,7 @@ Completed for the first RC:
 
 - Local `preflight:rc` and Openings Golden Acceptance passed on 2026-09-19.
 - Package version bumped to `0.1.0-rc.1`.
-- Release-facing Action examples pinned to `viewportable/slice@v0.1.0-rc.1`.
+- Release-facing Action examples pinned to `viewportable/engine@v0.1.0-rc.1`.
 - RC changelog finalized.
 
 Remaining:
@@ -111,7 +111,7 @@ These items document what was intentionally outside the v0.1 release scope. They
 
 ## Post-v0.1 engine direction
 
-Slice is expected to evolve into the Viewportable engine. Future capability work should follow the modular, capability-driven architecture in [docs/ENGINE_ARCHITECTURE.md](docs/ENGINE_ARCHITECTURE.md): disabled capabilities should add approximately zero runtime cost, expensive browser evidence should be captured at most once per viewport and shared, and detector modules should remain simple TypeScript units rather than a heavy plugin framework.
+Viewportable Engine is expected to evolve into the Viewportable engine. Future capability work should follow the modular, capability-driven architecture in [docs/ENGINE_ARCHITECTURE.md](docs/ENGINE_ARCHITECTURE.md): disabled capabilities should add approximately zero runtime cost, expensive browser evidence should be captured at most once per viewport and shared, and detector modules should remain simple TypeScript units rather than a heavy plugin framework.
 
 Initial responsive-layout research is tracked in [docs/research/REDECHECK.md](docs/research/REDECHECK.md). ReDeCheck's Responsive Layout Graph, small-range anomaly detection, wrapping/protrusion models, regression graph comparison, and independent failure corpus are research inputs rather than runtime dependencies.
 
