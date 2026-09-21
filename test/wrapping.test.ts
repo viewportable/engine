@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { groupWrappingIssues } from '../src/analyze/wrapping-group.js';
 import { detectWrappingTransitions } from '../src/analyze/wrapping.js';
-import type { LayoutNode } from '../src/types.js';
+import type { LayoutNode, WrappingIssue } from '../src/types.js';
 
 function node(
   index: number,
@@ -150,5 +151,87 @@ describe('detectWrappingTransitions', () => {
     ]);
 
     expect(findings).toEqual([]);
+  });
+});
+
+
+function wrappingIssue(
+  id: string,
+  selector: string,
+  viewportWidth: number,
+  previousViewportWidth: number,
+  parentDisplay = 'block',
+  parentFlexWrap = 'nowrap',
+): WrappingIssue {
+  return {
+    id,
+    type: 'wrapping',
+    severity: 'error',
+    selector,
+    parentSelector: '#footer-links',
+    tagName: 'LI',
+    parentTagName: 'UL',
+    viewportWidth,
+    previousViewportWidth,
+    bbox: [0, 40, 80, 30],
+    evidence: {
+      previousRowSize: 5,
+      currentRowSize: 1,
+      stableSiblingCount: 4,
+      previousRowIndex: 0,
+      currentRowIndex: 1,
+      verticalShiftPx: 40,
+      parentDisplay,
+      parentFlexWrap,
+    },
+  };
+}
+
+describe('groupWrappingIssues', () => {
+  it('groups sibling observations under one parent finding', () => {
+    const groups = groupWrappingIssues([
+      wrappingIssue('issue-1', '#terms', 390, 430, 'flex', 'wrap'),
+      wrappingIssue('issue-2', '#privacy', 390, 430, 'flex', 'wrap'),
+    ]);
+
+    expect(groups).toEqual([
+      expect.objectContaining({
+        parentSelector: '#footer-links',
+        issueIds: ['issue-1', 'issue-2'],
+        observations: [
+          expect.objectContaining({
+            viewportWidth: 390,
+            previousViewportWidth: 430,
+            issueIds: ['issue-1', 'issue-2'],
+            wrappedSelectors: ['#terms', '#privacy'],
+            stableSiblingCount: 4,
+            wrappedSiblingCount: 2,
+          }),
+        ],
+        evidence: {
+          authoredFlexWrap: true,
+          transitionCount: 1,
+          repeatedAcrossWidths: false,
+          displayValues: ['flex'],
+          flexWrapValues: ['wrap'],
+        },
+      }),
+    ]);
+  });
+
+  it('records repeated responsive reflow as evidence without declaring intent', () => {
+    const groups = groupWrappingIssues([
+      wrappingIssue('issue-1', '#terms', 390, 430),
+      wrappingIssue('issue-2', '#privacy', 320, 390),
+    ]);
+
+    expect(groups[0]?.evidence).toEqual({
+      authoredFlexWrap: false,
+      transitionCount: 2,
+      repeatedAcrossWidths: true,
+      displayValues: ['block'],
+      flexWrapValues: ['nowrap'],
+    });
+    expect(groups[0]?.observations).toHaveLength(2);
   });
 });
