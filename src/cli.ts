@@ -22,6 +22,7 @@ import { runDetector } from './detector.js';
 import { diagnoseHorizontalOverflowRoot } from './diagnose.js';
 import { groupHorizontalOverflow } from './grouping.js';
 import { writeResults } from './report.js';
+import { writeSmallRangeOverlapResearch } from './research/small-range-output.js';
 import { buildStableSelector, makePageUniquenessCheck } from './selector.js';
 import { installStabilization, stabilizeViewport } from './stabilize.js';
 import { partitionSuppressedIssues } from './suppress.js';
@@ -56,6 +57,7 @@ interface CliOptions {
   boundary: boolean;
   timeout: string;
   wait: string;
+  researchSmallRangeOverlap: boolean;
   readySelector?: string;
   config?: string;
 }
@@ -969,6 +971,16 @@ async function runSlice(url: string, options: RunOptions): Promise<number> {
       options.suppressions,
     );
 
+    if (options.researchSmallRangeOverlap) {
+      await writeSmallRangeOverlapResearch(
+        options.out,
+        [...sampleCaptures].map(([width, captured]) => ({
+          width,
+          nodes: captured.surface.nodes,
+        })),
+      );
+    }
+
     const boundaries: BoundaryResult[] = [];
     const rootCauseBoundaries: RootCauseBoundaryResult[] = [];
     const boundaryDisplays: BoundaryDisplay[] = [];
@@ -1147,6 +1159,11 @@ program
   .option('--no-boundary', 'skip binary boundary search')
   .option('--timeout <ms>', 'page load timeout', String(DEFAULT_TIMEOUT_MS))
   .option('--wait <ms>', 'delay after resize', String(DEFAULT_WAIT_MS))
+  .option(
+    '--research-small-range-overlap',
+    'write research-only sampled sibling-overlap candidates',
+    false,
+  )
   .option('--ready-selector <selector>', 'require a visible selector before scanning')
   .option('--config <path>', 'project config path; defaults to slice.config.json when present')
   .exitOverride()
