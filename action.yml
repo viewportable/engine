@@ -26,6 +26,10 @@ inputs:
     description: Install Playwright Chromium and OS dependencies
     required: false
     default: 'true'
+  pr-comment:
+    description: Create or update one managed pull request comment for structural compare evidence
+    required: false
+    default: 'false'
 
 outputs:
   exit_code:
@@ -37,6 +41,9 @@ outputs:
   artifact_url:
     description: URL of the uploaded Viewportable Engine artifact when available
     value: ${{ steps.artifact.outputs.artifact-url }}
+  comment_url:
+    description: URL of the managed pull request evidence comment when available
+    value: ${{ steps.pr-comment.outputs.comment_url }}
 
 runs:
   using: composite
@@ -108,6 +115,18 @@ runs:
         path: ${{ steps.scan.outputs.result_path }}
         if-no-files-found: ignore
         include-hidden-files: true
+
+    - name: Update pull request evidence comment
+      id: pr-comment
+      if: ${{ always() && inputs.pr-comment == 'true' && inputs.baseline-url != '' }}
+      continue-on-error: true
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        SLICE_ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+        SLICE_ENGINE_REF: ${{ github.action_ref }}
+        SLICE_ENGINE_REPOSITORY: ${{ github.action_repository }}
+      run: node "$GITHUB_ACTION_PATH/scripts/github-pr-comment.mjs" "${{ steps.scan.outputs.result_path }}"
 
     - name: Enforce Viewportable Engine result
       if: ${{ always() }}
