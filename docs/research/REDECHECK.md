@@ -149,6 +149,44 @@ optional exact boundary refinement
 detector-specific verdict policy
 ```
 
+### First small-range experiment: sibling overlap
+
+The first detector-specific experiment intentionally does **not** create a Slice issue.
+
+It tracks only stable sibling pairs that are observable at every supplied sample width and classifies one binary structural relationship:
+
+```text
+separate | overlap
+```
+
+A research candidate is emitted only for:
+
+```text
+separate -> overlap -> separate
+```
+
+Example:
+
+```text
+989px  separate
+990px  overlap
+991px  overlap
+992px  separate
+
+=> sampled overlap candidate at 990..991px
+```
+
+Guardrails:
+
+- stable node and parent identities are required;
+- the pair must exist at every supplied sample width;
+- persistent overlap is not a small-range candidate;
+- a 1px geometry tolerance matches existing collision semantics;
+- no width threshold is used;
+- no CLI issue, severity, exit-code change, or default runtime cost is introduced.
+
+The next research step is to run this candidate generator against the small-range corpus cases and anti-oracle before deciding whether exact boundary refinement or a default detector is justified.
+
 ### 5. Wrapping failure
 
 ReDeCheck groups sibling elements into rows across behavior ranges, then detects an element that leaves a row and appears below it while remaining in the same parent.
