@@ -62,6 +62,24 @@ function computeNthChildren(nodes: NodeTreeSnapshot): Map<number, number> {
   return positions;
 }
 
+function nearestCapturedParentIndex(
+  parentIndex: number,
+  capturedIndices: Set<number>,
+  rawParentIndices: number[] | undefined,
+): number {
+  let currentIndex = parentIndex;
+  const seen = new Set<number>();
+
+  while (currentIndex !== -1 && !seen.has(currentIndex)) {
+    if (capturedIndices.has(currentIndex)) return currentIndex;
+
+    seen.add(currentIndex);
+    currentIndex = rawParentIndices?.[currentIndex] ?? -1;
+  }
+
+  return -1;
+}
+
 export async function captureLayout(cdp: CDPSession): Promise<LayoutNode[]> {
   const snapshot = await cdp.send('DOMSnapshot.captureSnapshot', {
     computedStyles: [...COMPUTED_STYLES],
@@ -114,7 +132,12 @@ export async function captureLayout(cdp: CDPSession): Promise<LayoutNode[]> {
     });
   }
 
-  return result;
+  const capturedIndices = new Set(result.map((node) => node.index));
+
+  return result.map((node) => ({
+    ...node,
+    parentIndex: nearestCapturedParentIndex(node.parentIndex, capturedIndices, nodes.parentIndex),
+  }));
 }
 
 export async function captureBrowserSurface(

@@ -44,7 +44,11 @@ export async function getDocumentMetrics(page: Page): Promise<DocumentMetrics> {
   }));
 }
 
+export function documentOverflowsHorizontally(metrics: DocumentMetrics): boolean {
+  return metrics.scrollWidth > metrics.clientWidth;
+}
+
 export async function hasHorizontalDocumentOverflow(page: Page): Promise<boolean> {
   const metrics = await getDocumentMetrics(page);
-  return metrics.scrollWidth > metrics.clientWidth;
+  return documentOverflowsHorizontally(metrics);
 }

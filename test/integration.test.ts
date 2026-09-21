@@ -261,6 +261,27 @@ describe('slice CLI', () => {
     expect(result.stdout).toContain('source: .fixed-grid @ <inline stylesheet>');
   });
 
+  it('keeps clipping ancestry across non-layout DOM nodes', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('non-layout-ancestor-overflow.html', [
+      '--widths',
+      '390',
+      '--wait',
+      '0',
+      '--no-boundary',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(0);
+    const report = JSON.parse(await readFile(path.join(out, 'results.json'), 'utf8'));
+    expect(report.viewports[0]).toMatchObject({
+      width: 390,
+      status: 'pass',
+      issues: [],
+    });
+  });
+
   it('reports an independent fixed-element collision without document overflow', async () => {
     const out = await makeOutDir();
     const result = await runCli('fixed-collision.html', [

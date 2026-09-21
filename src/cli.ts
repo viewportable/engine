@@ -2,7 +2,12 @@
 import { Command, CommanderError } from 'commander';
 import type { Page } from 'playwright';
 import pc from 'picocolors';
-import { getDocumentMetrics, launchBrowser, type DocumentMetrics } from './browser.js';
+import {
+  documentOverflowsHorizontally,
+  getDocumentMetrics,
+  launchBrowser,
+  type DocumentMetrics,
+} from './browser.js';
 import { findBoundary } from './boundary.js';
 import { captureBrowserSurface } from './capture.js';
 import { loadSliceConfig, type SliceConfig, type SuppressionRule } from './config.js';
@@ -366,7 +371,9 @@ async function enrichIssues(
 ): Promise<RawCaptureResult> {
   const nodes = surface.nodes;
   const { width: viewportWidth } = surface.viewport;
-  const detected = await runDetector(horizontalOverflowDetector, surface);
+  const detected = documentOverflowsHorizontally(metrics)
+    ? await runDetector(horizontalOverflowDetector, surface)
+    : [];
   const collisions = await runDetector(fixedElementCollisionDetector, surface);
   const occlusions = await runDetector(fixedContentOcclusionDetector, surface);
   const grouped = groupHorizontalOverflow(nodes, surface.viewport, detected);

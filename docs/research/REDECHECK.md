@@ -286,6 +286,41 @@ The first benchmark-driven precision improvement should not add a new detector. 
 
 A follow-up experiment showed that repairing layout ancestry across non-layout DOM nodes can substantially reduce raw issue volume and anti-oracle candidates. That change is evaluated separately in PR #13 so the baseline remains stable.
 
+## Benchmark-driven overflow precision experiments
+
+After the accepted baseline, two orthogonal precision hypotheses were evaluated against the same 26-page corpus and reviewed oracle.
+
+| Variant | Confirmed detections | Incidental candidates | NOI negative candidates | Raw Slice issues | Aggregate scan time |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Accepted baseline | 5 | 4 | 22 | 8,838 | 96.4s |
+| Connected layout ancestry | 5 | 3 | 16 | 919 | 82.7s |
+| Document-overflow gate | 5 | 1 | 15 | 410 | 79.9s |
+| Document-overflow gate + connected ancestry | **5** | **0** | **12** | **201** | **78.6s** |
+
+The combined variant preserved every manually reviewed confirmed detection while removing approximately 97.7% of raw issue volume relative to the accepted baseline.
+
+### Semantic clarification
+
+The benchmark exposed two different concepts that should not be conflated:
+
+```text
+horizontal-overflow
+  -> the rendered document itself is horizontally wider than its viewport
+
+clipped / protruding content
+  -> a subject can be visually obscured even when document scrollWidth == clientWidth
+```
+
+The current `horizontal-overflow` rule should require document-level horizontal overflow. This makes its semantics precise and dramatically reduces geometry-only noise.
+
+Cases such as the Consumer-Reports Featured Products/tiles failures remain real UI problems, but they belong to future structural rules such as element protrusion, clipping/occlusion, or relationship analysis rather than being forced into `horizontal-overflow`.
+
+### Surface IR lesson
+
+`DOMSnapshot.layout` does not contain every DOM node. A captured layout node can point to a raw DOM parent that is absent from the layout surface.
+
+Normalizing `parentIndex` to the nearest captured ancestor keeps the internal Surface IR connected across intermediaries such as `display: contents`. This allows clipping and ancestor-based evidence to work consistently without extra browser round trips.
+
 ## Initial mapping to Slice
 
 | ReDeCheck concept | Slice today | Research direction |
