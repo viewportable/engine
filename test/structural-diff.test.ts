@@ -71,9 +71,7 @@ describe('compareStructuralSurfaces', () => {
       baselineState: 'separate',
       candidateState: 'overlap',
     });
-    expect(
-      diff.changes.filter((change) => change.kind === 'sibling-overlap'),
-    ).toHaveLength(1);
+    expect(diff.changes.filter((change) => change.kind === 'sibling-overlap')).toHaveLength(1);
   });
 
   it('reports a resolved sibling overlap', () => {
