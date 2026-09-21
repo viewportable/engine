@@ -154,10 +154,7 @@ export async function runStructuralCompare(
 
     if (options.boundary) {
       const diffByWidth = new Map<number, Promise<StructuralDiff>>(
-        viewports.map((viewport) => [
-          viewport.viewport.width,
-          Promise.resolve(viewport),
-        ]),
+        viewports.map((viewport) => [viewport.viewport.width, Promise.resolve(viewport)]),
       );
       let probeQueue: Promise<void> = Promise.resolve();
 
@@ -182,19 +179,14 @@ export async function runStructuralCompare(
         viewports,
         async (width, fingerprint) => {
           const diff = await diffAtWidth(width);
-          return diff.changes.some(
-            (change) => structuralChangeFingerprint(change) === fingerprint,
-          );
+          return diff.changes.some((change) => structuralChangeFingerprint(change) === fingerprint);
         },
       );
     }
 
     const introducedRanges = ranges.filter((range) => range.direction === 'introduced').length;
     const resolvedRanges = ranges.filter((range) => range.direction === 'resolved').length;
-    const exactBoundaries = ranges.reduce(
-      (sum, range) => sum + range.boundaries.length,
-      0,
-    );
+    const exactBoundaries = ranges.reduce((sum, range) => sum + range.boundaries.length, 0);
 
     return {
       version: 1,
