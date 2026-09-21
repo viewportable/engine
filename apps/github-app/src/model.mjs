@@ -75,12 +75,10 @@ export function removeRepository(state, repositoryId) {
   }
 }
 
-export function upsertPullRequestReview(state, {
-  installationId,
-  repository,
-  pullRequest,
-  detailsUrl = null,
-}) {
+export function upsertPullRequestReview(
+  state,
+  { installationId, repository, pullRequest, detailsUrl = null },
+) {
   const project = upsertRepository(state, installationId, repository);
   const headSha = pullRequest.head.sha;
   const id = reviewId(repository.id, pullRequest.number, headSha);
