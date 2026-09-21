@@ -144,7 +144,10 @@ try {
   assert(broken.outcome === 'findings', `broken: expected findings, got ${broken.outcome}`);
   assert(broken.exitCode === 1, `broken: expected exit 1, got ${broken.exitCode}`);
   assert(Array.isArray(broken.findings), 'broken: findings is not an array');
-  assert(broken.findings.length === 2, `broken: expected 2 findings, got ${broken.findings.length}`);
+  assert(
+    broken.findings.length === 2,
+    `broken: expected 2 findings, got ${broken.findings.length}`,
+  );
 
   const types = broken.findings.map((finding) => finding.type).sort();
   assert(
