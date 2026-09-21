@@ -113,6 +113,42 @@ We should not copy the hard-coded 5px threshold blindly. The useful idea is:
 
 > detect short-lived relationship states between stable neighboring states.
 
+The first Viewportable interval primitive now models only what the sampled evidence proves:
+
+```text
+width samples
+  -> relationship state at each sample
+  -> coalesced sampled intervals
+  -> A -> B -> A candidate
+```
+
+For example:
+
+```text
+768px   same-row
+900px   overlap
+901px   overlap
+1024px  same-row
+
+=> sampled candidate:
+   overlap observed at 900..901px
+   surrounded by same-row
+```
+
+The observed `900..901px` span is not yet an exact relationship interval. A transition may occur anywhere between neighboring sample widths. Boundary refinement should therefore be a separate capability, invoked only after a detector has a meaningful candidate to refine.
+
+This keeps three concerns separate:
+
+```text
+relationship observation
+        ↓
+sampled interval candidate
+        ↓
+optional exact boundary refinement
+        ↓
+detector-specific verdict policy
+```
+
 ### 5. Wrapping failure
 
 ReDeCheck groups sibling elements into rows across behavior ranges, then detects an element that leaves a row and appears below it while remaining in the same parent.
@@ -591,8 +627,8 @@ Current sequence:
 1. sibling wrapping - implemented and reviewed with 10/10 behavioral TP coverage;
 2. canonical parent grouping + authored/repeated-flow evidence - implemented and benchmarked;
 3. authored-reflow review policy - implemented without suppression or corpus-specific thresholds;
-4. relationship intervals only where required by small-range analysis - next;
-5. small-range anomaly research;
+4. sampled relationship intervals - implemented as a minimal generic primitive;
+5. small-range anomaly research - next, detector-specific and benchmark-driven;
 6. element protrusion / generic collision after stronger observability evidence;
 7. structural base-vs-head graph comparison.
 

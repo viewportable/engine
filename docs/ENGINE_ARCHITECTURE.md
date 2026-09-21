@@ -201,6 +201,28 @@ Grouping must not silently change detector truth conditions. Evidence such as `f
 
 This boundary should generalize to future multi-observation detectors without forcing all detectors into one graph abstraction.
 
+## Sampled relationships and exact boundaries
+
+Relationship analysis should distinguish sampled evidence from exact boundaries.
+
+A sampled interval says only that the same relationship state was observed at adjacent sampled widths:
+
+```text
+320  same-row
+375  same-row
+390  below
+
+sampled intervals:
+  same-row  320..375
+  below     390..390
+```
+
+It must not imply that the relationship changed exactly at 390px. Exact transition search is a later, optional refinement step.
+
+Short-lived states can be surfaced structurally as `A -> B -> A` candidates without embedding a detector threshold into the interval primitive. The detector that consumes the candidate owns any verdict policy.
+
+This is intentionally smaller than a general responsive graph.
+
 ## Performance rules
 
 New modules must not silently make the default scan slower.
