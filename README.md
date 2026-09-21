@@ -388,12 +388,13 @@ For structural PR comparison, pass the candidate URL as `url` and the reference 
 
 When `baseline-url` is set, the Action switches to structural compare mode, writes `structural-diff.json`, renders introduced/resolved structural ranges in the GitHub job summary, uploads that report, and preserves the same exit contract: `0` no introduced changes, `1` introduced changes, `2` scanner/setup failure. The `result_path` output automatically points to either `results.json` or `structural-diff.json` depending on the mode.
 
-Set `pr-comment: 'true'` to create one managed PR evidence comment. The Action finds its previous marker comment and updates it on subsequent runs instead of creating duplicates. The comment is rendered from canonical `findings[]`, includes exact ranges, baseline/candidate states, base/head SHAs, Engine ref, duration, and a link to the uploaded artifact. Grant `issues: write` in the workflow:
+Set `pr-comment: 'true'` to create one managed PR evidence comment. The Action finds its previous marker comment and updates it on subsequent runs instead of creating duplicates. The comment is rendered from canonical `findings[]`, includes exact ranges, baseline/candidate states, base/head SHAs, Engine ref, duration, and a link to the uploaded artifact. Grant both `issues: write` and `pull-requests: write` for PR evidence, plus `checks: write` for the managed Check Run:
 
 ```yaml
 permissions:
   contents: read
   issues: write
+  pull-requests: write
   checks: write
 
 # ...
