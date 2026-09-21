@@ -35,7 +35,7 @@
   <body>
     <main id="page-root">
       <h1>Golden PR fixture</h1>
-      <p id="fixture-status">Candidate intentionally regresses structure from 350px through 499px.</p>
+      <p id="fixture-status">Candidate copy changed, while responsive structure remains stable.</p>
 
       <section id="pricing-card">
         <h2>Pro plan</h2>
@@ -44,21 +44,5 @@
       </section>
     </main>
 
-    <script>
-      const pageRoot = document.querySelector('#page-root');
-      const pricingCard = document.querySelector('#pricing-card');
-      const cta = document.querySelector('#cta');
-      const checkoutButton = document.querySelector('#checkout-button');
-
-      function applyGoldenRegression() {
-        const regressed = window.innerWidth >= 350 && window.innerWidth <= 499;
-
-        (regressed ? pageRoot : pricingCard).appendChild(cta);
-        checkoutButton.style.display = regressed ? 'none' : 'block';
-      }
-
-      applyGoldenRegression();
-      window.addEventListener('resize', applyGoldenRegression);
-    </script>
   </body>
 </html>
