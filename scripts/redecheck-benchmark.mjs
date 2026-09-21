@@ -171,7 +171,9 @@ function rangesOverlap(first, second) {
 function smallRangeMatches(pageRun, reports) {
   if (!pageRun || pageRun.status !== 'ok') return [];
 
-  const ranges = reports.filter((report) => report.type === 'Small-Range').map((report) => report.range);
+  const ranges = reports
+    .filter((report) => report.type === 'Small-Range')
+    .map((report) => report.range);
   if (ranges.length === 0) return [];
 
   return (pageRun.smallRangeResearch?.candidates ?? []).filter((candidate) =>
@@ -227,16 +229,18 @@ function renderSummary(report) {
     '',
     '| Oracle ID | Page | Range(s) | Candidate evidence |',
     '| ---: | --- | --- | --- |',
-    ...report.research.smallRangeOverlap.oracle.map((entry) =>
-      `| ${entry.id} | ${entry.page} | ${entry.reports
-        .map((item) => `${item.range.min}-${item.range.max}px`)
-        .join('<br>')} | ${smallRangeEvidence(entry.matches)} |`,
+    ...report.research.smallRangeOverlap.oracle.map(
+      (entry) =>
+        `| ${entry.id} | ${entry.page} | ${entry.reports
+          .map((item) => `${item.range.min}-${item.range.max}px`)
+          .join('<br>')} | ${smallRangeEvidence(entry.matches)} |`,
     ),
     '',
     '| Anti source | Page | Range | Candidate evidence |',
     '| --- | --- | --- | --- |',
-    ...report.research.smallRangeOverlap.antiOracle.map((entry) =>
-      `| ${entry.sourceClassification} | ${entry.page} | ${entry.range.min}-${entry.range.max}px | ${smallRangeEvidence(entry.matches)} |`,
+    ...report.research.smallRangeOverlap.antiOracle.map(
+      (entry) =>
+        `| ${entry.sourceClassification} | ${entry.page} | ${entry.range.min}-${entry.range.max}px | ${smallRangeEvidence(entry.matches)} |`,
     ),
     '',
     '> Research candidates are sampled structural evidence only. They do not change Slice findings, exit codes, or the baseline Small-Range support classification.',
@@ -720,7 +724,8 @@ const report = {
       },
       summary: {
         oracleDistinctFailures: smallRangeOracle.length,
-        oracleCandidateFailures: smallRangeOracle.filter((entry) => entry.matches.length > 0).length,
+        oracleCandidateFailures: smallRangeOracle.filter((entry) => entry.matches.length > 0)
+          .length,
         antiOracleReports: smallRangeAntiOracle.length,
         antiOracleCandidateReports: smallRangeAntiOracle.filter((entry) => entry.matches.length > 0)
           .length,
