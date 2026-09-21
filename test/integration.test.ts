@@ -138,6 +138,38 @@ describe('slice CLI', () => {
     expect(result.stdout).toContain('#item-4 wraps below siblings');
   });
 
+  it('detects the final inline footer item wrapping onto a second row', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('wrapping-inline-footer.html', [
+      '--widths',
+      '335,375',
+      '--wait',
+      '0',
+      '--no-boundary',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(1);
+    const report = JSON.parse(await readFile(path.join(out, 'results.json'), 'utf8'));
+    const narrow = report.viewports.find((viewport: { width: number }) => viewport.width === 335);
+
+    expect(narrow.issues.filter((issue: { type: string }) => issue.type === 'wrapping')).toEqual([
+      expect.objectContaining({
+        type: 'wrapping',
+        selector: '#terms',
+        parentSelector: '#mobile-footer',
+        viewportWidth: 335,
+        previousViewportWidth: 375,
+        evidence: expect.objectContaining({
+          previousRowSize: 5,
+          currentRowSize: 1,
+          stableSiblingCount: 4,
+        }),
+      }),
+    ]);
+  });
+
   it('attributes nested overflow to exactly one deepest element', async () => {
     const out = await makeOutDir();
     const result = await runCli('nested.html', [
