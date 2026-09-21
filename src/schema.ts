@@ -57,6 +57,7 @@ const wrappingIssueSchema = z.object({
   viewportWidth: z.number().int().positive(),
   previousViewportWidth: z.number().int().positive(),
   bbox: z.tuple([z.number(), z.number(), z.number(), z.number()]),
+  rootCauseId: z.string().min(1).optional(),
   evidence: z.object({
     previousRowSize: z.number().int().min(3),
     currentRowSize: z.number().int().positive(),
@@ -64,6 +65,8 @@ const wrappingIssueSchema = z.object({
     previousRowIndex: z.number().int().nonnegative(),
     currentRowIndex: z.number().int().positive(),
     verticalShiftPx: z.number().int().positive(),
+    parentDisplay: z.string(),
+    parentFlexWrap: z.string(),
   }),
 });
 
@@ -161,18 +164,50 @@ const rootCauseBoundarySchema = z.object({
   probesUsed: z.number().int().nonnegative(),
 });
 
-const rootCauseSchema = z.object({
+const horizontalOverflowRootCauseSchema = z.object({
   id: z.string().min(1),
   type: z.literal('horizontal-overflow'),
   severity: z.literal('error'),
   selector: z.string().min(1),
   tagName: z.string().min(1),
   side: z.enum(['right', 'left']),
-  issueIds: z.array(z.string().min(1)).min(2),
+  issueIds: z.array(z.string().min(1)).min(1),
   observations: z.array(rootCauseObservationSchema).min(1),
   boundaries: z.array(rootCauseBoundarySchema),
   diagnosis: rootCauseDiagnosisSchema.optional(),
 });
+
+const wrappingRootCauseObservationSchema = z.object({
+  viewportWidth: z.number().int().positive(),
+  previousViewportWidth: z.number().int().positive(),
+  issueIds: z.array(z.string().min(1)).min(1),
+  wrappedSelectors: z.array(z.string().min(1)).min(1),
+  stableSiblingCount: z.number().int().min(2),
+  wrappedSiblingCount: z.number().int().positive(),
+});
+
+const wrappingRootCauseSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal('wrapping'),
+  severity: z.literal('error'),
+  selector: z.string().min(1),
+  tagName: z.string().min(1),
+  issueIds: z.array(z.string().min(1)).min(1),
+  observations: z.array(wrappingRootCauseObservationSchema).min(1),
+  boundaries: z.tuple([]),
+  evidence: z.object({
+    authoredFlexWrap: z.boolean(),
+    transitionCount: z.number().int().positive(),
+    repeatedAcrossWidths: z.boolean(),
+    displayValues: z.array(z.string()),
+    flexWrapValues: z.array(z.string()),
+  }),
+});
+
+const rootCauseSchema = z.discriminatedUnion('type', [
+  horizontalOverflowRootCauseSchema,
+  wrappingRootCauseSchema,
+]);
 
 export const resultsSchema = z.object({
   version: z.literal(1),
