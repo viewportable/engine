@@ -1,6 +1,5 @@
+import { containmentRelationshipEvidence } from '../relationships/containment.js';
 import type { LayoutNode } from '../types.js';
-
-export const ELEMENT_PROTRUSION_TOLERANCE_PX = 1;
 
 export interface ElementProtrusionCandidate {
   viewportWidth: number;
@@ -60,22 +59,10 @@ export function detectElementProtrusionCandidates(
     if (parent.attributes['aria-hidden']?.toLowerCase() === 'true') continue;
     if (hasTranslatedTransform(parent)) continue;
 
-    const left = parent.rect.x - child.rect.x;
-    const right = child.rect.x + child.rect.width - (parent.rect.x + parent.rect.width);
-    const top = parent.rect.y - child.rect.y;
-    const bottom = child.rect.y + child.rect.height - (parent.rect.y + parent.rect.height);
+    const containment = containmentRelationshipEvidence(parent.rect, child.rect);
+    if (containment.state === 'contained') continue;
 
-    const protrusionPx = {
-      left: left > ELEMENT_PROTRUSION_TOLERANCE_PX ? Math.round(left) : 0,
-      right: right > ELEMENT_PROTRUSION_TOLERANCE_PX ? Math.round(right) : 0,
-      top: top > ELEMENT_PROTRUSION_TOLERANCE_PX ? Math.round(top) : 0,
-      bottom: bottom > ELEMENT_PROTRUSION_TOLERANCE_PX ? Math.round(bottom) : 0,
-    };
-
-    const sides = (['left', 'right', 'top', 'bottom'] as const).filter(
-      (side) => protrusionPx[side] > 0,
-    );
-    if (sides.length === 0) continue;
+    const { protrusionPx, sides } = containment;
 
     candidates.push({
       viewportWidth,
