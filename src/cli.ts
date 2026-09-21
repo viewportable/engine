@@ -362,13 +362,16 @@ function renderTable(
 
       if (rootCause.type === 'wrapping') {
         if (rootCause.evidence.authoredFlexWrap) {
+          const displays = rootCause.evidence.displayValues.join(', ');
+          const flexWrapValues = rootCause.evidence.flexWrapValues.join(', ');
           process.stdout.write(
-            `          evidence: authored flex wrapping (${rootCause.evidence.displayValues.join(', ')}; flex-wrap: ${rootCause.evidence.flexWrapValues.join(', ')})\n`,
+            `          evidence: authored flex wrapping (${displays}; flex-wrap: ${flexWrapValues})\n`,
           );
         }
         if (rootCause.evidence.repeatedAcrossWidths) {
+          const transitions = rootCause.evidence.transitionCount;
           process.stdout.write(
-            `          evidence: ${rootCause.evidence.transitionCount} responsive wrap transitions observed\n`,
+            `          evidence: ${transitions} responsive wrap transitions observed\n`,
           );
         }
       }
