@@ -241,7 +241,7 @@ The canonical group records structural flow evidence without guessing product in
 - whether the same parent reflows repeatedly across sampled widths;
 - the raw selectors and issue IDs behind every grouped observation.
 
-Authored or repeated reflow is evidence, not an automatic suppression. A deliberately wrapping component can still contain a real responsive defect, so Slice preserves the failure until a stronger intentional-reflow policy can distinguish expected flow from suspicious wrapping.
+Explicit flex wrapping is surfaced as an `authored-reflow-candidate` review hint, but the finding remains active. Repeated wrapping alone is not classified as intentional because confirmed failures can also persist across several sampled transitions. Slice does not change severity, exit code, or suppression behavior from this assessment.
 
 ### Fixed-element collision detector
 
