@@ -1,6 +1,6 @@
-# Slice demo site
+# Viewportable Engine demo site
 
-This is intentionally framework-neutral. Slice receives only a URL, so the detection path is identical whether the page is produced by static HTML, Rails, React, Next.js, or another framework.
+This is intentionally framework-neutral. Viewportable Engine receives only a URL, so the detection path is identical whether the page is produced by static HTML, Rails, React, Next.js, or another framework.
 
 - `broken.html` contains a realistic responsive pricing-grid regression.
 - `fixed.html` contains the responsive fix.
