@@ -3,23 +3,34 @@ import type { StructuralChange } from './structural-diff.js';
 import type { StructuralCompareReport } from './run.js';
 
 function renderChange(change: StructuralChange): string {
-  if (change.kind === 'sibling-overlap') {
-    return (
-      `${change.subjects[0].key} <> ${change.subjects[1].key} ` +
-      `${change.baselineState} -> ${change.candidateState}`
-    );
+  switch (change.kind) {
+    case 'sibling-overlap':
+      return (
+        `${change.subjects[0].key} <> ${change.subjects[1].key} ` +
+        `${change.baselineState} -> ${change.candidateState}`
+      );
+    case 'parent-containment': {
+      const sides =
+        change.candidateState === 'protruding'
+          ? change.candidateEvidence.sides.join('/')
+          : change.baselineEvidence.sides.join('/');
+
+      return (
+        `${change.subject.key} in ${change.parent.key} ` +
+        `${change.baselineState} -> ${change.candidateState}` +
+        (sides ? ` (${sides})` : '')
+      );
+    }
+    case 'reparenting':
+      return (
+        `${change.subject.key} reparented ` +
+        `${change.baselineParent.key} -> ${change.candidateParent.key}`
+      );
+    case 'node-presence':
+      return change.candidateState === 'missing'
+        ? `${change.subject.key} disappeared (visible -> missing)`
+        : `${change.subject.key} appeared (missing -> visible)`;
   }
-
-  const sides =
-    change.candidateState === 'protruding'
-      ? change.candidateEvidence.sides.join('/')
-      : change.baselineEvidence.sides.join('/');
-
-  return (
-    `${change.subject.key} in ${change.parent.key} ` +
-    `${change.baselineState} -> ${change.candidateState}` +
-    (sides ? ` (${sides})` : '')
-  );
 }
 
 function renderRangeWidth(
