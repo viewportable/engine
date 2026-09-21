@@ -25,6 +25,9 @@ jobs:
       - name: Format gate files
         run: npx oxfmt --write scripts/redecheck-benchmark.mjs test/integration.test.ts
 
+      - name: Print formatter diff
+        run: git diff -- scripts/redecheck-benchmark.mjs test/integration.test.ts
+
       - name: Upload formatted files
         uses: actions/upload-artifact@v7
         with:
