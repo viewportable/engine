@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      #row {
+        display: flex;
+        width: 100%;
+      }
+
+      .item {
+        flex: 0 0 100px;
+        height: 40px;
+      }
+
+      #second {
+        margin-left: 2px;
+      }
+
+      @media (min-width: 390px) and (max-width: 391px) {
+        #second {
+          margin-left: -2px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="row">
+      <div id="first" class="item"></div>
+      <div id="second" class="item"></div>
+    </div>
+  </body>
+</html>

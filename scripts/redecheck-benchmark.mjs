@@ -164,6 +164,34 @@ async function corpusPages() {
   return pages;
 }
 
+function rangesOverlap(first, second) {
+  return first.minSampleWidth <= second.max && first.maxSampleWidth >= second.min;
+}
+
+function smallRangeMatches(pageRun, reports) {
+  if (!pageRun || pageRun.status !== 'ok') return [];
+
+  const ranges = reports
+    .filter((report) => report.type === 'Small-Range')
+    .map((report) => report.range);
+  if (ranges.length === 0) return [];
+
+  return (pageRun.smallRangeResearch?.candidates ?? []).filter((candidate) =>
+    ranges.some((range) => rangesOverlap(candidate.interval, range)),
+  );
+}
+
+function smallRangeEvidence(matches) {
+  return matches
+    .slice(0, 4)
+    .map(
+      (match) =>
+        `${match.interval.minSampleWidth}-${match.interval.maxSampleWidth}px: ` +
+        `${match.firstLabel} <> ${match.secondLabel} in ${match.parentLabel}`,
+    )
+    .join('<br>');
+}
+
 function renderSummary(report) {
   const lines = [
     '# ReDeCheck Baseline',
@@ -191,6 +219,31 @@ function renderSummary(report) {
     `- Sampled viewport renders: **${report.summary.viewportsChecked}**`,
     `- Raw Slice issues emitted: **${report.summary.rawIssues}**`,
     `- Aggregate Slice scan time: **${(report.summary.sliceDurationMs / 1000).toFixed(1)}s**`,
+    '',
+    '## Small-range overlap research gate',
+    '',
+    `- Distinct oracle RLFs carrying Small-Range: **${report.research.smallRangeOverlap.summary.oracleDistinctFailures}**`,
+    `- Oracle RLFs with sampled sibling-overlap candidate: **${report.research.smallRangeOverlap.summary.oracleCandidateFailures}**`,
+    `- Anti-oracle raw Small-Range reports: **${report.research.smallRangeOverlap.summary.antiOracleReports}**`,
+    `- Anti-oracle Small-Range reports with candidate: **${report.research.smallRangeOverlap.summary.antiOracleCandidateReports}**`,
+    '',
+    '| Oracle ID | Page | Range(s) | Candidate evidence |',
+    '| ---: | --- | --- | --- |',
+    ...report.research.smallRangeOverlap.oracle.map(
+      (entry) =>
+        `| ${entry.id} | ${entry.page} | ${entry.reports
+          .map((item) => `${item.range.min}-${item.range.max}px`)
+          .join('<br>')} | ${smallRangeEvidence(entry.matches)} |`,
+    ),
+    '',
+    '| Anti source | Page | Range | Candidate evidence |',
+    '| --- | --- | --- | --- |',
+    ...report.research.smallRangeOverlap.antiOracle.map(
+      (entry) =>
+        `| ${entry.sourceClassification} | ${entry.page} | ${entry.range.min}-${entry.range.max}px | ${smallRangeEvidence(entry.matches)} |`,
+    ),
+    '',
+    '> Research candidates are sampled structural evidence only. They do not change Slice findings, exit codes, or the baseline Small-Range support classification.',
     '',
     '> Candidate match means compatible rule family + same page + sampled width inside the oracle range. It still requires evidence/identity review before being called a confirmed detection.',
     '',
@@ -375,6 +428,7 @@ try {
         '--out',
         pageOut,
         '--no-boundary',
+        '--research-small-range-overlap',
         '--wait',
         String(WAIT_MS),
         '--timeout',
@@ -401,12 +455,16 @@ try {
 
     try {
       const result = JSON.parse(await readFile(resultPath, 'utf8'));
+      const smallRangeResearch = JSON.parse(
+        await readFile(path.join(pageOut, 'small-range-overlap.json'), 'utf8'),
+      );
       pageRuns.set(oraclePage, {
         status: 'ok',
         corpusPage,
         widths,
         exitCode: child.status,
         result,
+        smallRangeResearch,
       });
     } catch (error) {
       pageRuns.set(oraclePage, {
@@ -507,6 +565,28 @@ const scoredAntiOracle = antiOracleReports.map((antiReport) => {
         },
   };
 });
+
+const smallRangeOracle = oracleFailures
+  .filter((failure) => failure.reports.some((report) => report.type === 'Small-Range'))
+  .map((failure) => {
+    const reports = failure.reports.filter((report) => report.type === 'Small-Range');
+    return {
+      id: failure.id,
+      page: failure.page,
+      reports,
+      matches: smallRangeMatches(pageRuns.get(failure.page), reports),
+    };
+  });
+
+const smallRangeAntiOracle = antiOracleReports
+  .filter((report) => report.type === 'Small-Range')
+  .map((report) => ({
+    sourceClassification: report.classification,
+    page: report.page,
+    range: report.range,
+    reason: report.reason,
+    matches: smallRangeMatches(pageRuns.get(report.page), [report]),
+  }));
 
 const classifications = {
   'candidate-match': 0,
@@ -635,6 +715,25 @@ const report = {
   bySupport,
   byReportType,
   antiOracleBySource,
+  research: {
+    smallRangeOverlap: {
+      methodology: {
+        relation: 'stable sibling pair separate -> overlap -> separate',
+        exactBoundarySearch: false,
+        verdict: false,
+      },
+      summary: {
+        oracleDistinctFailures: smallRangeOracle.length,
+        oracleCandidateFailures: smallRangeOracle.filter((entry) => entry.matches.length > 0)
+          .length,
+        antiOracleReports: smallRangeAntiOracle.length,
+        antiOracleCandidateReports: smallRangeAntiOracle.filter((entry) => entry.matches.length > 0)
+          .length,
+      },
+      oracle: smallRangeOracle,
+      antiOracle: smallRangeAntiOracle,
+    },
+  },
   failures: scoredFailures,
   antiOracle: scoredAntiOracle,
   environmentPages: Object.fromEntries(

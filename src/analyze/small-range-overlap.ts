@@ -16,21 +16,36 @@ export interface SmallRangeOverlapSample {
 
 export interface SmallRangeOverlapCandidate {
   parentIdentity: string;
+  parentLabel: string;
   firstIdentity: string;
+  firstLabel: string;
   secondIdentity: string;
+  secondLabel: string;
   interval: RelationshipInterval<OverlapRelationshipState>;
   sampledSpanPx: number;
 }
 
 interface PairObservation {
   parentIdentity: string;
+  parentLabel: string;
   firstIdentity: string;
+  firstLabel: string;
   secondIdentity: string;
+  secondLabel: string;
   samples: Array<{ width: number; state: OverlapRelationshipState }>;
 }
 
 function stableIdentity(node: LayoutNode): string | null {
   return node.identity ?? null;
+}
+
+function nodeLabel(node: LayoutNode): string {
+  const id = node.attributes.id ? `#${node.attributes.id}` : '';
+  const classes = node.attributes.class
+    ? `.${node.attributes.class.split(/\s+/).filter(Boolean).slice(0, 3).join('.')}`
+    : '';
+
+  return `${node.tagName.toLowerCase()}${id}${classes}`;
 }
 
 function pairKey(parentIdentity: string, firstIdentity: string, secondIdentity: string): string {
@@ -78,10 +93,18 @@ export function detectSmallRangeOverlapCandidates(
 
           const key = pairKey(parentIdentity, firstIdentity, secondIdentity);
           const [orderedFirst, orderedSecond] = [firstIdentity, secondIdentity].sort();
+          const orderedFirstNode = orderedFirst === firstIdentity ? first : second;
+          const orderedSecondNode = orderedSecond === secondIdentity ? second : first;
+          const parent = nodesByIndex.get(first.parentIndex);
+          if (!parent) continue;
+
           const observation = pairs.get(key) ?? {
             parentIdentity,
+            parentLabel: nodeLabel(parent),
             firstIdentity: orderedFirst ?? firstIdentity,
+            firstLabel: nodeLabel(orderedFirstNode),
             secondIdentity: orderedSecond ?? secondIdentity,
+            secondLabel: nodeLabel(orderedSecondNode),
             samples: [],
           };
 
@@ -110,8 +133,11 @@ export function detectSmallRangeOverlapCandidates(
 
       candidates.push({
         parentIdentity: observation.parentIdentity,
+        parentLabel: observation.parentLabel,
         firstIdentity: observation.firstIdentity,
+        firstLabel: observation.firstLabel,
         secondIdentity: observation.secondIdentity,
+        secondLabel: observation.secondLabel,
         interval: candidate.interval,
         sampledSpanPx: candidate.sampledSpanPx,
       });

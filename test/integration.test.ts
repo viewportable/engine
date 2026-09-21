@@ -218,6 +218,43 @@ describe('slice CLI', () => {
     ]);
   });
 
+  it('writes opt-in small-range overlap research without changing scan status', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('small-range-overlap.html', [
+      '--widths',
+      '389,390,391,392',
+      '--wait',
+      '0',
+      '--no-boundary',
+      '--research-small-range-overlap',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(0);
+    const research = JSON.parse(await readFile(path.join(out, 'small-range-overlap.json'), 'utf8'));
+
+    expect(research).toEqual({
+      version: 1,
+      widths: [389, 390, 391, 392],
+      candidates: [
+        expect.objectContaining({
+          parentLabel: 'div#row',
+          firstLabel: 'div#first.item',
+          secondLabel: 'div#second.item',
+          interval: {
+            state: 'overlap',
+            minSampleWidth: 390,
+            maxSampleWidth: 391,
+            sampleWidths: [390, 391],
+            sampleCount: 2,
+          },
+          sampledSpanPx: 1,
+        }),
+      ],
+    });
+  });
+
   it('attributes nested overflow to exactly one deepest element', async () => {
     const out = await makeOutDir();
     const result = await runCli('nested.html', [

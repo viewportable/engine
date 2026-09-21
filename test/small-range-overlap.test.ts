@@ -74,8 +74,11 @@ describe('detectSmallRangeOverlapCandidates', () => {
     expect(candidates).toEqual([
       {
         parentIdentity: 'parent',
+        parentLabel: 'div',
         firstIdentity: 'first',
+        firstLabel: 'div',
         secondIdentity: 'second',
+        secondLabel: 'div',
         interval: {
           state: 'overlap',
           minSampleWidth: 990,
