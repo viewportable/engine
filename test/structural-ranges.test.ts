@@ -50,6 +50,20 @@ describe('aggregateStructuralChangeRanges', () => {
     ]);
   });
 
+  it('normalizes viewport order before building the range', () => {
+    const ranges = aggregateStructuralChangeRanges([
+      viewport(430, [overlap(430)]),
+      viewport(375, [overlap(375)]),
+      viewport(390, [overlap(390)]),
+    ]);
+
+    expect(ranges[0]).toMatchObject({
+      firstWidth: 375,
+      lastWidth: 430,
+      sampleWidths: [375, 390, 430],
+    });
+  });
+
   it('splits the same fingerprint when a sampled viewport interrupts the change', () => {
     const ranges = aggregateStructuralChangeRanges([
       viewport(320, [overlap(320)]),
