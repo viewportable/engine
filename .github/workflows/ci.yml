@@ -124,6 +124,20 @@ jobs:
           if (report.summary.exactBoundaries !== 4) {
             throw new Error(`expected 4 exact boundaries, got ${report.summary.exactBoundaries}`);
           }
+          if (report.findings?.length !== 2) {
+            throw new Error(`expected 2 canonical findings, got ${report.findings?.length}`);
+          }
+
+          const findingTypes = report.findings.map((finding) => finding.type).sort();
+          if (JSON.stringify(findingTypes) !== JSON.stringify(['disappearance', 'reparenting'])) {
+            throw new Error(`unexpected finding types: ${JSON.stringify(findingTypes)}`);
+          }
+
+          for (const finding of report.findings) {
+            if (finding.exactRange?.minWidth !== 350 || finding.exactRange?.maxWidth !== 499) {
+              throw new Error(`unexpected finding range: ${JSON.stringify(finding.exactRange)}`);
+            }
+          }
 
           for (const range of report.ranges) {
             const boundaries = Object.fromEntries(
