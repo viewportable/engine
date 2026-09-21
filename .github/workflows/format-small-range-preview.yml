@@ -1,0 +1,32 @@
+name: Format Small Range Preview
+
+on:
+  push:
+    branches:
+      - research/small-range-overlap-candidates
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci --ignore-scripts
+
+      - name: Format research analyzer
+        run: npx oxfmt --write src/analyze/small-range-overlap.ts
+
+      - name: Upload formatted analyzer
+        uses: actions/upload-artifact@v7
+        with:
+          name: formatted-small-range
+          path: src/analyze/small-range-overlap.ts
