@@ -1,0 +1,32 @@
+name: Format Preview
+
+on:
+  push:
+    branches:
+      - engine/wrapping-canonical-grouping
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci --ignore-scripts
+
+      - name: Format changed TypeScript
+        run: npx oxfmt --write src/cli.ts
+
+      - name: Upload formatted file
+        uses: actions/upload-artifact@v7
+        with:
+          name: formatted-cli
+          path: src/cli.ts
