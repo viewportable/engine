@@ -23,7 +23,7 @@ The committed React Native adapter spike is tracked in `ROADMAP.md`; only uncomm
 
 ## Analysis capabilities
 
-The committed ReDeCheck-derived sequence (`element-protrusion`, small-range anomaly, wrapping) is tracked in `ROADMAP.md` and `docs/research/REDECHECK.md`.
+The benchmark-driven ReDeCheck sequence is tracked in `ROADMAP.md` and `docs/research/REDECHECK.md`. Current priority is wrapping precision/canonical grouping, then relationship intervals and small-range analysis; element protrusion and generic collision remain deferred until stronger evidence supports them.
 
 
 ### Structural base-vs-head comparison
