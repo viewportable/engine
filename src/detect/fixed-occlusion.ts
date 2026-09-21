@@ -1,3 +1,4 @@
+import type { Detector } from '../detector.js';
 import type { LayoutNode, Viewport } from '../types.js';
 
 export const OCCLUSION_TOLERANCE_PX = 1;
@@ -232,3 +233,9 @@ export function detectFixedContentOcclusions(
 
   return findings;
 }
+
+export const fixedContentOcclusionDetector: Detector<FixedContentOcclusionFinding, LayoutNode> = {
+  id: 'fixed-content-occlusion',
+  requires: ['geometry', 'computed-styles', 'paint-order', 'tree'],
+  detect: ({ surface }) => detectFixedContentOcclusions(surface.nodes, surface.viewport),
+};

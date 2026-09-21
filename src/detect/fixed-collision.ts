@@ -1,3 +1,4 @@
+import type { Detector } from '../detector.js';
 import type { LayoutNode, Viewport } from '../types.js';
 
 export const COLLISION_TOLERANCE_PX = 1;
@@ -141,3 +142,9 @@ export function detectFixedElementCollisions(
 
   return findings;
 }
+
+export const fixedElementCollisionDetector: Detector<FixedCollisionFinding, LayoutNode> = {
+  id: 'fixed-element-collision',
+  requires: ['geometry', 'computed-styles', 'tree'],
+  detect: ({ surface }) => detectFixedElementCollisions(surface.nodes, surface.viewport),
+};

@@ -1,26 +1,17 @@
-export interface Rect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+import type { SurfaceNode, SurfaceRect, SurfaceViewport } from './surface.js';
 
-export interface LayoutNode {
-  index: number;
-  parentIndex: number;
+export type Rect = SurfaceRect;
+
+export interface LayoutNode extends SurfaceNode {
   tagName: string;
   attributes: Record<string, string>;
   rect: Rect;
   styles: Record<string, string>;
   paintOrder: number;
-  isVisible: boolean;
   nthChild?: number;
 }
 
-export interface Viewport {
-  width: number;
-  height: number;
-}
+export type Viewport = SurfaceViewport;
 
 export interface HorizontalOverflowEvidence {
   documentScrollWidth: number;

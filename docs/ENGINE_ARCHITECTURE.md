@@ -2,6 +2,26 @@
 
 Slice is expected to evolve into the Viewportable engine. The engine should be modular and composable from the beginning, without turning detector development into plugin-framework work and without charging runtime cost for disabled capabilities.
 
+## System context
+
+Viewportable Engine sits between callers that request visual verification and platform runtimes that can render a UI.
+
+```text
+Human / Agent / CI / Desktop
+           |
+           v
+      ScanRequest
+           |
+           v
+    Viewportable Engine
+      /           \
+     v             v
+browser/native   findings/reporters
+runtime          GitHub/MCP/JSON/UI
+```
+
+The engine does not own application deployment, CI compute, browser/device farms, or product source code. It consumes reachable/renderable targets and produces structured findings.
+
 ## Goals
 
 1. Keep the deterministic layout engine small and fast.
@@ -232,3 +252,46 @@ not a rewrite of the scan pipeline.
 The core architectural requirement is therefore:
 
 > Viewportable should become more capable by composition, while the cheapest useful scan stays cheap.
+
+
+## Platform-neutral surface boundary
+
+The first implementation of the modular engine introduces a small `SurfaceSnapshot` contract between capture and detection. Browser layout nodes remain richer than the minimum surface node, but generic geometry work should increasingly depend on the minimum normalized fields rather than browser DOM details.
+
+Platform-specific adapters are documented in [PLATFORM_ADAPTERS.md](PLATFORM_ADAPTERS.md). The immediate goal is not React Native support itself. The goal is to make browser evolution avoid assumptions that would make a future React Native or Capacitor adapter unnecessarily expensive.
+
+
+## Standards-first boundary model
+
+The engine architecture is governed by [ADR-0001](adr/0001-standards-first-surface-ir.md).
+
+The key distinction is:
+
+```text
+public semantics:
+ScanRequest -> ScanResult / Finding
+
+internal implementation:
+platform adapter -> Surface IR -> analyzers -> evidence fusion
+```
+
+`SurfaceSnapshot` is an internal IR, not a public protocol. It may evolve or be replaced without forcing external callers to change.
+
+Existing standards should be used at system boundaries where they fit:
+
+- WebDriver / WebDriver BiDi and Playwright for browser automation;
+- CDP for rich Chromium capture;
+- Appium and platform-native automation/accessibility APIs for native capture;
+- MCP for agent tool exposure;
+- SARIF for analysis-result interchange.
+
+The proposed public semantic contract is documented in [RFC-0001](rfcs/0001-scan-contract.md).
+
+
+## Architecture quality and risk references
+
+Architecture trade-offs should be evaluated against [Quality Attributes](QUALITY_ATTRIBUTES.md).
+
+Known architectural risks and technical debt are tracked separately in [Risks and Technical Debt](RISKS.md), so the Design Backlog does not become a risk register.
+
+Shared terminology is defined in [Glossary](GLOSSARY.md).

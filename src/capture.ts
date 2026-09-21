@@ -1,5 +1,6 @@
 import type { CDPSession } from 'playwright';
-import type { LayoutNode } from './types.js';
+import type { SurfaceSnapshot } from './surface.js';
+import type { LayoutNode, Viewport } from './types.js';
 
 const COMPUTED_STYLES = [
   'position',
@@ -114,4 +115,18 @@ export async function captureLayout(cdp: CDPSession): Promise<LayoutNode[]> {
   }
 
   return result;
+}
+
+export async function captureBrowserSurface(
+  cdp: CDPSession,
+  viewport: Viewport,
+): Promise<SurfaceSnapshot<LayoutNode>> {
+  const nodes = await captureLayout(cdp);
+
+  return {
+    platform: 'web',
+    viewport,
+    capabilities: ['geometry', 'computed-styles', 'paint-order', 'tree'],
+    nodes,
+  };
 }

@@ -4,18 +4,20 @@ import type { Page } from 'playwright';
 import pc from 'picocolors';
 import { getDocumentMetrics, launchBrowser, type DocumentMetrics } from './browser.js';
 import { findBoundary } from './boundary.js';
-import { captureLayout } from './capture.js';
+import { captureBrowserSurface } from './capture.js';
 import { loadSliceConfig, type SliceConfig, type SuppressionRule } from './config.js';
 import { findUniqueCssSource } from './css-source.js';
-import { detectFixedElementCollisions } from './detect/fixed-collision.js';
-import { detectFixedContentOcclusions } from './detect/fixed-occlusion.js';
-import { detectHorizontalOverflow } from './detect/overflow.js';
+import { fixedElementCollisionDetector } from './detect/fixed-collision.js';
+import { fixedContentOcclusionDetector } from './detect/fixed-occlusion.js';
+import { horizontalOverflowDetector } from './detect/overflow.js';
+import { runDetector } from './detector.js';
 import { diagnoseHorizontalOverflowRoot } from './diagnose.js';
 import { groupHorizontalOverflow } from './grouping.js';
 import { writeResults } from './report.js';
 import { buildStableSelector, makePageUniquenessCheck } from './selector.js';
 import { installStabilization, stabilizeViewport } from './stabilize.js';
 import { partitionSuppressedIssues } from './suppress.js';
+import type { SurfaceSnapshot } from './surface.js';
 import type {
   BoundaryResult,
   HorizontalOverflowIssue,
@@ -357,30 +359,17 @@ function rootCauseKey(selector: string, side: 'right' | 'left'): string {
 
 async function enrichIssues(
   page: Page,
-  nodes: LayoutNode[],
-  viewportWidth: number,
-  viewportHeight: number,
+  surface: SurfaceSnapshot<LayoutNode>,
   metrics: DocumentMetrics,
   issueIds: Map<string, string>,
   rootCauseIds: Map<string, string>,
 ): Promise<RawCaptureResult> {
-  const detected = detectHorizontalOverflow(nodes, {
-    width: viewportWidth,
-    height: viewportHeight,
-  });
-  const collisions = detectFixedElementCollisions(nodes, {
-    width: viewportWidth,
-    height: viewportHeight,
-  });
-  const occlusions = detectFixedContentOcclusions(nodes, {
-    width: viewportWidth,
-    height: viewportHeight,
-  });
-  const grouped = groupHorizontalOverflow(
-    nodes,
-    { width: viewportWidth, height: viewportHeight },
-    detected,
-  );
+  const nodes = surface.nodes;
+  const { width: viewportWidth } = surface.viewport;
+  const detected = await runDetector(horizontalOverflowDetector, surface);
+  const collisions = await runDetector(fixedElementCollisionDetector, surface);
+  const occlusions = await runDetector(fixedContentOcclusionDetector, surface);
+  const grouped = groupHorizontalOverflow(nodes, surface.viewport, detected);
   const byIndex = new Map(nodes.map((node) => [node.index, node]));
   const isUnique = makePageUniquenessCheck((selector) =>
     page.evaluate((value) => document.querySelectorAll(value).length, selector),
@@ -620,16 +609,8 @@ async function captureAtWidth(
 ): Promise<CaptureResult> {
   await stabilizeViewport(runtime.page, width, height, waitMs);
   const metrics = await getDocumentMetrics(runtime.page);
-  const nodes = await captureLayout(runtime.cdp);
-  const captured = await enrichIssues(
-    runtime.page,
-    nodes,
-    width,
-    height,
-    metrics,
-    issueIds,
-    rootCauseIds,
-  );
+  const surface = await captureBrowserSurface(runtime.cdp, { width, height });
+  const captured = await enrichIssues(runtime.page, surface, metrics, issueIds, rootCauseIds);
   const { issues, suppressedIssues } = partitionSuppressedIssues(captured.issues, suppressions);
   const activeIssueIds = new Set(issues.map((issue) => issue.id));
   const rootCauses = captured.rootCauses
