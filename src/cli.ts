@@ -208,7 +208,7 @@ function renderTable(
 ): void {
   const colors = pc.createColors(Boolean(process.stdout.isTTY) && !process.env.NO_COLOR);
 
-  process.stdout.write(`\n  Slice | ${url}\n\n`);
+  process.stdout.write(`\n  Viewportable Engine | ${url}\n\n`);
 
   for (const viewport of viewports) {
     const width = String(viewport.width).padEnd(6, ' ');
@@ -1180,7 +1180,7 @@ try {
     process.exitCode = 0;
   } else {
     const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`Slice: ${message}\n`);
+    process.stderr.write(`Viewportable Engine: ${message}\n`);
     process.exitCode = 2;
   }
 }
