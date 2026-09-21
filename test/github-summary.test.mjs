@@ -56,7 +56,7 @@ describe('GitHub summary', () => {
     expect(markdown).toContain('| issue-2 | fixed-content-occlusion | 768px |');
   });
 
-  it('renders wrapping issues and canonical wrapping groups', () => {
+  it('renders canonical wrapping findings without duplicating grouped leaves', () => {
     const markdown = renderGitHubSummary({
       summary: {
         viewportsChecked: 2,
@@ -68,9 +68,21 @@ describe('GitHub summary', () => {
           status: 'fail',
           issues: [
             {
+              id: 'issue-1',
               type: 'wrapping',
               selector: '#terms',
               parentSelector: '#footer-links',
+              rootCauseId: 'root-1',
+              evidence: {
+                stableSiblingCount: 4,
+              },
+            },
+            {
+              id: 'issue-2',
+              type: 'wrapping',
+              selector: '#privacy',
+              parentSelector: '#footer-links',
+              rootCauseId: 'root-1',
               evidence: {
                 stableSiblingCount: 4,
               },
@@ -87,9 +99,18 @@ describe('GitHub summary', () => {
       ],
       rootCauses: [
         {
+          id: 'root-1',
           type: 'wrapping',
           selector: '#footer-links',
           boundaries: [],
+          observations: [
+            {
+              viewportWidth: 390,
+              issueIds: ['issue-1', 'issue-2'],
+              wrappedSiblingCount: 2,
+              stableSiblingCount: 4,
+            },
+          ],
           evidence: {
             authoredFlexWrap: true,
             transitionCount: 2,
@@ -99,7 +120,11 @@ describe('GitHub summary', () => {
       boundaries: [],
     });
 
-    expect(markdown).toContain('wrapping: #terms wraps below siblings (4 stay)');
+    expect(markdown).toContain(
+      'wrapping: #footer-links (2 siblings wrap; 4 stay; authored flex-wrap)',
+    );
+    expect(markdown).not.toContain('wrapping: #terms wraps below siblings');
+    expect(markdown).not.toContain('wrapping: #privacy wraps below siblings');
     expect(markdown).toContain(
       '| #footer-links | - | Grouped sibling wrapping · authored flex-wrap · 2 transitions |',
     );
