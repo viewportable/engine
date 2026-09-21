@@ -131,6 +131,63 @@ describe('structural browser diff', () => {
 });
 
 describe('slice CLI', () => {
+  it('compares a candidate against a baseline and fails on introduced structural changes', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('structural-diff-candidate.html', [
+      '--baseline-url',
+      `${baseUrl}/structural-diff-baseline.html`,
+      '--widths',
+      '390',
+      '--wait',
+      '0',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(1);
+    const report = JSON.parse(await readFile(path.join(out, 'structural-diff.json'), 'utf8'));
+
+    expect(report.summary).toMatchObject({
+      viewportsChecked: 1,
+      introducedChanges: 2,
+      resolvedChanges: 0,
+      totalChanges: 2,
+    });
+    expect(report.viewports[0].changes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'sibling-overlap',
+          direction: 'introduced',
+        }),
+        expect.objectContaining({
+          kind: 'parent-containment',
+          direction: 'introduced',
+        }),
+      ]),
+    );
+    expect(result.stdout).toContain('Viewportable Engine compare');
+    expect(result.stdout).toContain('2 introduced');
+  });
+
+  it('does not fail when structural changes are only resolved', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('structural-diff-baseline.html', [
+      '--baseline-url',
+      `${baseUrl}/structural-diff-candidate.html`,
+      '--widths',
+      '390',
+      '--wait',
+      '0',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(0);
+    const report = JSON.parse(await readFile(path.join(out, 'structural-diff.json'), 'utf8'));
+    expect(report.summary.introducedChanges).toBe(0);
+    expect(report.summary.resolvedChanges).toBe(2);
+  });
+
   it('returns exit 0 and empty issues for a clean page', async () => {
     const out = await makeOutDir();
     const result = await runCli('clean.html', [
