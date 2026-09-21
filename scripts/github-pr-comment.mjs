@@ -82,10 +82,7 @@ export function renderPullRequestComment(report, metadata = {}) {
   } else {
     const suffix = introduced.length === 1 ? 'regression' : 'regressions';
     lines.push(`❌ **${introduced.length} structural ${suffix} introduced.**`, '');
-    lines.push(
-      '| Range | Finding | Baseline | Candidate |',
-      '| --- | --- | --- | --- |',
-    );
+    lines.push('| Range | Finding | Baseline | Candidate |', '| --- | --- | --- | --- |');
 
     for (const finding of introduced) {
       lines.push(
