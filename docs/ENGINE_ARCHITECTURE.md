@@ -223,6 +223,53 @@ Short-lived states can be surfaced structurally as `A -> B -> A` candidates with
 
 This is intentionally smaller than a general responsive graph.
 
+## Cross-version structural comparison
+
+Single-version geometry often cannot tell whether an unusual layout is intentional. Structural regression analysis therefore compares selected relationships between a baseline render and a candidate render at the same render state.
+
+The first comparison slice is deliberately narrow:
+
+```text
+baseline SurfaceSnapshot
+        |
+cross-version node matching
+        |
+selected relationship states
+        |
+      diff
+        |
+candidate SurfaceSnapshot
+```
+
+Cross-version matching must not use Chromium backend node IDs as persistent identity. Those IDs are useful across viewport captures inside one page session, but are not a public or cross-version identity contract.
+
+V1 matching uses:
+
+1. stable authored IDs;
+2. stable test attributes such as `data-testid`, `data-test`, or `data-qa`;
+3. a conservative structural-path fallback when no explicit identity exists.
+
+Only keys unique within each snapshot are eligible for matching. Match quality is retained as evidence.
+
+V1 compares two relationship families:
+
+- sibling overlap: `separate <-> overlap`;
+- parent containment: `contained <-> protruding`.
+
+The comparator emits only state changes. A relationship that is unusual in both baseline and candidate is not a regression candidate:
+
+```text
+baseline:  overlap
+candidate: overlap
+=> no structural diff
+
+baseline:  separate
+candidate: overlap
+=> introduced structural change
+```
+
+This is the intended way to reuse broad structural evidence that was too noisy as a single-version detector. Reparenting, node appearance/disappearance, row membership, range aggregation, and generic graph comparison should be added only as independent slices with focused tests.
+
 ## Performance rules
 
 New modules must not silently make the default scan slower.
