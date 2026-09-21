@@ -45,8 +45,11 @@ export function aggregateStructuralChangeRanges(
 ): StructuralChangeRange[] {
   const active = new Map<string, StructuralChangeRange>();
   const completed: StructuralChangeRange[] = [];
+  const orderedViewports = [...viewports].sort(
+    (first, second) => first.viewport.width - second.viewport.width,
+  );
 
-  for (const viewport of viewports) {
+  for (const viewport of orderedViewports) {
     const changesByFingerprint = new Map(
       viewport.changes.map((change) => [structuralChangeFingerprint(change), change]),
     );
