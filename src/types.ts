@@ -198,6 +198,11 @@ export interface HorizontalOverflowRootCause {
   diagnosis?: RootCauseDiagnosis;
 }
 
+export interface WrappingReflowAssessment {
+  classification: 'authored-reflow-candidate' | 'unclassified';
+  reasons: Array<'explicit-flex-wrap'>;
+}
+
 export interface WrappingRootCause {
   id: string;
   type: 'wrapping';
@@ -214,6 +219,7 @@ export interface WrappingRootCause {
     displayValues: string[];
     flexWrapValues: string[];
   };
+  assessment: WrappingReflowAssessment;
 }
 
 export type RootCause = HorizontalOverflowRootCause | WrappingRootCause;
