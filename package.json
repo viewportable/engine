@@ -13,7 +13,8 @@
     "url": "git+https://github.com/viewportable/engine.git"
   },
   "bin": {
-    "slice": "./dist/cli.mjs"
+    "slice": "./dist/cli.mjs",
+    "viewportable-mcp": "./dist/mcp.mjs"
   },
   "files": [
     "dist"
@@ -27,7 +28,7 @@
     "lint:fix": "oxlint --fix --vitest-plugin src test scripts apps tsdown.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && vitest run",
-    "test:unit": "vitest run test/boundary.test.ts test/detector.test.ts test/overflow.test.ts test/fixed-collision.test.ts test/fixed-occlusion.test.ts test/grouping.test.ts test/rows.test.ts test/intervals.test.ts test/containment.test.ts test/node-match.test.ts test/structural-diff.test.ts test/structural-ranges.test.ts test/structural-findings.test.ts test/structural-boundaries.test.ts test/element-protrusion.test.ts test/small-range-overlap.test.ts test/wrapping.test.ts test/diagnose.test.ts test/selector.test.ts test/suppress.test.ts test/demo-server.test.mjs test/github-summary.test.mjs test/github-pr-comment.test.mjs test/github-check-run.test.mjs test/github-app.test.mjs test/redecheck-oracle.test.mjs",
+    "test:unit": "vitest run test/boundary.test.ts test/detector.test.ts test/overflow.test.ts test/fixed-collision.test.ts test/fixed-occlusion.test.ts test/grouping.test.ts test/rows.test.ts test/intervals.test.ts test/containment.test.ts test/node-match.test.ts test/structural-diff.test.ts test/structural-ranges.test.ts test/structural-findings.test.ts test/structural-boundaries.test.ts test/element-protrusion.test.ts test/small-range-overlap.test.ts test/wrapping.test.ts test/diagnose.test.ts test/selector.test.ts test/suppress.test.ts test/demo-server.test.mjs test/github-summary.test.mjs test/github-pr-comment.test.mjs test/github-check-run.test.mjs test/github-app.test.mjs test/mcp-runner.test.ts test/redecheck-oracle.test.mjs",
     "test:integration": "vitest run test/integration.test.ts",
     "validate:package": "node scripts/validate-package.mjs && npm pack --dry-run --ignore-scripts",
     "check:fast": "npm run fmt:check && npm run lint && npm run typecheck && npm run test:unit && npm run build && npm run validate:package && npm run validate:release:current",
@@ -45,13 +46,15 @@
     "validate:release:current": "node scripts/validate-release-current.mjs",
     "github-app:serve": "node apps/github-app/src/server.mjs",
     "benchmark:redecheck:prepare": "node scripts/redecheck-prepare.mjs",
-    "benchmark:redecheck": "npm run benchmark:redecheck:prepare && npm run build --silent && node scripts/redecheck-benchmark.mjs"
+    "benchmark:redecheck": "npm run benchmark:redecheck:prepare && npm run build --silent && node scripts/redecheck-benchmark.mjs",
+    "mcp": "npm run build --silent && node dist/mcp.mjs"
   },
   "dependencies": {
     "commander": "^14.0.1",
     "picocolors": "^1.1.1",
     "playwright": "^1.63.0",
-    "zod": "^4.1.8"
+    "zod": "^4.1.8",
+    "@modelcontextprotocol/server": "2.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.3.1",
