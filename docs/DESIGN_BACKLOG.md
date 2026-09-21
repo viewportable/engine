@@ -28,7 +28,7 @@ The benchmark-driven ReDeCheck sequence is tracked in `ROADMAP.md` and `docs/res
 
 ### Structural base-vs-candidate comparison
 
-- Status: V1 implementation in progress
+- Status: V1 complete
 - Compare two internal surface/relationship representations and report meaningful layout changes without requiring pixel baselines.
 - Prefer newly introduced structural changes over single-version intent inference.
 - V1 intentionally starts with matched-node sibling overlap and parent containment state changes rather than a generic graph.
@@ -59,9 +59,12 @@ The benchmark-driven ReDeCheck sequence is tracked in `ROADMAP.md` and `docs/res
 
 ### MCP server
 
-- Status: candidate
-- Expose high-level tools such as `scan`, `compare`, `explain`, and `reproduce`.
-- Use MCP input/output schemas rather than inventing a Viewportable-specific agent transport.
+- Status: V1 complete
+- Local stdio integration now exposes `viewportable_scan` and `viewportable_compare` through the official MCP TypeScript SDK.
+- V1 deliberately reuses the built production CLI/report path instead of introducing a second execution implementation.
+- Compact tool responses return agent-relevant evidence while full reports remain under `.slice/mcp/`.
+- `explain` and `reproduce` remain candidates; add them only after real agent usage shows a stable semantic contract.
+- Do not invent a Viewportable-specific agent transport.
 
 ### Public API
 
@@ -71,9 +74,12 @@ The benchmark-driven ReDeCheck sequence is tracked in `ROADMAP.md` and `docs/res
 
 ### GitHub App
 
-- Status: deferred
-- The App should add orchestration, shared policy, managed configuration, or interaction that a plain GitHub Action cannot provide.
-- User runners continue to provide compute.
+- Status: architecture complete; activation deferred until backend
+- Installation/repository/project/review modeling and App-owned Check semantics now live under `apps/github-app/`.
+- Standalone Action mode remains the active integration path.
+- Create/register the real Viewportable GitHub App through GitHub's App Manifest flow only when the production backend/control plane exists.
+- Do not create temporary App credentials or webhook infrastructure solely to activate the integration early.
+- User runners may continue to provide compute while the App/control plane owns orchestration and Cloud-mode GitHub state.
 
 ## Performance
 

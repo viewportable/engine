@@ -27,6 +27,10 @@ if (packageJson.bin?.slice !== './dist/cli.mjs') {
   throw new Error('package.json must expose ./dist/cli.mjs as bin.slice');
 }
 
+if (packageJson.bin?.['viewportable-mcp'] !== './dist/mcp.mjs') {
+  throw new Error('package.json must expose ./dist/mcp.mjs as bin.viewportable-mcp');
+}
+
 if (packageJson.license !== 'AGPL-3.0-only') {
   throw new Error('package.json license must be AGPL-3.0-only');
 }
@@ -46,6 +50,9 @@ for (const required of [
   'package-lock.json',
   'tsdown.config.ts',
   'src/cli.ts',
+  'src/mcp.ts',
+  'src/mcp-server.ts',
+  'src/mcp-runner.ts',
   'scripts/github-summary.mjs',
   'scripts/github-pr-comment.mjs',
   'scripts/github-check-run.mjs',

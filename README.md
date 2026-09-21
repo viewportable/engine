@@ -42,6 +42,59 @@ to:
 
 The PR body keeps links to both the red and green workflow/check evidence so the failing phase remains inspectable after the managed comment updates in place.
 
+## Use it from coding agents with MCP
+
+Viewportable Engine includes a local stdio MCP server that exposes the same production Engine path to coding agents.
+
+V1 tools:
+
+```text
+viewportable_scan
+viewportable_compare
+```
+
+The MCP layer does **not** reimplement detection. Each tool invokes the built `slice` CLI, reads the same `results.json` or `structural-diff.json`, returns a compact structured result to the agent, and retains the full evidence under:
+
+```text
+.slice/mcp/scan-*/
+.slice/mcp/compare-*/
+```
+
+Build and start it from this repository:
+
+```bash
+npm ci
+npm run build
+node dist/mcp.mjs
+```
+
+A generic local MCP client configuration can launch the server with:
+
+```json
+{
+  "command": "node",
+  "args": ["/absolute/path/to/viewportable-engine/dist/mcp.mjs"]
+}
+```
+
+After package publication, the intended binary is:
+
+```text
+viewportable-mcp
+```
+
+and the package exposes it alongside the compatibility `slice` CLI.
+
+The tool contract preserves Engine semantics:
+
+```text
+exit 0 -> clean
+exit 1 -> findings        (successful MCP tool call with product evidence)
+exit 2 -> infra_failure   (MCP tool error)
+```
+
+`viewportable_compare` returns introduced canonical `findings[]` directly to the agent; resolved evidence remains in the retained full structural report. `viewportable_scan` returns failing viewports and canonical root causes while retaining the complete scan report.
+
 ### Structural baseline comparison
 
 Viewportable Engine can also compare the same UI state between a baseline and candidate URL. This mode reports structural relationship changes instead of treating unusual geometry in one render as a defect by itself.
