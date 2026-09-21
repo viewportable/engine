@@ -20,7 +20,7 @@ function sampledRangeText(range) {
   return `${range.minWidth}-${range.maxWidth}px sampled`;
 }
 
-function findingRangeText(finding) {
+export function findingRangeText(finding) {
   const exact = finding.exactRange;
   const sampled = sampledRangeText(finding.sampledRange);
 
@@ -39,7 +39,7 @@ function findingRangeText(finding) {
   return sampled;
 }
 
-function findingLabel(finding) {
+export function findingLabel(finding) {
   const related = finding.relatedSubjects ?? [];
 
   if (finding.type === 'disappearance') {
@@ -65,7 +65,7 @@ function findingLabel(finding) {
   return finding.type ?? 'structural finding';
 }
 
-function stateText(state) {
+export function stateText(state) {
   if (!state) return '?';
   if (state.parent?.key) return `${state.state}: ${state.parent.key}`;
   return state.state ?? '?';
