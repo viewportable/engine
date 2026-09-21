@@ -152,10 +152,17 @@ describe('slice CLI', () => {
           displayValues: ['flex'],
           flexWrapValues: ['wrap'],
         },
+        assessment: {
+          classification: 'authored-reflow-candidate',
+          reasons: ['explicit-flex-wrap'],
+        },
       }),
     ]);
     expect(wrappingIssues[0].rootCauseId).toBe(report.rootCauses[0].id);
-    expect(result.stdout).toContain('#actions wraps 1 sibling');
+    expect(result.stdout).toContain(
+      '#actions wraps 1 sibling | 3 stay | review: authored reflow candidate',
+    );
+    expect(result.stdout).toContain('review: authored reflow candidate; finding remains active');
   });
 
   it('detects the final inline footer item wrapping onto a second row', async () => {
@@ -203,6 +210,10 @@ describe('slice CLI', () => {
           transitionCount: 1,
           repeatedAcrossWidths: false,
         }),
+        assessment: {
+          classification: 'unclassified',
+          reasons: [],
+        },
       }),
     ]);
   });
