@@ -1,8 +1,15 @@
+import type { BoundarySearchResult } from '../boundary.js';
 import type {
   StructuralChange,
   StructuralChangeDirection,
   StructuralDiff,
 } from './structural-diff.js';
+
+export interface StructuralRangeBoundary extends BoundarySearchResult {
+  edge: 'lower' | 'upper';
+  sampledPassWidth: number;
+  sampledFailWidth: number;
+}
 
 export interface StructuralChangeRange {
   fingerprint: string;
@@ -13,6 +20,7 @@ export interface StructuralChangeRange {
   sampleWidths: number[];
   sampleCount: number;
   change: StructuralChange;
+  boundaries: StructuralRangeBoundary[];
 }
 
 export function structuralChangeFingerprint(change: StructuralChange): string {
@@ -80,6 +88,7 @@ export function aggregateStructuralChangeRanges(
         sampleWidths: [viewport.viewport.width],
         sampleCount: 1,
         change,
+        boundaries: [],
       });
     }
   }
