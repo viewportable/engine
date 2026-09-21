@@ -4,8 +4,12 @@ author: Viewportable
 
 inputs:
   url:
-    description: Page URL to scan
+    description: Page or candidate URL to scan
     required: true
+  baseline-url:
+    description: Optional baseline URL; when set, run structural baseline-vs-candidate comparison
+    required: false
+    default: ''
   config:
     description: Optional path to slice.config.json
     required: false
@@ -28,7 +32,7 @@ outputs:
     description: Engine CLI exit code (0 clean, 1 findings, 2 scanner/setup failure)
     value: ${{ steps.scan.outputs.exit_code }}
   result_path:
-    description: Path to results.json
+    description: Path to results.json or structural-diff.json
     value: ${{ steps.scan.outputs.result_path }}
   artifact_url:
     description: URL of the uploaded Viewportable Engine artifact when available
@@ -64,10 +68,18 @@ runs:
       shell: bash
       env:
         SLICE_URL: ${{ inputs.url }}
+        SLICE_BASELINE_URL: ${{ inputs.baseline-url }}
         SLICE_CONFIG: ${{ inputs.config }}
         SLICE_OUT: ${{ inputs.out }}
       run: |
         args=("$SLICE_URL" "--out" "$SLICE_OUT")
+        result_name="results.json"
+
+        if [[ -n "$SLICE_BASELINE_URL" ]]; then
+          args+=("--baseline-url" "$SLICE_BASELINE_URL")
+          result_name="structural-diff.json"
+        fi
+
         if [[ -n "$SLICE_CONFIG" ]]; then
           args+=("--config" "$SLICE_CONFIG")
         fi
@@ -78,13 +90,13 @@ runs:
         set -e
 
         echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-        echo "result_path=$SLICE_OUT/results.json" >> "$GITHUB_OUTPUT"
+        echo "result_path=$SLICE_OUT/$result_name" >> "$GITHUB_OUTPUT"
 
     - name: Write job summary
       if: ${{ always() }}
       shell: bash
       env:
-        SLICE_RESULT_PATH: ${{ inputs.out }}/results.json
+        SLICE_RESULT_PATH: ${{ steps.scan.outputs.result_path }}
       run: node "$GITHUB_ACTION_PATH/scripts/github-summary.mjs" "$SLICE_RESULT_PATH"
 
     - name: Upload Viewportable Engine results
@@ -93,7 +105,7 @@ runs:
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}
-        path: ${{ inputs.out }}/results.json
+        path: ${{ steps.scan.outputs.result_path }}
         if-no-files-found: ignore
         include-hidden-files: true
 
