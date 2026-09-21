@@ -132,6 +132,34 @@ Installation lifecycle events are consumed to synchronize repository access.
 - executor result authentication becomes a separate control-plane concern;
 - standalone Action publishing and Cloud publishing are two explicit modes that documentation must keep distinct.
 
+## Activation timing
+
+The GitHub App architecture is implemented before activation, but **registration and installation are deliberately deferred until Viewportable has a real backend/control plane deployment**.
+
+When that backend exists, register the Viewportable GitHub App through GitHub's **App Manifest flow** so the deployed control plane can immediately provide the canonical callback/webhook URLs and receive the generated App credentials in the environment where they will actually live.
+
+Do not create a temporary GitHub App or temporary webhook host merely to activate this slice early. Until the backend exists:
+
+- standalone GitHub Action mode remains the active integration path;
+- `apps/github-app/` remains dormant server-side code;
+- no production App private key, webhook secret, or installation state is created.
+
+Activation milestone:
+
+```text
+deploy real Viewportable backend
+        ↓
+create GitHub App via App Manifest flow
+        ↓
+configure real webhook/callback URLs
+        ↓
+install on selected repositories
+        ↓
+receive installation lifecycle
+        ↓
+switch Cloud-mode Check ownership to the App
+```
+
 ## Non-goals for V1
 
 - starting an executor from the webhook handler;
@@ -139,4 +167,5 @@ Installation lifecycle events are consumed to synchronize repository access.
 - GitHub OAuth user login;
 - requested-action buttons on Check Runs;
 - PR comment ownership migration to the App;
-- selecting the permanent cloud database.
+- selecting the permanent cloud database;
+- registering or installing the GitHub App before the backend exists.
