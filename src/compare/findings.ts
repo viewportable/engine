@@ -43,9 +43,7 @@ export interface StructuralFinding {
   };
 }
 
-function exactRange(
-  boundaries: StructuralRangeBoundary[],
-): StructuralFindingExactRange | null {
+function exactRange(boundaries: StructuralRangeBoundary[]): StructuralFindingExactRange | null {
   const lower = boundaries.find((boundary) => boundary.edge === 'lower');
   const upper = boundaries.find((boundary) => boundary.edge === 'upper');
 
@@ -139,8 +137,6 @@ function findingFromRange(range: StructuralChangeRange): StructuralFinding {
   }
 }
 
-export function buildStructuralFindings(
-  ranges: StructuralChangeRange[],
-): StructuralFinding[] {
+export function buildStructuralFindings(ranges: StructuralChangeRange[]): StructuralFinding[] {
   return ranges.map(findingFromRange);
 }
