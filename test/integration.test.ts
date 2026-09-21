@@ -418,7 +418,17 @@ describe('slice CLI', () => {
         stableSiblingCount: 3,
       },
     });
-    expect(result.stdout).toContain('wraps below siblings');
+    expect(wrappingIssues[0].rootCauseId).toBe(report.rootCauses[0].id);
+    expect(report.rootCauses[0]).toMatchObject({
+      type: 'wrapping',
+      selector: 'nav',
+      evidence: {
+        authoredFlexWrap: true,
+        transitionCount: 1,
+        repeatedAcrossWidths: false,
+      },
+    });
+    expect(result.stdout).toContain('nav wraps 1 sibling');
     expect(report.boundaries).toEqual([]);
   });
 
