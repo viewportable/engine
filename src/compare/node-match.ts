@@ -136,9 +136,7 @@ function indexCrossVersionNodes(nodes: LayoutNode[]): CrossVersionNodeIndex {
 
   return {
     uniqueByKey,
-    uniqueByIndex: new Map(
-      [...uniqueByKey.values()].map((entry) => [entry.node.index, entry]),
-    ),
+    uniqueByIndex: new Map([...uniqueByKey.values()].map((entry) => [entry.node.index, entry])),
     observedKeys: new Set(grouped.keys()),
   };
 }
