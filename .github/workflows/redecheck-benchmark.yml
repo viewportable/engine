@@ -7,6 +7,7 @@ on:
       - benchmark/redecheck-baseline
       - engine/wrapping-*
       - research/redecheck-*
+      - research/element-protrusion-gate
     paths:
       - benchmark/redecheck/**
       - scripts/redecheck-prepare.mjs
