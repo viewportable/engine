@@ -173,15 +173,12 @@ export async function upsertPullRequestComment({
   );
 
   if (existing) {
-    const comment = await request(
-      `/repos/${repository}/issues/comments/${existing.id}`,
-      {
-        token,
-        apiUrl,
-        method: 'PATCH',
-        body: { body },
-      },
-    );
+    const comment = await request(`/repos/${repository}/issues/comments/${existing.id}`, {
+      token,
+      apiUrl,
+      method: 'PATCH',
+      body: { body },
+    });
 
     return {
       action: 'updated',
@@ -190,15 +187,12 @@ export async function upsertPullRequestComment({
     };
   }
 
-  const comment = await request(
-    `/repos/${repository}/issues/${pullRequestNumber}/comments`,
-    {
-      token,
-      apiUrl,
-      method: 'POST',
-      body: { body },
-    },
-  );
+  const comment = await request(`/repos/${repository}/issues/${pullRequestNumber}/comments`, {
+    token,
+    apiUrl,
+    method: 'POST',
+    body: { body },
+  });
 
   return {
     action: 'created',
