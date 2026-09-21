@@ -218,6 +218,42 @@ describe('slice CLI', () => {
     ]);
   });
 
+  it('writes opt-in element protrusion research without changing scan status', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('element-protrusion.html', [
+      '--widths',
+      '390',
+      '--wait',
+      '0',
+      '--no-boundary',
+      '--research-element-protrusion',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(0);
+    const research = JSON.parse(await readFile(path.join(out, 'element-protrusion.json'), 'utf8'));
+
+    expect(research).toEqual({
+      version: 1,
+      widths: [390],
+      candidates: [
+        expect.objectContaining({
+          viewportWidth: 390,
+          parentLabel: 'section#container',
+          childLabel: 'div#subject',
+          sides: ['right'],
+          protrusionPx: {
+            left: 0,
+            right: 40,
+            top: 0,
+            bottom: 0,
+          },
+        }),
+      ],
+    });
+  });
+
   it('writes opt-in small-range overlap research without changing scan status', async () => {
     const out = await makeOutDir();
     const result = await runCli('small-range-overlap.html', [

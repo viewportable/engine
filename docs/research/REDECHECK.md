@@ -215,6 +215,39 @@ Do **not** rescue this experiment with a copied 5px threshold, exact-boundary tu
 
 Keep the generic interval primitive and research analyzer. Move product work to a more semantically specific failure family.
 
+### Parent-boundary element protrusion gate
+
+The first element-protrusion experiment tested the most direct structural interpretation:
+
+```text
+visible captured child
+        ↓
+visible captured parent
+        ↓
+child rect extends >1px beyond parent rect
+```
+
+It deliberately excluded fixed-position children, translated/transformed subjects, HTML/BODY parents, and aria-hidden subjects.
+
+ReDeCheck result:
+
+```text
+Element Protrusion oracle RLFs:        3
+RLFs with parent-boundary candidate:   3
+
+Element Protrusion anti-oracle reports: 36
+anti reports with candidate:           36
+unique anti candidate groups:          256
+```
+
+The oracle queue contains plausible subject matches for the known BugMeNot form/header and Pdf-Escape navbar failures, but the same relation is ubiquitous in anti-oracle layouts. The false-positive pressure is not a narrow threshold problem; it is a semantic problem. Normal CSS layout routinely allows descendants to extend beyond an immediate captured parent without producing a user-visible defect.
+
+Conclusion:
+
+> direct child-outside-parent geometry is useful evidence, but not a production detector family.
+
+Do not add a default `element-protrusion` issue from this relation and do not rescue it with selector allowlists, a larger pixel threshold, or corpus-specific parent types. Keep the research analyzer as evidence and move to structural base-vs-candidate comparison, where a newly introduced relationship change can provide the missing regression context.
+
 ### 5. Wrapping failure
 
 ReDeCheck groups sibling elements into rows across behavior ranges, then detects an element that leaves a row and appears below it while remaining in the same parent.
@@ -695,8 +728,8 @@ Current sequence:
 3. authored-reflow review policy - implemented without suppression or corpus-specific thresholds;
 4. sampled relationship intervals - implemented as a minimal generic primitive;
 5. small-range sibling-overlap experiment - completed as a no-go for production;
-6. element protrusion research - next; generic collision remains deferred;
-7. structural base-vs-head graph comparison.
+6. generic parent-boundary element protrusion - evaluated and rejected as a production detector;
+7. structural base-vs-candidate comparison - next; generic all-pairs collision remains deferred.
 
 Each detector must earn its place through reviewed benchmark improvement and acceptable runtime/noise cost.
 

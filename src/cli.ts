@@ -22,6 +22,7 @@ import { runDetector } from './detector.js';
 import { diagnoseHorizontalOverflowRoot } from './diagnose.js';
 import { groupHorizontalOverflow } from './grouping.js';
 import { writeResults } from './report.js';
+import { writeElementProtrusionResearch } from './research/element-protrusion-output.js';
 import { writeSmallRangeOverlapResearch } from './research/small-range-output.js';
 import { buildStableSelector, makePageUniquenessCheck } from './selector.js';
 import { installStabilization, stabilizeViewport } from './stabilize.js';
@@ -58,6 +59,7 @@ interface CliOptions {
   timeout: string;
   wait: string;
   researchSmallRangeOverlap: boolean;
+  researchElementProtrusion: boolean;
   readySelector?: string;
   config?: string;
 }
@@ -981,6 +983,16 @@ async function runSlice(url: string, options: RunOptions): Promise<number> {
       );
     }
 
+    if (options.researchElementProtrusion) {
+      await writeElementProtrusionResearch(
+        options.out,
+        [...sampleCaptures].map(([width, captured]) => ({
+          width,
+          nodes: captured.surface.nodes,
+        })),
+      );
+    }
+
     const boundaries: BoundaryResult[] = [];
     const rootCauseBoundaries: RootCauseBoundaryResult[] = [];
     const boundaryDisplays: BoundaryDisplay[] = [];
@@ -1162,6 +1174,11 @@ program
   .option(
     '--research-small-range-overlap',
     'write research-only sampled sibling-overlap candidates',
+    false,
+  )
+  .option(
+    '--research-element-protrusion',
+    'write research-only parent-boundary protrusion candidates',
     false,
   )
   .option('--ready-selector <selector>', 'require a visible selector before scanning')
