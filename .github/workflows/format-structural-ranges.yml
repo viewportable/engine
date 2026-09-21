@@ -1,0 +1,30 @@
+name: Format Structural Ranges
+
+on:
+  push:
+    branches:
+      - engine/structural-range-aggregation-v1
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Format range files
+        run: npx oxfmt --write src/compare/render.ts test/structural-ranges.test.ts
+      - name: Upload formatted files
+        uses: actions/upload-artifact@v7
+        with:
+          name: formatted-structural-ranges
+          path: |
+            src/compare/render.ts
+            test/structural-ranges.test.ts
