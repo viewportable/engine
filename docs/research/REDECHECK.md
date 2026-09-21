@@ -358,19 +358,21 @@ Against the pinned ReDeCheck wrapping oracle:
 2 negative candidates
 ```
 
-The confirmed TP subjects are RLF 24, 25, 27, 28, 29, 30, 31, 32, and 33.
+The confirmed TP subjects inside their historical oracle ranges are RLF 24, 25, 27, 28, 29, 30, 31, 32, and 33.
 
-The miss, AirBnb RLF 26, is structurally different: `Terms & Privacy` wraps inside an element rather than a sibling moving out of a visual row. This implies at least two useful wrapping subtypes:
+AirBnb RLF 26 initially appeared to be a different text/internal wrapping subtype. That hypothesis was tested and rejected. Source inspection and a focused Chromium probe show that the mobile footer contains five sibling `li` elements and `Terms & Privacy` itself moves to a second visual row.
+
+The same 5 -> 4+1 sibling transition is reproducible in current Chromium, but its boundary has drifted from the historical ReDeCheck range:
 
 ```text
-sibling wrapping
-  -> geometry + tree + cross-viewport identity
-
-text/internal wrapping
-  -> rendered text-line geometry
+historical oracle: 321..335px
+Chromium 153:       broken through 398px
+                    one row at 399px
 ```
 
-Do not broaden the sibling detector to guess text wrapping. A future text-line capability should use browser-rendered text geometry such as Range/client rects.
+Therefore the sibling-wrapping detector has 10/10 behavioral coverage for the ReDeCheck wrapping TP set, with nine subjects confirmed inside historical ranges and one shifted-range reproduction. This is rendering-range drift, not evidence for a separate text-wrapping subtype.
+
+Text-line geometry remains a possible future capability, but it should only be introduced when an independently demonstrated failure requires it rather than to explain AirBnb RLF 26.
 
 ### Intentional reflow precision problem
 
@@ -409,7 +411,7 @@ This reinforces the architecture rule discovered earlier:
 | element protrusion | not first-class | parent-boundary detector |
 | viewport protrusion | horizontal overflow | unify/clarify semantics |
 | small-range anomaly | exact issue boundaries | relationship-state anomaly |
-| wrapping | sibling row transition prototype | text/internal wrap + intentional reflow refinement |
+| wrapping | sibling row transition prototype with 10/10 behavioral TP coverage | intentional-reflow precision + canonical grouping |
 | RLG comparison | not present | structural base-vs-head diff |
 | visual verification | not present | optional verifier module |
 
@@ -493,8 +495,8 @@ Do not generalize this into a full relationship graph until another detector dem
 
 Current sequence:
 
-1. sibling wrapping - prototype implemented and reviewed;
-2. intentional-reflow precision refinement and text/internal wrapping research;
+1. sibling wrapping - prototype implemented and reviewed with 10/10 behavioral TP coverage;
+2. intentional-reflow precision refinement and canonical grouping of detector observations;
 3. relationship intervals only where required by small-range analysis;
 4. small-range anomaly research;
 5. element protrusion / generic collision after stronger observability evidence;
