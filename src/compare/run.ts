@@ -150,6 +150,7 @@ export async function runStructuralCompare(
     );
 
     let ranges = aggregateStructuralChangeRanges(viewports);
+    let boundaryProbes = 0;
 
     if (options.boundary) {
       const diffByWidth = new Map<number, Promise<StructuralDiff>>(
@@ -164,6 +165,7 @@ export async function runStructuralCompare(
         const existing = diffByWidth.get(width);
         if (existing) return existing;
 
+        boundaryProbes += 1;
         const scheduled = probeQueue.then(() =>
           captureStructuralDiffAtWidth(runtime, candidateRuntime, width, options),
         );
@@ -191,15 +193,6 @@ export async function runStructuralCompare(
     const resolvedRanges = ranges.filter((range) => range.direction === 'resolved').length;
     const exactBoundaries = ranges.reduce(
       (sum, range) => sum + range.boundaries.length,
-      0,
-    );
-    const boundaryProbes = ranges.reduce(
-      (sum, range) =>
-        sum +
-        range.boundaries.reduce(
-          (boundarySum, boundary) => boundarySum + boundary.probesUsed,
-          0,
-        ),
       0,
     );
 
