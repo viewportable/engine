@@ -121,11 +121,12 @@ The benchmark-driven post-v0.1 sequence is:
 
 1. **ReDeCheck baseline - complete.** Preserve the accepted 33-RLF oracle plus FP/NOI anti-oracle as an external regression suite.
 2. **Horizontal-overflow precision hardening - current.** Require document-level overflow for the `horizontal-overflow` rule and preserve connected layout ancestry across non-layout DOM nodes. The combined benchmark keeps all 5 reviewed confirmed detections while reducing raw issue volume from 8,838 to 201 and NOI negative candidates from 22 to 12.
-3. **Wrapping detector - next.** ReDeCheck provides 10 distinct true-positive wrapping RLFs and only 5 raw wrapping FP reports, making it the strongest first new detector family in this corpus.
-4. **Relationship intervals.** Generalize only the row/sibling relationships required by wrapping and later small-range analysis instead of building a full graph up front.
-5. **Small-range anomaly research.** Evaluate after wrapping because the corpus contains many raw Small-Range false-positive reports.
-6. **Element protrusion and generic collision research.** Revisit with stronger observability/relationship evidence; the corpus shows substantial NOI pressure for these geometry-only families.
-7. Keep screenshot/pixel verification optional until structural evidence shows where it reduces false positives enough to justify its cost.
+3. **Sibling wrapping detector - prototype validated.** The implementation behaviorally reproduces all 10 wrapping TP RLFs: 9 inside their historical oracle ranges and AirBnb #26 as a manually confirmed shifted-range reproduction. It produces 2/5 wrapping FP candidates, both intentional Duolingo reflows.
+4. **Wrapping precision + historical range-drift handling - next.** Investigate authored/intentional reflow evidence separately and keep historical benchmark ranges immutable while representing manually confirmed current-browser boundary drift explicitly.
+5. **Relationship intervals.** Generalize only the relationships required by wrapping/small-range analysis instead of building a full graph up front.
+6. **Small-range anomaly research.** Evaluate after wrapping because the corpus contains many raw Small-Range false-positive reports.
+7. **Element protrusion and generic collision research.** Revisit with stronger observability/relationship evidence; the corpus shows substantial NOI pressure for these geometry-only families.
+8. Keep screenshot/pixel verification optional until structural evidence shows where it reduces false positives enough to justify its cost.
 
 
 After the structural web model proves itself, run a deliberately small React Native adapter spike: normalize one simulator-rendered screen into `SurfaceSnapshot` and prove that an existing shared geometry detector can find a real layout defect without algorithm changes. Capacitor should reuse the browser path first because its UI remains WebView-based.

@@ -103,6 +103,41 @@ describe('slice CLI', () => {
     ).toBe(true);
   });
 
+  it('detects one sibling wrapping below a previously stable row', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('wrapping.html', [
+      '--widths',
+      '320,430',
+      '--wait',
+      '0',
+      '--no-boundary',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(1);
+    const report = JSON.parse(await readFile(path.join(out, 'results.json'), 'utf8'));
+    const narrow = report.viewports.find((viewport: { width: number }) => viewport.width === 320);
+    const wide = report.viewports.find((viewport: { width: number }) => viewport.width === 430);
+
+    expect(wide.issues.filter((issue: { type: string }) => issue.type === 'wrapping')).toEqual([]);
+    expect(narrow.issues.filter((issue: { type: string }) => issue.type === 'wrapping')).toEqual([
+      expect.objectContaining({
+        type: 'wrapping',
+        selector: '#item-4',
+        parentSelector: '#actions',
+        viewportWidth: 320,
+        previousViewportWidth: 430,
+        evidence: expect.objectContaining({
+          previousRowSize: 4,
+          currentRowSize: 1,
+          stableSiblingCount: 3,
+        }),
+      }),
+    ]);
+    expect(result.stdout).toContain('#item-4 wraps below siblings');
+  });
+
   it('attributes nested overflow to exactly one deepest element', async () => {
     const out = await makeOutDir();
     const result = await runCli('nested.html', [
@@ -280,6 +315,44 @@ describe('slice CLI', () => {
       status: 'pass',
       issues: [],
     });
+  });
+
+  it('reports a sibling that wraps away from a stable row', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('wrapping-anomaly.html', [
+      '--widths',
+      '430,320',
+      '--wait',
+      '0',
+      '--no-boundary',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(1);
+    const report = JSON.parse(await readFile(path.join(out, 'results.json'), 'utf8'));
+    const wide = report.viewports.find((viewport: { width: number }) => viewport.width === 430);
+    const narrow = report.viewports.find((viewport: { width: number }) => viewport.width === 320);
+
+    expect(wide).toMatchObject({ status: 'pass', issues: [] });
+    const wrappingIssues = narrow.issues.filter(
+      (issue: { type: string }) => issue.type === 'wrapping',
+    );
+    expect(wrappingIssues).toHaveLength(1);
+    expect(wrappingIssues[0]).toMatchObject({
+      type: 'wrapping',
+      viewportWidth: 320,
+      previousViewportWidth: 430,
+      selector: 'a.wrapped',
+      parentSelector: 'nav',
+      evidence: {
+        previousRowSize: 4,
+        currentRowSize: 1,
+        stableSiblingCount: 3,
+      },
+    });
+    expect(result.stdout).toContain('wraps below siblings');
+    expect(report.boundaries).toEqual([]);
   });
 
   it('reports an independent fixed-element collision without document overflow', async () => {

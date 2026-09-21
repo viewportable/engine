@@ -181,6 +181,8 @@ function renderSummary(report) {
     `- Environment errors: **${report.summary.environmentErrors}**`,
     `- Anti-oracle raw reports (FP + NOI): **${report.summary.antiOracleReports}**`,
     `- Anti-oracle negative candidates: **${report.summary.negativeCandidates}**`,
+    `- Reviewed confirmed negative candidates: **${report.summary.confirmedNegativeCandidates}**`,
+    `- Unreviewed negative candidates: **${report.summary.unreviewedNegativeCandidates}**`,
     `- Anti-oracle clean comparable reports: **${report.summary.antiOracleClean}**`,
     `- Corpus pages scanned: **${report.summary.pagesScanned}/${report.summary.corpusPages}**`,
     `- Sampled viewport renders: **${report.summary.viewportsChecked}**`,
@@ -314,6 +316,11 @@ await access(archivePath);
 const sources = JSON.parse(await readFile(sourcesPath, 'utf8'));
 const review = JSON.parse(await readFile(reviewPath, 'utf8'));
 const reviewById = new Map(review.reviews.map((entry) => [entry.id, entry]));
+const antiReviewKey = (entry) =>
+  [entry.sourceClassification, entry.type, entry.page, entry.range.min, entry.range.max].join('|');
+const antiReviewByKey = new Map(
+  (review.antiReviews ?? []).map((entry) => [antiReviewKey(entry), entry]),
+);
 const archive = await readFile(archivePath, 'utf8');
 const oracleFailures = parseOracle(archive);
 const antiOracleReports = parseAntiOracle(archive);
@@ -438,11 +445,33 @@ const scoredFailures = oracleFailures.map((failure) => {
   };
 });
 
-const scoredAntiOracle = antiOracleReports.map((antiReport) => ({
-  ...antiReport,
-  sourceClassification: antiReport.classification,
-  ...classifyAntiOracleReport(antiReport, pageRuns.get(antiReport.page)),
-}));
+const scoredAntiOracle = antiOracleReports.map((antiReport) => {
+  const sourceClassification = antiReport.classification;
+  const automatic = classifyAntiOracleReport(antiReport, pageRuns.get(antiReport.page));
+  const reviewed = antiReviewByKey.get(
+    antiReviewKey({
+      sourceClassification,
+      type: antiReport.type,
+      page: antiReport.page,
+      range: antiReport.range,
+    }),
+  );
+
+  return {
+    ...antiReport,
+    sourceClassification,
+    ...automatic,
+    review: reviewed
+      ? {
+          status: reviewed.status,
+          reason: reviewed.reason,
+        }
+      : {
+          status: 'unreviewed',
+          reason: null,
+        },
+  };
+});
 
 const classifications = {
   'candidate-match': 0,
@@ -532,6 +561,15 @@ const report = {
       (report) => report.classification === 'negative-candidate',
     ).length,
     antiOracleClean: scoredAntiOracle.filter((report) => report.classification === 'clean').length,
+    confirmedNegativeCandidates: scoredAntiOracle.filter(
+      (report) =>
+        report.classification === 'negative-candidate' &&
+        report.review.status === 'confirmed-negative',
+    ).length,
+    unreviewedNegativeCandidates: scoredAntiOracle.filter(
+      (report) =>
+        report.classification === 'negative-candidate' && report.review.status === 'unreviewed',
+    ).length,
     antiOracleUnsupported: scoredAntiOracle.filter(
       (report) => report.classification === 'unsupported',
     ).length,

@@ -82,14 +82,29 @@ describe('ReDeCheck benchmark oracle', () => {
     expect(classified.matches[0].oracleReportTypes).toEqual(['Viewport Protrusion']);
   });
 
-  it('keeps fully unsupported distinct RLFs separate from misses', () => {
+  it('treats wrapping as a compatible family once the detector exists', () => {
     const [, failure] = parseOracle(archive, { expectedDistinct: 2 });
     const classified = classifyFailure(failure, {
       status: 'ok',
-      result: { viewports: [] },
+      result: {
+        viewports: [
+          {
+            width: 478,
+            issues: [
+              {
+                id: 'issue-wrap',
+                type: 'wrapping',
+                selector: '.wrapped-item',
+              },
+            ],
+          },
+        ],
+      },
     });
 
-    expect(classified.classification).toBe('unsupported');
+    expect(classified.classification).toBe('candidate-match');
+    expect(classified.support).toBe('compatible');
+    expect(classified.matches[0].oracleReportTypes).toEqual(['Wrapping']);
   });
 
   it('parses FP and NOI reports as a separate anti-oracle', () => {

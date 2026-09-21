@@ -321,6 +321,93 @@ Cases such as the Consumer-Reports Featured Products/tiles failures remain real 
 
 Normalizing `parentIndex` to the nearest captured ancestor keeps the internal Surface IR connected across intermediaries such as `display: contents`. This allows clipping and ancestor-based evidence to work consistently without extra browser round trips.
 
+## Wrapping detector prototype
+
+The first relationship-based detector intentionally implements only **sibling row wrapping**.
+
+Model:
+
+```text
+same siblings at wider viewport
+        ↓
+stable visual row
+        ↓
+narrower viewport
+        ↓
+minority subgroup moves to lower row
+while majority remains together
+        ↓
+wrapping candidate
+```
+
+Cross-viewport node identity uses Chromium backend node IDs normalized into the internal Surface IR. Snapshot-local node indices are not used as identity across renders.
+
+### Reviewed corpus result
+
+Against the pinned ReDeCheck wrapping oracle:
+
+```text
+10 distinct wrapping TP RLFs
+
+9 exact-range candidate matches
+9 manually confirmed subjects in the historical oracle ranges
+1 apparent miss under strict historical-range scoring
+
+Independent current-Chromium reproduction of RLF 26:
+- same mobile footer subject: Terms & Privacy
+- same 5 -> 4+1 sibling-row failure
+- current boundary: 399px
+- historical ReDeCheck failure range: 321-335px
+
+Therefore the sibling detector reproduces all 10 wrapping defects behaviorally, with 9 exact-range reproductions and 1 shifted-range reproduction.
+
+5 raw wrapping FP reports
+3 clean
+2 negative candidates
+```
+
+The exact-range confirmed TP subjects are RLF 24, 25, 27, 28, 29, 30, 31, 32, and 33.
+
+RLF 26 was initially classified as a miss because the benchmark required findings to occur inside the historical 321-335px range. Source inspection and a focused Chromium probe show that the archived page still contains the same five-item mobile footer, and Slice reports the fifth item, `Terms & Privacy`, wrapping from a 5-item row to a 4+1 layout. In Chromium 153 the item remains wrapped through 398px and returns to one row at 399px.
+
+This is **rendering-range drift**, not a missing detector capability.
+
+The benchmark must therefore keep the historical oracle immutable while distinguishing:
+
+```text
+exact-range reproduction
+shifted-range reproduction
+real miss
+```
+
+Shifted reproduction requires manual subject/evidence confirmation and a current-browser range. It must never be inferred by simply widening the historical oracle tolerance.
+
+### Intentional reflow precision problem
+
+The two wrapping anti-oracle candidates are both Duolingo cases that ReDeCheck classifies as intentional layout changes.
+
+One parent is an explicitly wrapping flex layout; the other is a large inline-block language list that reflows repeatedly across many sampled widths.
+
+This suggests a separate concept:
+
+```text
+observed wrap
+   +
+authored/repeated responsive-flow evidence
+   ↓
+intentional-reflow confidence
+```
+
+Do not encode a benchmark-specific child-count or viewport-count threshold without broader evidence. The current detector should expose deterministic observations; intentional-reflow classification can be refined separately.
+
+### Observation vs canonical finding
+
+The wrapping prototype emits individual observations for moved subjects. The corpus run produced substantially more raw wrapping observations than distinct user-visible RLFs.
+
+This reinforces the architecture rule discovered earlier:
+
+> Detector observations are evidence. A canonical user-facing finding may group multiple observations that share one responsive layout cause.
+
 ## Initial mapping to Slice
 
 | ReDeCheck concept | Slice today | Research direction |
@@ -332,7 +419,7 @@ Normalizing `parentIndex` to the nearest captured ancestor keeps the internal Su
 | element protrusion | not first-class | parent-boundary detector |
 | viewport protrusion | horizontal overflow | unify/clarify semantics |
 | small-range anomaly | exact issue boundaries | relationship-state anomaly |
-| wrapping | not first-class | row-membership transition |
+| wrapping | sibling row transition prototype | intentional reflow + range-drift-aware benchmark review |
 | RLG comparison | not present | structural base-vs-head diff |
 | visual verification | not present | optional verifier module |
 
@@ -401,29 +488,30 @@ Run current Slice against every usable corpus page and classify:
 
 This gives us a real capability gap instead of designing from theory.
 
-### R3 - Prototype relationship intervals
+### R3 - Prototype only the relationships required by a detector - in progress
 
-Implement the smallest useful representation first:
+The wrapping slice introduced:
 
-- stable node identity;
-- parent-child containment;
-- sibling overlap;
-- relative vertical/horizontal ordering;
-- visibility.
+- stable cross-viewport node identity;
+- connected parent-child containment;
+- sibling visual row membership;
+- row-transition comparison across sampled widths.
 
-Build intervals only when a relationship actually changes across probes.
+Do not generalize this into a full relationship graph until another detector demonstrates a concrete need.
 
-### R4 - Add one detector at a time
+### R4 - Add one detector at a time - benchmark-driven
 
-Suggested order:
+Current sequence:
 
-1. element protrusion;
-2. small-range relationship anomaly;
-3. wrapping;
-4. generic collision candidate;
-5. structural base-vs-head graph comparison.
+1. sibling wrapping - prototype implemented and behaviorally reproduces all 10 wrapping RLFs, including one shifted-range reproduction;
+2. intentional-reflow precision refinement;
+3. benchmark range-drift handling for historical corpora;
+4. relationship intervals only where required by small-range analysis;
+5. small-range anomaly research;
+6. element protrusion / generic collision after stronger observability evidence;
+7. structural base-vs-head graph comparison.
 
-Each detector should earn its place through benchmark improvement and acceptable runtime cost.
+Each detector must earn its place through reviewed benchmark improvement and acceptable runtime/noise cost.
 
 ### R5 - Visual verifier research
 

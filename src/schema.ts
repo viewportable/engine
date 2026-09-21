@@ -46,6 +46,27 @@ const fixedElementCollisionIssueSchema = z.object({
   }),
 });
 
+const wrappingIssueSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal('wrapping'),
+  severity: z.literal('error'),
+  selector: z.string().min(1),
+  parentSelector: z.string().min(1),
+  tagName: z.string().min(1),
+  parentTagName: z.string().min(1),
+  viewportWidth: z.number().int().positive(),
+  previousViewportWidth: z.number().int().positive(),
+  bbox: z.tuple([z.number(), z.number(), z.number(), z.number()]),
+  evidence: z.object({
+    previousRowSize: z.number().int().min(3),
+    currentRowSize: z.number().int().positive(),
+    stableSiblingCount: z.number().int().min(2),
+    previousRowIndex: z.number().int().nonnegative(),
+    currentRowIndex: z.number().int().positive(),
+    verticalShiftPx: z.number().int().positive(),
+  }),
+});
+
 const fixedContentOcclusionIssueSchema = z.object({
   id: z.string().min(1),
   type: z.literal('fixed-content-occlusion'),
@@ -75,6 +96,7 @@ export const issueSchema = z.discriminatedUnion('type', [
   horizontalOverflowIssueSchema,
   fixedElementCollisionIssueSchema,
   fixedContentOcclusionIssueSchema,
+  wrappingIssueSchema,
 ]);
 
 export const viewportResultSchema = z.object({
@@ -87,7 +109,12 @@ export const viewportResultSchema = z.object({
 
 export const boundaryResultSchema = z.object({
   issueId: z.string().min(1),
-  issueType: z.enum(['horizontal-overflow', 'fixed-element-collision', 'fixed-content-occlusion']),
+  issueType: z.enum([
+    'horizontal-overflow',
+    'fixed-element-collision',
+    'fixed-content-occlusion',
+    'wrapping',
+  ]),
   boundary: z.number().int().positive(),
   lastGoodWidth: z.number().int().positive(),
   firstBadWidth: z.number().int().positive(),

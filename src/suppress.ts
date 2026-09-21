@@ -30,6 +30,13 @@ export function isIssueSuppressed(issue: Issue, rules: SuppressionRule[]): boole
       return rule.selector === issue.selector && rule.targetSelector === issue.targetSelector;
     }
 
+    if (issue.type === 'wrapping' && rule.type === 'wrapping') {
+      return (
+        rule.selector === issue.selector &&
+        (rule.parentSelector === undefined || rule.parentSelector === issue.parentSelector)
+      );
+    }
+
     return false;
   });
 }

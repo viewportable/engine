@@ -18,8 +18,8 @@ export const CLASS_MAPPING = {
     issueTypes: [],
   },
   Wrapping: {
-    support: 'unsupported',
-    issueTypes: [],
+    support: 'compatible',
+    issueTypes: ['wrapping'],
   },
 };
 

@@ -47,6 +47,75 @@
       "id": 21,
       "status": "confirmed",
       "reason": "ReDeCheck explicitly describes the PCWorld logo protruding. Slice reports img.home-img-pcw and its containing feature row in the same range."
+    },
+    {
+      "id": 24,
+      "status": "confirmed",
+      "reason": "ReDeCheck describes the Tweet icon wrapping. Slice reports the AddThis Tweet anchor (a.at300b) in the same failure range."
+    },
+    {
+      "id": 25,
+      "status": "confirmed",
+      "reason": "ReDeCheck describes The Atlantic logo wrapping. Slice reports li.featured.theatlantic in the same failure range."
+    },
+    {
+      "id": 27,
+      "status": "confirmed",
+      "reason": "ReDeCheck describes the Instagram footer icon wrapping. Slice reports the last social-list item containing Instagram in the same range."
+    },
+    {
+      "id": 28,
+      "status": "confirmed",
+      "reason": "ReDeCheck describes the search button wrapping. Slice reports form.search_form > button in the same range."
+    },
+    {
+      "id": 29,
+      "status": "confirmed",
+      "reason": "ReDeCheck describes Privacy Policy wrapping. Slice reports the third copyright-list item, which is Privacy Policy, in the same range."
+    },
+    {
+      "id": 30,
+      "status": "confirmed",
+      "reason": "ReDeCheck describes the Pricing navigation link wrapping. Slice reports #menu-item-11, the Pricing item, in the same range."
+    },
+    {
+      "id": 31,
+      "status": "confirmed",
+      "reason": "ReDeCheck describes the terms footer link wrapping. Slice reports the seventh footer-list item, which is terms, in the same range."
+    },
+    {
+      "id": 32,
+      "status": "confirmed",
+      "reason": "ReDeCheck describes The Verge source logo wrapping. Slice reports img.sources-four, whose source is the-verge.png, in the same range."
+    },
+    {
+      "id": 33,
+      "status": "confirmed",
+      "reason": "ReDeCheck describes the main tab/navigation links wrapping incongruously. Slice reports a child of the same ui-tabs-nav list in the same range."
+    }
+  ],
+  "antiReviews": [
+    {
+      "sourceClassification": "FP",
+      "type": "Wrapping",
+      "page": "Duolingo",
+      "range": {
+        "min": 378,
+        "max": 399
+      },
+      "status": "confirmed-negative",
+      "reason": "ReDeCheck classifies this as intentional reflow. Slice reports multiple footer-language-options items wrapping in the same range, so the detector is matching the intentional behavior."
+    },
+    {
+      "sourceClassification": "FP",
+      "type": "Wrapping",
+      "page": "Duolingo",
+      "range": {
+        "min": 830,
+        "max": 881
+      },
+      "status": "confirmed-negative",
+      "reason": "ReDeCheck classifies this as intentional reflow. Slice reports footer-language-options items and a sitemap footer column in the same range, so the detector is matching the intentional behavior."
     }
   ]
 }

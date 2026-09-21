@@ -86,10 +86,32 @@ export interface FixedContentOcclusionIssue {
   };
 }
 
+export interface WrappingIssue {
+  id: string;
+  type: 'wrapping';
+  severity: 'error';
+  selector: string;
+  parentSelector: string;
+  tagName: string;
+  parentTagName: string;
+  viewportWidth: number;
+  previousViewportWidth: number;
+  bbox: [number, number, number, number];
+  evidence: {
+    previousRowSize: number;
+    currentRowSize: number;
+    stableSiblingCount: number;
+    previousRowIndex: number;
+    currentRowIndex: number;
+    verticalShiftPx: number;
+  };
+}
+
 export type Issue =
   | HorizontalOverflowIssue
   | FixedElementCollisionIssue
-  | FixedContentOcclusionIssue;
+  | FixedContentOcclusionIssue
+  | WrappingIssue;
 
 export interface ViewportResult {
   width: number;

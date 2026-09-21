@@ -8,6 +8,7 @@ import {
   launchBrowser,
   type DocumentMetrics,
 } from './browser.js';
+import { detectWrappingTransitions } from './analyze/wrapping.js';
 import { findBoundary } from './boundary.js';
 import { captureBrowserSurface } from './capture.js';
 import { loadSliceConfig, type SliceConfig, type SuppressionRule } from './config.js';
@@ -34,6 +35,7 @@ import type {
   RootCauseObservation,
   SliceResults,
   ViewportResult,
+  WrappingIssue,
 } from './types.js';
 
 const DEFAULT_WIDTHS = [320, 375, 390, 430, 768, 1024, 1280, 1440];
@@ -77,12 +79,16 @@ interface CapturedRootCause extends RootCauseObservation {
 }
 
 interface CaptureResult {
+  surface: SurfaceSnapshot<LayoutNode>;
   issues: Issue[];
   suppressedIssues: Issue[];
   rootCauses: CapturedRootCause[];
 }
 
-type RawCaptureResult = Omit<CaptureResult, 'suppressedIssues'>;
+interface RawCaptureResult {
+  issues: Issue[];
+  rootCauses: CapturedRootCause[];
+}
 
 class SliceCliError extends Error {}
 
@@ -173,6 +179,13 @@ function renderIssue(issue: Issue): string {
     return (
       `${truncate(issue.selector, 38)} covers ${truncate(issue.targetSelector, 38)} | ` +
       `${issue.targetCoveragePct}% (${issue.overlapWidthPx}x${issue.overlapHeightPx}px)`
+    );
+  }
+
+  if (issue.type === 'wrapping') {
+    return (
+      `${truncate(issue.selector, 48)} wraps below siblings | ` +
+      `${issue.evidence.stableSiblingCount} stay / ${issue.evidence.currentRowSize} wrap`
     );
   }
 
@@ -356,6 +369,10 @@ function collisionIssueKey(firstSelector: string, secondSelector: string): strin
 
 function occlusionIssueKey(selector: string, targetSelector: string): string {
   return `fixed-content-occlusion|${selector}|${targetSelector}`;
+}
+
+function wrappingIssueKey(selector: string, parentSelector: string): string {
+  return `wrapping|${parentSelector}|${selector}`;
 }
 
 function rootCauseKey(selector: string, side: 'right' | 'left'): string {
@@ -632,10 +649,78 @@ async function captureAtWidth(
     );
 
   return {
+    surface,
     issues,
     suppressedIssues,
     rootCauses,
   };
+}
+
+async function addWrappingIssues(
+  page: Page,
+  sampleCaptures: Map<number, CaptureResult>,
+  viewports: ViewportResult[],
+  issueIds: Map<string, string>,
+  suppressions: SuppressionRule[],
+): Promise<void> {
+  const findings = detectWrappingTransitions(
+    [...sampleCaptures].map(([width, captured]) => ({
+      width,
+      nodes: captured.surface.nodes,
+    })),
+  );
+  if (findings.length === 0) return;
+
+  const isUnique = makePageUniquenessCheck((selector) =>
+    page.evaluate((value) => document.querySelectorAll(value).length, selector),
+  );
+
+  for (const finding of findings) {
+    const captured = sampleCaptures.get(finding.viewportWidth);
+    const viewport = viewports.find((entry) => entry.width === finding.viewportWidth);
+    if (!captured || !viewport) continue;
+
+    const byIndex = new Map(captured.surface.nodes.map((node) => [node.index, node]));
+    const node = byIndex.get(finding.nodeIndex);
+    const parent = byIndex.get(finding.parentIndex);
+    if (!node || !parent) continue;
+
+    const selector = await buildStableSelector(node, captured.surface.nodes, isUnique);
+    const parentSelector = await buildStableSelector(parent, captured.surface.nodes, isUnique);
+    const key = wrappingIssueKey(selector, parentSelector);
+    let id = issueIds.get(key);
+
+    if (!id) {
+      id = `issue-${issueIds.size + 1}`;
+      issueIds.set(key, id);
+    }
+
+    const issue: WrappingIssue = {
+      id,
+      type: 'wrapping',
+      severity: 'error',
+      selector,
+      parentSelector,
+      tagName: node.tagName,
+      parentTagName: parent.tagName,
+      viewportWidth: finding.viewportWidth,
+      previousViewportWidth: finding.previousViewportWidth,
+      bbox: finding.bbox,
+      evidence: {
+        previousRowSize: finding.previousRowSize,
+        currentRowSize: finding.currentRowSize,
+        stableSiblingCount: finding.stableSiblingCount,
+        previousRowIndex: finding.previousRowIndex,
+        currentRowIndex: finding.currentRowIndex,
+        verticalShiftPx: finding.verticalShiftPx,
+      },
+    };
+    const partitioned = partitionSuppressedIssues([issue], suppressions);
+
+    captured.issues.push(...partitioned.issues);
+    captured.suppressedIssues.push(...partitioned.suppressedIssues);
+    viewport.status = captured.issues.length > 0 ? 'fail' : 'pass';
+  }
 }
 
 function aggregateRootCauses(
@@ -769,6 +854,14 @@ async function runSlice(url: string, options: RunOptions): Promise<number> {
       });
     }
 
+    await addWrappingIssues(
+      runtime.page,
+      sampleCaptures,
+      viewports,
+      issueIds,
+      options.suppressions,
+    );
+
     const boundaries: BoundaryResult[] = [];
     const rootCauseBoundaries: RootCauseBoundaryResult[] = [];
     const boundaryDisplays: BoundaryDisplay[] = [];
@@ -815,7 +908,7 @@ async function runSlice(url: string, options: RunOptions): Promise<number> {
           const issue =
             current.issues.find((candidate) => candidate.id === issueId) ??
             next.issues.find((candidate) => candidate.id === issueId);
-          if (!issue) continue;
+          if (!issue || issue.type === 'wrapping') continue;
 
           const currentBroken = currentIssueIds.has(issueId);
           const passWidth = currentBroken ? next.width : current.width;

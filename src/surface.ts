@@ -25,6 +25,7 @@ export type SurfaceCapability =
 export interface SurfaceNode {
   index: number;
   parentIndex: number;
+  identity?: string;
   rect: SurfaceRect;
   isVisible: boolean;
 }

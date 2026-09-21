@@ -22,10 +22,17 @@ const fixedContentOcclusionSuppressionSchema = z.object({
   targetSelector: z.string().min(1),
 });
 
+const wrappingSuppressionSchema = z.object({
+  type: z.literal('wrapping'),
+  selector: z.string().min(1),
+  parentSelector: z.string().min(1).optional(),
+});
+
 export const suppressionRuleSchema = z.discriminatedUnion('type', [
   horizontalOverflowSuppressionSchema,
   fixedElementCollisionSuppressionSchema,
   fixedContentOcclusionSuppressionSchema,
+  wrappingSuppressionSchema,
 ]);
 
 const sliceConfigSchema = z

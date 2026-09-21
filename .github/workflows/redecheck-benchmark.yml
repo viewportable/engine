@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - benchmark/redecheck-baseline
+      - engine/wrapping-detector
     paths:
       - benchmark/redecheck/**
       - scripts/redecheck-prepare.mjs

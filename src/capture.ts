@@ -23,6 +23,7 @@ const COMPUTED_STYLES = [
 
 interface NodeTreeSnapshot {
   parentIndex?: number[];
+  backendNodeId?: number[];
   nodeType?: number[];
   nodeName?: number[];
   attributes?: number[][];
@@ -119,9 +120,12 @@ export async function captureLayout(cdp: CDPSession): Promise<LayoutNode[]> {
 
     if (!isVisible) continue;
 
+    const backendNodeId = nodes.backendNodeId?.[nodeIndex];
+
     result.push({
       index: nodeIndex,
       parentIndex: nodes.parentIndex?.[nodeIndex] ?? -1,
+      ...(backendNodeId !== undefined ? { identity: `web:${backendNodeId}` } : {}),
       tagName: (snapshot.strings[nodes.nodeName?.[nodeIndex] ?? -1] ?? '').toUpperCase(),
       attributes: decodeAttributes(nodes.attributes?.[nodeIndex], snapshot.strings),
       rect: { x, y, width, height },
