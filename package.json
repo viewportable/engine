@@ -50,11 +50,11 @@
     "mcp": "npm run build --silent && node dist/mcp.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
     "commander": "^14.0.1",
     "picocolors": "^1.1.1",
     "playwright": "^1.63.0",
-    "zod": "^4.1.8",
-    "@modelcontextprotocol/server": "2.0.0"
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "@types/node": "^24.3.1",
