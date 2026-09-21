@@ -394,15 +394,19 @@ Set `pr-comment: 'true'` to create one managed PR evidence comment. The Action f
 permissions:
   contents: read
   issues: write
+  checks: write
 
 # ...
 with:
   url: http://127.0.0.1:3001
   baseline-url: http://127.0.0.1:3000
   pr-comment: 'true'
+  check-run: 'true'
 ```
 
-PR commenting is deliberately non-blocking: a read-only token, such as on some fork PRs, does not hide or replace the Engine result. The scan/report/artifact and exit code remain authoritative.
+PR commenting and Check Run publishing are deliberately non-blocking: a read-only token, such as on some fork PRs, does not hide or replace the Engine result. The scan/report/artifact and exit code remain authoritative.
+
+When `check-run: 'true'` is enabled, the Action creates or updates one `Viewportable Engine` Check Run on the PR head SHA. Re-running the same head updates the managed check instead of creating a duplicate. The Check conclusion follows the Engine contract: `0 -> success`, `1 -> failure`, and scanner/setup failure `2 -> action_required`. The Check output is rendered from canonical `findings[]`; its details link prefers the uploaded structural artifact and falls back to the workflow run.
 
 The copy-ready single-render workflow lives at `examples/github/slice.yml`. A full pull-request example that checks out `base.sha` and `head.sha`, starts both versions, and compares them lives at `examples/github/compare.yml`. The repository CI exercises both Action modes end to end.
 

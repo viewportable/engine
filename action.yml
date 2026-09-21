@@ -30,6 +30,10 @@ inputs:
     description: Create or update one managed pull request comment for structural compare evidence
     required: false
     default: 'false'
+  check-run:
+    description: Create or update a Viewportable Engine GitHub Check Run for structural compare evidence
+    required: false
+    default: 'false'
 
 outputs:
   exit_code:
@@ -44,6 +48,12 @@ outputs:
   comment_url:
     description: URL of the managed pull request evidence comment when available
     value: ${{ steps.pr-comment.outputs.comment_url }}
+  check_url:
+    description: URL of the managed Viewportable Engine Check Run when available
+    value: ${{ steps.check-run.outputs.check_url }}
+  check_conclusion:
+    description: GitHub Check Run conclusion when available
+    value: ${{ steps.check-run.outputs.check_conclusion }}
 
 runs:
   using: composite
@@ -115,6 +125,17 @@ runs:
         path: ${{ steps.scan.outputs.result_path }}
         if-no-files-found: ignore
         include-hidden-files: true
+
+    - name: Update GitHub Check Run
+      id: check-run
+      if: ${{ always() && inputs.check-run == 'true' && inputs.baseline-url != '' }}
+      continue-on-error: true
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        SLICE_ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+        SLICE_EXIT_CODE: ${{ steps.scan.outputs.exit_code }}
+      run: node "$GITHUB_ACTION_PATH/scripts/github-check-run.mjs" "${{ steps.scan.outputs.result_path }}"
 
     - name: Update pull request evidence comment
       id: pr-comment

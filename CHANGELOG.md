@@ -14,6 +14,7 @@ All notable changes to Viewportable Engine are documented here.
 - Conservative structural reparenting plus explicit-identity appearance/disappearance changes, integrated with canonical ranges and exact boundary refinement.
 - GitHub Action structural compare mode via optional `baseline-url`, with dynamic report paths, compare-aware job summaries, artifact upload, and end-to-end Action smoke coverage.
 - Canonical structural `findings[]` contract plus opt-in managed PR evidence comments that update in place and link back to the uploaded structural artifact.
+- Opt-in managed `Viewportable Engine` Check Run on the PR head SHA, with deterministic update semantics, canonical finding summary, artifact/workflow details link, and Engine-to-Check conclusion mapping.
 
 
 

@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  checks: write
 
 concurrency:
   group: slice-ci-${{ github.workflow }}-${{ github.ref }}
@@ -90,6 +91,30 @@ jobs:
           out: .slice/action-smoke
           artifact-name: slice-action-smoke
           install-browser: 'false'
+
+      - name: GitHub Action Check Run smoke
+        id: check-run-action
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: ./
+        with:
+          url: http://127.0.0.1:4173/action-compare-baseline.html
+          baseline-url: http://127.0.0.1:4173/action-compare-baseline.html
+          config: examples/github/action-compare.config.json
+          out: .slice/action-check-run-smoke
+          artifact-name: slice-action-check-run-smoke
+          check-run: 'true'
+          install-browser: 'false'
+
+      - name: Verify GitHub Action Check Run smoke
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          SLICE_CHECK_EXIT_CODE: ${{ steps.check-run-action.outputs.exit_code }}
+          SLICE_CHECK_URL: ${{ steps.check-run-action.outputs.check_url }}
+          SLICE_CHECK_CONCLUSION: ${{ steps.check-run-action.outputs.check_conclusion }}
+        run: |
+          test "$SLICE_CHECK_EXIT_CODE" = "0"
+          test "$SLICE_CHECK_CONCLUSION" = "success"
+          test -n "$SLICE_CHECK_URL"
 
       - name: GitHub Action compare smoke
         id: compare-action
