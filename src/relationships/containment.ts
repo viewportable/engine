@@ -28,13 +28,10 @@ export function containmentRelationshipEvidence(
   };
 
   const protrusionPx = {
-    left:
-      raw.left > RELATIONSHIP_CONTAINMENT_TOLERANCE_PX ? Math.round(raw.left) : 0,
-    right:
-      raw.right > RELATIONSHIP_CONTAINMENT_TOLERANCE_PX ? Math.round(raw.right) : 0,
+    left: raw.left > RELATIONSHIP_CONTAINMENT_TOLERANCE_PX ? Math.round(raw.left) : 0,
+    right: raw.right > RELATIONSHIP_CONTAINMENT_TOLERANCE_PX ? Math.round(raw.right) : 0,
     top: raw.top > RELATIONSHIP_CONTAINMENT_TOLERANCE_PX ? Math.round(raw.top) : 0,
-    bottom:
-      raw.bottom > RELATIONSHIP_CONTAINMENT_TOLERANCE_PX ? Math.round(raw.bottom) : 0,
+    bottom: raw.bottom > RELATIONSHIP_CONTAINMENT_TOLERANCE_PX ? Math.round(raw.bottom) : 0,
   };
 
   const sides = (['left', 'right', 'top', 'bottom'] as const).filter(
