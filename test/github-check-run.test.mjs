@@ -75,7 +75,8 @@ describe('GitHub Check Run', () => {
 
     expect(renderCheckOutput(clean, 0)).toEqual({
       title: 'No structural regressions',
-      summary: '✅ No structural regressions introduced.\n\n_4 viewports · 4 exact boundaries · 1.3s_',
+      summary:
+        '✅ No structural regressions introduced.\n\n_4 viewports · 4 exact boundaries · 1.3s_',
     });
   });
 
