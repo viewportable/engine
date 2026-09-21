@@ -12,10 +12,13 @@ import {
 import {
   matchCrossVersionNodes,
   type CrossVersionMatchQuality,
+  type CrossVersionNodeIndexEntry,
   type CrossVersionNodeMatch,
+  type CrossVersionNodeMatchResult,
 } from './node-match.js';
 
 export type StructuralChangeDirection = 'introduced' | 'resolved';
+export type StructuralPresenceState = 'visible' | 'missing';
 
 export interface StructuralSubject {
   key: string;
@@ -45,7 +48,29 @@ export interface ParentContainmentStructuralChange {
   candidateEvidence: ContainmentRelationshipEvidence;
 }
 
-export type StructuralChange = SiblingOverlapStructuralChange | ParentContainmentStructuralChange;
+export interface ReparentingStructuralChange {
+  kind: 'reparenting';
+  direction: 'introduced';
+  viewport: { width: number; height: number };
+  subject: StructuralSubject;
+  baselineParent: StructuralSubject;
+  candidateParent: StructuralSubject;
+}
+
+export interface NodePresenceStructuralChange {
+  kind: 'node-presence';
+  direction: StructuralChangeDirection;
+  viewport: { width: number; height: number };
+  subject: StructuralSubject;
+  baselineState: StructuralPresenceState;
+  candidateState: StructuralPresenceState;
+}
+
+export type StructuralChange =
+  | SiblingOverlapStructuralChange
+  | ParentContainmentStructuralChange
+  | ReparentingStructuralChange
+  | NodePresenceStructuralChange;
 
 export interface StructuralDiff {
   platform: SurfaceSnapshot['platform'];
@@ -59,6 +84,14 @@ function subject(match: CrossVersionNodeMatch): StructuralSubject {
     key: match.key,
     quality: match.quality,
     tagName: match.candidate.tagName,
+  };
+}
+
+function indexedSubject(entry: CrossVersionNodeIndexEntry): StructuralSubject {
+  return {
+    key: entry.key,
+    quality: entry.quality,
+    tagName: entry.node.tagName,
   };
 }
 
@@ -83,6 +116,81 @@ function comparableContainmentNode(node: LayoutNode): boolean {
   if (node.attributes['aria-hidden']?.toLowerCase() === 'true') return false;
 
   return true;
+}
+
+function compareNodePresence(
+  matched: CrossVersionNodeMatchResult,
+  viewport: { width: number; height: number },
+): NodePresenceStructuralChange[] {
+  const changes: NodePresenceStructuralChange[] = [];
+
+  for (const [key, entry] of matched.baselineUniqueByKey) {
+    if (entry.quality !== 'explicit') continue;
+    if (matched.candidateObservedKeys.has(key)) continue;
+
+    changes.push({
+      kind: 'node-presence',
+      direction: 'introduced',
+      viewport,
+      subject: indexedSubject(entry),
+      baselineState: 'visible',
+      candidateState: 'missing',
+    });
+  }
+
+  for (const [key, entry] of matched.candidateUniqueByKey) {
+    if (entry.quality !== 'explicit') continue;
+    if (matched.baselineObservedKeys.has(key)) continue;
+
+    changes.push({
+      kind: 'node-presence',
+      direction: 'resolved',
+      viewport,
+      subject: indexedSubject(entry),
+      baselineState: 'missing',
+      candidateState: 'visible',
+    });
+  }
+
+  return changes;
+}
+
+function compareReparenting(
+  matched: CrossVersionNodeMatchResult,
+  viewport: { width: number; height: number },
+): ReparentingStructuralChange[] {
+  const changes: ReparentingStructuralChange[] = [];
+
+  for (const match of matched.matches) {
+    if (match.quality !== 'explicit') continue;
+
+    const baselineParent = matched.baselineUniqueByIndex.get(match.baseline.parentIndex);
+    const candidateParent = matched.candidateUniqueByIndex.get(match.candidate.parentIndex);
+    if (!baselineParent || !candidateParent) continue;
+    if (baselineParent.quality !== 'explicit' || candidateParent.quality !== 'explicit') continue;
+    if (baselineParent.key === candidateParent.key) continue;
+
+    const baselineParentInCandidate = matched.candidateUniqueByKey.get(baselineParent.key);
+    const candidateParentInBaseline = matched.baselineUniqueByKey.get(candidateParent.key);
+    if (!baselineParentInCandidate || !candidateParentInBaseline) continue;
+    if (
+      baselineParentInCandidate.quality !== 'explicit' ||
+      candidateParentInBaseline.quality !== 'explicit'
+    ) {
+      continue;
+    }
+
+    changes.push({
+      kind: 'reparenting',
+      direction: 'introduced',
+      viewport,
+      subject: subject(match),
+      baselineParent: indexedSubject(baselineParent),
+      candidateParent: indexedSubject(candidateParent),
+    });
+  }
+
+  return changes;
 }
 
 function compareParentContainment(
@@ -215,6 +323,19 @@ function compareSiblingOverlap(
   return changes;
 }
 
+function structuralChangeSortKey(change: StructuralChange): string {
+  switch (change.kind) {
+    case 'parent-containment':
+      return `${change.parent.key}|${change.subject.key}`;
+    case 'sibling-overlap':
+      return `${change.parent.key}|${change.subjects.map((item) => item.key).join('|')}`;
+    case 'reparenting':
+      return `${change.subject.key}|${change.baselineParent.key}|${change.candidateParent.key}`;
+    case 'node-presence':
+      return `${change.subject.key}|${change.baselineState}|${change.candidateState}`;
+  }
+}
+
 export function compareStructuralSurfaces(
   baseline: SurfaceSnapshot<LayoutNode>,
   candidate: SurfaceSnapshot<LayoutNode>,
@@ -243,6 +364,8 @@ export function compareStructuralSurfaces(
   };
 
   const changes: StructuralChange[] = [
+    ...compareNodePresence(matched, viewport),
+    ...compareReparenting(matched, viewport),
     ...compareParentContainment(
       matched.matches,
       matched.baselineMatchedByIndex,
@@ -260,17 +383,7 @@ export function compareStructuralSurfaces(
   changes.sort((first, second) => {
     const kind = first.kind.localeCompare(second.kind);
     if (kind !== 0) return kind;
-
-    const firstKey =
-      first.kind === 'parent-containment'
-        ? `${first.parent.key}|${first.subject.key}`
-        : `${first.parent.key}|${first.subjects.map((item) => item.key).join('|')}`;
-    const secondKey =
-      second.kind === 'parent-containment'
-        ? `${second.parent.key}|${second.subject.key}`
-        : `${second.parent.key}|${second.subjects.map((item) => item.key).join('|')}`;
-
-    return firstKey.localeCompare(secondKey);
+    return structuralChangeSortKey(first).localeCompare(structuralChangeSortKey(second));
   });
 
   return {
