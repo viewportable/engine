@@ -1,0 +1,17 @@
+{
+  "corpus": {
+    "repository": "redecheck/example-webpages",
+    "commit": "32f4e79e13c43fbfade67c3e1afa7ef252dbb6b8",
+    "url": "https://github.com/redecheck/example-webpages.git"
+  },
+  "oracle": {
+    "repository": "redecheck/redecheck.github.io",
+    "commit": "003ea4341a9359ba7d062e9a14dc8f5067eaec82",
+    "path": "results-archive.md",
+    "rawUrl": "https://raw.githubusercontent.com/redecheck/redecheck.github.io/003ea4341a9359ba7d062e9a14dc8f5067eaec82/results-archive.md"
+  },
+  "referenceImplementation": {
+    "repository": "redecheck/redecheck",
+    "commit": "d3f2364960aa7398f7085a502576da70759f5ed0"
+  }
+}

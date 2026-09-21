@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "reviewedAt": "2026-09-19",
+  "method": "Manual subject/evidence review against ReDeCheck Distinct RLF descriptions",
+  "reviews": [
+    {
+      "id": 12,
+      "status": "confirmed",
+      "reason": "ReDeCheck describes the fixed-width graph protruding outside the viewport. Slice reports the graph canvas and its tick labels in the same failing range."
+    },
+    {
+      "id": 13,
+      "status": "confirmed",
+      "reason": "ReDeCheck describes the same graph protruding again at a wider responsive range. Slice reports the graph canvas and tick labels in that range."
+    },
+    {
+      "id": 14,
+      "status": "confirmed",
+      "reason": "ReDeCheck describes a form field protruding on the right at narrow widths. Slice reports the search form field with right-side overflow in the same range."
+    },
+    {
+      "id": 15,
+      "status": "confirmed",
+      "reason": "ReDeCheck describes a form field protruding on the left at narrow widths. Slice reports the search form field with left-side overflow in the same range."
+    },
+    {
+      "id": 16,
+      "status": "rejected-incidental",
+      "reason": "ReDeCheck describes Featured Products tiles protruding. Slice candidate evidence points to mobile-header close-button pseudo-elements and header links, so page/range coincidence is not the same defect."
+    },
+    {
+      "id": 17,
+      "status": "rejected-incidental",
+      "reason": "ReDeCheck describes footer navigation and the Privacy Policy link protruding left. Slice candidate evidence points to mobile-header elements, not the footer."
+    },
+    {
+      "id": 18,
+      "status": "rejected-incidental",
+      "reason": "ReDeCheck describes Price Watch / Featured content tiles. Slice candidate evidence points to mobile-header elements, not those tiles."
+    },
+    {
+      "id": 19,
+      "status": "rejected-incidental",
+      "reason": "ReDeCheck describes the language carousel next arrow becoming protruded and nearly unclickable. Slice candidate evidence points to bx-clone language flag/name spans, not the arrow."
+    },
+    {
+      "id": 21,
+      "status": "confirmed",
+      "reason": "ReDeCheck explicitly describes the PCWorld logo protruding. Slice reports img.home-img-pcw and its containing feature row in the same range."
+    }
+  ]
+}

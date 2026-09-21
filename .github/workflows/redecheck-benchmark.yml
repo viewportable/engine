@@ -1,0 +1,63 @@
+name: ReDeCheck Benchmark
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - benchmark/redecheck-baseline
+    paths:
+      - benchmark/redecheck/**
+      - scripts/redecheck-prepare.mjs
+      - scripts/redecheck-benchmark.mjs
+      - scripts/lib/redecheck-oracle.mjs
+      - src/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/redecheck-benchmark.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: redecheck-benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install npm dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run ReDeCheck benchmark
+        run: npm run benchmark:redecheck
+
+      - name: Print benchmark summary
+        if: ${{ always() }}
+        run: |
+          if [[ -f .slice/benchmarks/redecheck/summary.md ]]; then
+            cat .slice/benchmarks/redecheck/summary.md
+          fi
+
+      - name: Upload benchmark results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: redecheck-baseline
+          path: .slice/benchmarks/redecheck
+          if-no-files-found: warn

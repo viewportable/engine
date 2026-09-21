@@ -27,7 +27,7 @@
     "lint:fix": "oxlint --fix --vitest-plugin src test scripts tsdown.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && vitest run",
-    "test:unit": "vitest run test/boundary.test.ts test/detector.test.ts test/overflow.test.ts test/fixed-collision.test.ts test/fixed-occlusion.test.ts test/grouping.test.ts test/diagnose.test.ts test/selector.test.ts test/suppress.test.ts test/demo-server.test.mjs test/github-summary.test.mjs",
+    "test:unit": "vitest run test/boundary.test.ts test/detector.test.ts test/overflow.test.ts test/fixed-collision.test.ts test/fixed-occlusion.test.ts test/grouping.test.ts test/diagnose.test.ts test/selector.test.ts test/suppress.test.ts test/demo-server.test.mjs test/github-summary.test.mjs test/redecheck-oracle.test.mjs",
     "test:integration": "vitest run test/integration.test.ts",
     "validate:package": "node scripts/validate-package.mjs && npm pack --dry-run --ignore-scripts",
     "check:fast": "npm run fmt:check && npm run lint && npm run typecheck && npm run test:unit && npm run build && npm run validate:package && npm run validate:release:current",
@@ -42,7 +42,9 @@
     "golden:openings": "node scripts/golden-openings.mjs",
     "validate:release": "node scripts/validate-release.mjs",
     "preflight:rc": "node scripts/preflight-rc.mjs",
-    "validate:release:current": "node scripts/validate-release-current.mjs"
+    "validate:release:current": "node scripts/validate-release-current.mjs",
+    "benchmark:redecheck:prepare": "node scripts/redecheck-prepare.mjs",
+    "benchmark:redecheck": "npm run benchmark:redecheck:prepare && npm run build --silent && node scripts/redecheck-benchmark.mjs"
   },
   "dependencies": {
     "commander": "^14.0.1",
