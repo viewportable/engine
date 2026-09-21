@@ -1,0 +1,33 @@
+name: Format Structural Boundaries
+
+on:
+  push:
+    branches:
+      - engine/structural-boundaries-v1
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Format structural boundary files
+        run: npx oxfmt --write src/compare/boundaries.ts src/compare/render.ts src/compare/run.ts test/integration.test.ts test/structural-boundaries.test.ts
+      - name: Upload formatted files
+        uses: actions/upload-artifact@v7
+        with:
+          name: formatted-structural-boundaries
+          path: |
+            src/compare/boundaries.ts
+            src/compare/render.ts
+            src/compare/run.ts
+            test/integration.test.ts
+            test/structural-boundaries.test.ts
