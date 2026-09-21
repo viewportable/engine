@@ -121,7 +121,8 @@ describe('slice CLI', () => {
     const wide = report.viewports.find((viewport: { width: number }) => viewport.width === 430);
 
     expect(wide.issues.filter((issue: { type: string }) => issue.type === 'wrapping')).toEqual([]);
-    expect(narrow.issues.filter((issue: { type: string }) => issue.type === 'wrapping')).toEqual([
+    const wrappingIssues = narrow.issues.filter((issue: { type: string }) => issue.type === 'wrapping');
+    expect(wrappingIssues).toEqual([
       expect.objectContaining({
         type: 'wrapping',
         selector: '#item-4',
@@ -132,10 +133,27 @@ describe('slice CLI', () => {
           previousRowSize: 4,
           currentRowSize: 1,
           stableSiblingCount: 3,
+          parentDisplay: 'flex',
+          parentFlexWrap: 'wrap',
         }),
       }),
     ]);
-    expect(result.stdout).toContain('#item-4 wraps below siblings');
+    expect(report.rootCauses).toEqual([
+      expect.objectContaining({
+        type: 'wrapping',
+        selector: '#actions',
+        issueIds: [wrappingIssues[0].id],
+        evidence: {
+          authoredFlexWrap: true,
+          transitionCount: 1,
+          repeatedAcrossWidths: false,
+          displayValues: ['flex'],
+          flexWrapValues: ['wrap'],
+        },
+      }),
+    ]);
+    expect(wrappingIssues[0].rootCauseId).toBe(report.rootCauses[0].id);
+    expect(result.stdout).toContain('#actions wraps 1 sibling');
   });
 
   it('detects the final inline footer item wrapping onto a second row', async () => {
@@ -154,7 +172,10 @@ describe('slice CLI', () => {
     const report = JSON.parse(await readFile(path.join(out, 'results.json'), 'utf8'));
     const narrow = report.viewports.find((viewport: { width: number }) => viewport.width === 335);
 
-    expect(narrow.issues.filter((issue: { type: string }) => issue.type === 'wrapping')).toEqual([
+    const wrappingIssues = narrow.issues.filter(
+      (issue: { type: string }) => issue.type === 'wrapping',
+    );
+    expect(wrappingIssues).toEqual([
       expect.objectContaining({
         type: 'wrapping',
         selector: '#terms',
@@ -165,6 +186,20 @@ describe('slice CLI', () => {
           previousRowSize: 5,
           currentRowSize: 1,
           stableSiblingCount: 4,
+          parentDisplay: 'block',
+          parentFlexWrap: 'nowrap',
+        }),
+      }),
+    ]);
+    expect(report.rootCauses).toEqual([
+      expect.objectContaining({
+        type: 'wrapping',
+        selector: '#mobile-footer',
+        issueIds: [wrappingIssues[0].id],
+        evidence: expect.objectContaining({
+          authoredFlexWrap: false,
+          transitionCount: 1,
+          repeatedAcrossWidths: false,
         }),
       }),
     ]);
