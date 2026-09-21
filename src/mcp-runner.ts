@@ -92,7 +92,7 @@ export async function runEngineForMcp({
       ...process.env,
       NO_COLOR: '1',
     },
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: ['ignore', 'ignore', 'pipe'],
   });
 
   let stderr = '';
