@@ -266,9 +266,9 @@ describe('slice CLI', () => {
 
     expect(report.summary.exactBoundaries).toBe(0);
     expect(report.summary.boundaryProbes).toBe(0);
-    expect(report.ranges.every((range: { boundaries: unknown[] }) => range.boundaries.length === 0)).toBe(
-      true,
-    );
+    expect(
+      report.ranges.every((range: { boundaries: unknown[] }) => range.boundaries.length === 0),
+    ).toBe(true);
   });
 
   it('does not fail when structural changes are only resolved', async () => {
