@@ -12,6 +12,7 @@ All notable changes to Viewportable Engine are documented here.
 - Canonical sampled-width range aggregation for repeated structural relationship changes while preserving raw per-viewport evidence.
 - Exact binary boundary refinement for introduced structural ranges with shared width-level probe caching and `--no-boundary` support.
 - Conservative structural reparenting plus explicit-identity appearance/disappearance changes, integrated with canonical ranges and exact boundary refinement.
+- GitHub Action structural compare mode via optional `baseline-url`, with dynamic report paths, compare-aware job summaries, artifact upload, and end-to-end Action smoke coverage.
 
 
 
