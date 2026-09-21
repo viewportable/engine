@@ -185,7 +185,35 @@ Guardrails:
 - no width threshold is used;
 - no CLI issue, severity, exit-code change, or default runtime cost is introduced.
 
-The next research step is to run this candidate generator against the small-range corpus cases and anti-oracle before deciding whether exact boundary refinement or a default detector is justified.
+The candidate generator was then run against the full Small-Range oracle and anti-oracle.
+
+Research gate result:
+
+```text
+Distinct Small-Range oracle RLFs:        4
+RLFs with sampled overlap candidate:     3
+
+Raw anti-oracle Small-Range reports:     43
+Anti reports with overlap candidate:     13
+Unique anti candidate groups:            at least 7
+```
+
+Short subject review:
+
+- **CloudConvert RLF #1** - strong: oracle says header/main content overlap only at 980px; the candidate is masthead vs fixed navbar at 980px.
+- **WillMyPhoneWork RLF #8** - strong: oracle says header/main overlap at 990-991px; the candidate is `#wrap` vs fixed navbar at exactly 990-991px.
+- **PepFeed RLF #6** - weak/over-broad: oracle says panels overlap only at 415px, while the sampled candidate persists across roughly 415-479px.
+- **AccountKiller RLF #23** - missed: its 476-480px short-lived layout state is not represented by this sibling-overlap relation.
+
+The anti-oracle pressure is also structural rather than just duplicate report noise. Repeated raw reports collapse to several distinct candidate groups on PepFeed and TopDocumentary, and some candidates are themselves narrow.
+
+Conclusion:
+
+> `separate -> overlap -> separate` is useful evidence, but not a sufficiently selective Small-Range detector family.
+
+Do **not** rescue this experiment with a copied 5px threshold, exact-boundary tuning, or corpus-specific subject rules. Exact boundaries cannot solve the more fundamental issue that short-lived overlap can be intentional/non-observable while real Small-Range failures can involve other relationship states.
+
+Keep the generic interval primitive and research analyzer. Move product work to a more semantically specific failure family.
 
 ### 5. Wrapping failure
 
@@ -666,8 +694,8 @@ Current sequence:
 2. canonical parent grouping + authored/repeated-flow evidence - implemented and benchmarked;
 3. authored-reflow review policy - implemented without suppression or corpus-specific thresholds;
 4. sampled relationship intervals - implemented as a minimal generic primitive;
-5. small-range anomaly research - next, detector-specific and benchmark-driven;
-6. element protrusion / generic collision after stronger observability evidence;
+5. small-range sibling-overlap experiment - completed as a no-go for production;
+6. element protrusion research - next; generic collision remains deferred;
 7. structural base-vs-head graph comparison.
 
 Each detector must earn its place through reviewed benchmark improvement and acceptable runtime/noise cost.
