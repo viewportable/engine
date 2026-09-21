@@ -14,9 +14,9 @@ Primary references:
 
 The ReDeCheck code is MIT-licensed. The 2020 paper is published open access under CC BY 4.0.
 
-## Why this matters to Slice
+## Why this matters to Viewportable Engine
 
-Slice and ReDeCheck independently converge on several important ideas:
+Viewportable Engine and ReDeCheck independently converge on several important ideas:
 
 - model layout structurally instead of relying only on pixels;
 - inspect behavior across viewport widths;
@@ -24,9 +24,9 @@ Slice and ReDeCheck independently converge on several important ideas:
 - distinguish different classes of responsive layout failures;
 - retain machine-readable evidence.
 
-Slice already has a modern Chromium/CDP capture path using `DOMSnapshot.captureSnapshot`, exact per-issue boundary search, deterministic detectors, grouping, and conservative CSS diagnosis.
+Viewportable Engine already has a modern Chromium/CDP capture path using `DOMSnapshot.captureSnapshot`, exact per-issue boundary search, deterministic detectors, grouping, and conservative CSS diagnosis.
 
-The research opportunity is therefore **not** to embed ReDeCheck or port it wholesale. The opportunity is to study its mathematical/modeling ideas and benchmark Slice against its known failure corpus.
+The research opportunity is therefore **not** to embed ReDeCheck or port it wholesale. The opportunity is to study its mathematical/modeling ideas and benchmark Viewportable Engine against its known failure corpus.
 
 ## ReDeCheck model
 
@@ -71,13 +71,13 @@ ReDeCheck reports five major responsive-layout failure classes.
 
 Two elements that did not overlap at a wider range begin to overlap at a narrower range.
 
-Slice currently has a narrower deterministic `fixed-element-collision` rule. Research question: can an RLG-like relationship model let us safely generalize collision detection beyond fixed elements without exploding false positives?
+Viewportable Engine currently has a narrower deterministic `fixed-element-collision` rule. Research question: can an RLG-like relationship model let us safely generalize collision detection beyond fixed elements without exploding false positives?
 
 ### 2. Element protrusion
 
 An element exceeds the bounds of its parent.
 
-This differs from Slice's current document-level horizontal overflow. A child can protrude from a component while the document itself still has no horizontal scrollbar.
+This differs from Viewportable Engine's current document-level horizontal overflow. A child can protrude from a component while the document itself still has no horizontal scrollbar.
 
 Potential future detector:
 
@@ -151,7 +151,7 @@ detector-specific verdict policy
 
 ### First small-range experiment: sibling overlap
 
-The first detector-specific experiment intentionally does **not** create a Slice issue.
+The first detector-specific experiment intentionally does **not** create a Viewportable Engine issue.
 
 It tracks only stable sibling pairs that are observable at every supplied sample width and classifies one binary structural relationship:
 
@@ -322,7 +322,7 @@ This is directly relevant to Viewportable architecture: detector outputs are evi
 - small-range layouts;
 - wrapping.
 
-This is a useful external benchmark because it was assembled independently of Slice.
+This is a useful external benchmark because it was assembled independently of Viewportable Engine.
 
 ### 2020 regression corpus
 
@@ -332,7 +332,7 @@ The 2020 paper reports that the RLG-comparison approach detected more injected c
 
 We should treat these numbers as results of that experiment, not as current product-comparison claims.
 
-## Accepted Slice baseline
+## Accepted Viewportable Engine baseline
 
 The first benchmark baseline is now established against the pinned 2017 corpus and manually classified results archive.
 
@@ -357,8 +357,8 @@ Baseline:
 25 clean comparable reports
 36 unsupported anti-oracle reports
 
-8,838 raw Slice issues
-96.4s aggregate Slice scan time
+8,838 raw Viewportable Engine issues
+96.4s aggregate Viewportable Engine scan time
 ```
 
 The five confirmed detections are:
@@ -371,10 +371,10 @@ The five confirmed detections are:
 
 The four automatic matches rejected as incidental are:
 
-- RLF 16 - Consumer-Reports Featured Products failure, while Slice matched mobile-header elements;
-- RLF 17 - Consumer-Reports footer Privacy Policy failure, while Slice matched mobile-header elements;
-- RLF 18 - Consumer-Reports Price Watch / Featured tiles failure, while Slice matched mobile-header elements;
-- RLF 19 - Duolingo carousel arrow failure, while Slice matched cloned language label/flag elements.
+- RLF 16 - Consumer-Reports Featured Products failure, while Viewportable Engine matched mobile-header elements;
+- RLF 17 - Consumer-Reports footer Privacy Policy failure, while Viewportable Engine matched mobile-header elements;
+- RLF 18 - Consumer-Reports Price Watch / Featured tiles failure, while Viewportable Engine matched mobile-header elements;
+- RLF 19 - Duolingo carousel arrow failure, while Viewportable Engine matched cloned language label/flag elements.
 
 This establishes an important benchmark rule:
 
@@ -392,7 +392,7 @@ A follow-up experiment showed that repairing layout ancestry across non-layout D
 
 After the accepted baseline, two orthogonal precision hypotheses were evaluated against the same 26-page corpus and reviewed oracle.
 
-| Variant | Confirmed detections | Incidental candidates | NOI negative candidates | Raw Slice issues | Aggregate scan time |
+| Variant | Confirmed detections | Incidental candidates | NOI negative candidates | Raw Viewportable Engine issues | Aggregate scan time |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Accepted baseline | 5 | 4 | 22 | 8,838 | 96.4s |
 | Connected layout ancestry | 5 | 3 | 16 | 919 | 82.7s |
@@ -514,7 +514,7 @@ The ReDeCheck corpus remains behaviorally unchanged after grouping:
 14 exact-range candidate matches
 1 shifted-range reproduction
 15 reviewed confirmed reproductions
-296 raw Slice issues
+296 raw Viewportable Engine issues
 81.0s aggregate scan time
 ```
 
@@ -595,11 +595,11 @@ This does not claim to infer product intent. The classification means only that 
 
 No severity, exit code, or suppression behavior changes as a result of this assessment.
 
-## Initial mapping to Slice
+## Initial mapping to Viewportable Engine
 
-| ReDeCheck concept | Slice today | Research direction |
+| ReDeCheck concept | Viewportable Engine today | Research direction |
 | --- | --- | --- |
-| layout extraction | CDP DOMSnapshot | keep Slice capture |
+| layout extraction | CDP DOMSnapshot | keep Viewportable Engine capture |
 | visibility ranges | indirect/per-issue probing | normalized visibility intervals |
 | alignment ranges | limited detector-specific geometry | Surface Graph relationships |
 | collision | fixed elements only | safe generic collision candidate |
@@ -663,9 +663,9 @@ Do not implement the full graph until benchmarks show which relationships materi
 - confirm how many still render deterministically in current Chromium;
 - record failures that depend on obsolete browser behavior/assets.
 
-### R2 - Establish a Slice baseline - complete
+### R2 - Establish a Viewportable Engine baseline - complete
 
-Run current Slice against every usable corpus page and classify:
+Run current Viewportable Engine against every usable corpus page and classify:
 
 - detected correctly;
 - partially detected;
