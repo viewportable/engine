@@ -3,12 +3,16 @@ import {
   aggregateStructuralChangeRanges,
   structuralChangeFingerprint,
 } from '../src/compare/ranges.js';
-import type { StructuralChange, StructuralDiff } from '../src/compare/structural-diff.js';
+import type {
+  SiblingOverlapStructuralChange,
+  StructuralChange,
+  StructuralDiff,
+} from '../src/compare/structural-diff.js';
 
 function overlap(
   width: number,
   direction: 'introduced' | 'resolved' = 'introduced',
-): StructuralChange {
+): SiblingOverlapStructuralChange {
   return {
     kind: 'sibling-overlap',
     direction,
@@ -89,7 +93,7 @@ describe('aggregateStructuralChangeRanges', () => {
 
   it('normalizes sibling order in the fingerprint', () => {
     const first = overlap(390);
-    const reversed: StructuralChange = {
+    const reversed: SiblingOverlapStructuralChange = {
       ...first,
       subjects: [first.subjects[1], first.subjects[0]],
     };
