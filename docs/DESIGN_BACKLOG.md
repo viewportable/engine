@@ -23,14 +23,15 @@ The committed React Native adapter spike is tracked in `ROADMAP.md`; only uncomm
 
 ## Analysis capabilities
 
-The benchmark-driven ReDeCheck sequence is tracked in `ROADMAP.md` and `docs/research/REDECHECK.md`. Current priority is conservative element protrusion research after the completed wrapping and small-range gates; generic collision remains deferred until stronger evidence supports its false-positive cost.
+The benchmark-driven ReDeCheck sequence is tracked in `ROADMAP.md` and `docs/research/REDECHECK.md`. Single-version element protrusion research is complete with a no-go for generic production detection. Current priority is structural base-vs-candidate comparison; generic collision remains deferred until regression context or stronger evidence justifies its false-positive cost.
 
 
 ### Structural base-vs-candidate comparison
 
-- Status: promoted to current roadmap work
+- Status: V1 implementation in progress
 - Compare two internal surface/relationship representations and report meaningful layout changes without requiring pixel baselines.
 - Prefer newly introduced structural changes over single-version intent inference.
+- V1 intentionally starts with matched-node sibling overlap and parent containment state changes rather than a generic graph.
 
 ### Pixel/screenshot verification
 
