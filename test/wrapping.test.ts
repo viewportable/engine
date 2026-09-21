@@ -154,7 +154,6 @@ describe('detectWrappingTransitions', () => {
   });
 });
 
-
 function wrappingIssue(
   id: string,
   selector: string,
