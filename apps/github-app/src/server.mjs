@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 import { createServer } from 'node:http';
+import { pathToFileURL } from 'node:url';
 import { GitHubAppClient } from './github-client.mjs';
 import { acceptReviewResult } from './results.mjs';
 import { JsonFileStateStore } from './state.mjs';
@@ -140,6 +141,6 @@ async function main() {
   });
 }
 
-if (import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   await main();
 }
