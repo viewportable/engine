@@ -226,9 +226,8 @@ function renderTable(
     const groupedIssueIds = new Set(
       rootsAtWidth.flatMap(
         (rootCause) =>
-          rootCause.observations.find(
-            (observation) => observation.viewportWidth === viewport.width,
-          )?.issueIds ?? [],
+          rootCause.observations.find((observation) => observation.viewportWidth === viewport.width)
+            ?.issueIds ?? [],
       ),
     );
     const ungroupedIssues = viewport.issues.filter((issue) => !groupedIssueIds.has(issue.id));
