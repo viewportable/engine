@@ -37,13 +37,16 @@ function rootCauseObservationAtWidth(rootCause, width) {
 
 function rootCauseText(rootCause, observation) {
   if (rootCause.type === 'wrapping') {
-    const authored = rootCause.evidence?.authoredFlexWrap ? '; authored flex-wrap' : '';
+    const review =
+      rootCause.assessment?.classification === 'authored-reflow-candidate'
+        ? '; review: authored reflow candidate'
+        : '';
     const count = observation.wrappedSiblingCount ?? observation.issueIds?.length ?? '?';
     const suffix = count === 1 ? 'sibling' : 'siblings';
 
     return (
       `wrapping: ${rootCause.selector} (${count} ${suffix} wrap; ` +
-      `${observation.stableSiblingCount ?? '?'} stay${authored})`
+      `${observation.stableSiblingCount ?? '?'} stay${review})`
     );
   }
 
@@ -111,7 +114,9 @@ export function renderGitHubSummary(results) {
         rootCause.type === 'wrapping'
           ? [
               'Grouped sibling wrapping',
-              rootCause.evidence?.authoredFlexWrap ? 'authored flex-wrap' : null,
+              rootCause.assessment?.classification === 'authored-reflow-candidate'
+                ? 'review: authored reflow candidate'
+                : null,
               rootCause.evidence?.transitionCount
                 ? `${rootCause.evidence.transitionCount} transition${rootCause.evidence.transitionCount === 1 ? '' : 's'}`
                 : null,
