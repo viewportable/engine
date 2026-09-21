@@ -1,6 +1,6 @@
 # Modular Engine Architecture
 
-Slice is expected to evolve into the Viewportable engine. The engine should be modular and composable from the beginning, without turning detector development into plugin-framework work and without charging runtime cost for disabled capabilities.
+Viewportable Engine is expected to evolve into the Viewportable engine. The engine should be modular and composable from the beginning, without turning detector development into plugin-framework work and without charging runtime cost for disabled capabilities.
 
 ## System context
 
@@ -71,7 +71,7 @@ reporters
 
 The important boundary is between **capturing evidence** and **interpreting evidence**.
 
-Today Slice already captures Chromium layout data with CDP `DOMSnapshot.captureSnapshot`, including DOM rects and paint order. Detectors should consume a normalized internal representation instead of each detector independently querying the page.
+Today Viewportable Engine already captures Chromium layout data with CDP `DOMSnapshot.captureSnapshot`, including DOM rects and paint order. Detectors should consume a normalized internal representation instead of each detector independently querying the page.
 
 ## Capability-driven execution
 
