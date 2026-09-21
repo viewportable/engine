@@ -1,5 +1,5 @@
-name: Slice responsive QA
-description: Deterministic responsive QA with machine-readable evidence, job summary, and artifact upload
+name: Viewportable Engine
+description: Viewportable Engine responsive validation with machine-readable evidence, job summary, and artifact upload
 author: Viewportable
 
 inputs:
@@ -11,7 +11,7 @@ inputs:
     required: false
     default: ''
   out:
-    description: Output directory for Slice artifacts
+    description: Output directory for Viewportable Engine artifacts
     required: false
     default: .slice
   artifact-name:
@@ -25,13 +25,13 @@ inputs:
 
 outputs:
   exit_code:
-    description: Slice CLI exit code (0 clean, 1 findings, 2 scanner/setup failure)
+    description: Engine CLI exit code (0 clean, 1 findings, 2 scanner/setup failure)
     value: ${{ steps.scan.outputs.exit_code }}
   result_path:
     description: Path to results.json
     value: ${{ steps.scan.outputs.result_path }}
   artifact_url:
-    description: URL of the uploaded Slice artifact when available
+    description: URL of the uploaded Viewportable Engine artifact when available
     value: ${{ steps.artifact.outputs.artifact-url }}
 
 runs:
@@ -42,7 +42,7 @@ runs:
       with:
         node-version: '24'
 
-    - name: Prepare Slice
+    - name: Prepare Viewportable Engine
       shell: bash
       working-directory: ${{ github.action_path }}
       run: |
@@ -59,7 +59,7 @@ runs:
       working-directory: ${{ github.action_path }}
       run: npx playwright install --with-deps chromium
 
-    - name: Run Slice
+    - name: Run Viewportable Engine
       id: scan
       shell: bash
       env:
@@ -87,7 +87,7 @@ runs:
         SLICE_RESULT_PATH: ${{ inputs.out }}/results.json
       run: node "$GITHUB_ACTION_PATH/scripts/github-summary.mjs" "$SLICE_RESULT_PATH"
 
-    - name: Upload Slice results
+    - name: Upload Viewportable Engine results
       id: artifact
       if: ${{ always() }}
       uses: actions/upload-artifact@v7
@@ -97,7 +97,7 @@ runs:
         if-no-files-found: ignore
         include-hidden-files: true
 
-    - name: Enforce Slice result
+    - name: Enforce Viewportable Engine result
       if: ${{ always() }}
       shell: bash
       env:
