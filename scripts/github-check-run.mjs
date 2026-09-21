@@ -217,9 +217,7 @@ async function main() {
   }
 
   const fallbackDetailsUrl =
-    process.env.GITHUB_SERVER_URL &&
-    repository &&
-    process.env.GITHUB_RUN_ID
+    process.env.GITHUB_SERVER_URL && repository && process.env.GITHUB_RUN_ID
       ? `${process.env.GITHUB_SERVER_URL}/${repository}/actions/runs/${process.env.GITHUB_RUN_ID}`
       : null;
   const detailsUrl = process.env.SLICE_ARTIFACT_URL?.trim() || fallbackDetailsUrl;
