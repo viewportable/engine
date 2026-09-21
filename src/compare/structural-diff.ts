@@ -45,9 +45,7 @@ export interface ParentContainmentStructuralChange {
   candidateEvidence: ContainmentRelationshipEvidence;
 }
 
-export type StructuralChange =
-  | SiblingOverlapStructuralChange
-  | ParentContainmentStructuralChange;
+export type StructuralChange = SiblingOverlapStructuralChange | ParentContainmentStructuralChange;
 
 export interface StructuralDiff {
   platform: SurfaceSnapshot['platform'];
@@ -195,7 +193,10 @@ function compareSiblingOverlap(
         if (!second) continue;
 
         const baselineState = overlapRelationshipState(first.baseline.rect, second.baseline.rect);
-        const candidateState = overlapRelationshipState(first.candidate.rect, second.candidate.rect);
+        const candidateState = overlapRelationshipState(
+          first.candidate.rect,
+          second.candidate.rect,
+        );
         if (baselineState === candidateState) continue;
 
         changes.push({
