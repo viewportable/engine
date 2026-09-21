@@ -27,8 +27,7 @@ function renderRangeWidth(
   lastWidth: number,
   boundaries: StructuralCompareReport['ranges'][number]['boundaries'],
 ): string {
-  const sampled =
-    firstWidth === lastWidth ? `${firstWidth}px` : `${firstWidth}-${lastWidth}px`;
+  const sampled = firstWidth === lastWidth ? `${firstWidth}px` : `${firstWidth}-${lastWidth}px`;
   const lower = boundaries.find((boundary) => boundary.edge === 'lower');
   const upper = boundaries.find((boundary) => boundary.edge === 'upper');
 
