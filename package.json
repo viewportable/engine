@@ -2,15 +2,15 @@
   "name": "@viewportable/slice",
   "version": "0.1.0-rc.1",
   "private": true,
-  "description": "Deterministic responsive QA for coding agents",
-  "homepage": "https://github.com/viewportable/slice#readme",
+  "description": "Viewportable Engine - deterministic responsive QA for coding agents",
+  "homepage": "https://github.com/viewportable/engine#readme",
   "bugs": {
-    "url": "https://github.com/viewportable/slice/issues"
+    "url": "https://github.com/viewportable/engine/issues"
   },
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/viewportable/slice.git"
+    "url": "git+https://github.com/viewportable/engine.git"
   },
   "bin": {
     "slice": "./dist/cli.mjs"
