@@ -69,9 +69,7 @@ function viewportFindingTexts(viewport, rootCauses) {
   const groupedIssueIds = new Set(
     rootsAtWidth.flatMap(({ observation }) => observation.issueIds ?? []),
   );
-  const ungroupedIssues = (viewport.issues ?? []).filter(
-    (issue) => !groupedIssueIds.has(issue.id),
-  );
+  const ungroupedIssues = (viewport.issues ?? []).filter((issue) => !groupedIssueIds.has(issue.id));
 
   return [
     ...rootsAtWidth.map(({ rootCause, observation }) => rootCauseText(rootCause, observation)),
