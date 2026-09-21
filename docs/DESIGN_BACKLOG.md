@@ -28,7 +28,7 @@ The benchmark-driven ReDeCheck sequence is tracked in `ROADMAP.md` and `docs/res
 
 ### Structural base-vs-candidate comparison
 
-- Status: V1 implementation in progress
+- Status: V1 complete
 - Compare two internal surface/relationship representations and report meaningful layout changes without requiring pixel baselines.
 - Prefer newly introduced structural changes over single-version intent inference.
 - V1 intentionally starts with matched-node sibling overlap and parent containment state changes rather than a generic graph.
@@ -59,9 +59,12 @@ The benchmark-driven ReDeCheck sequence is tracked in `ROADMAP.md` and `docs/res
 
 ### MCP server
 
-- Status: candidate
-- Expose high-level tools such as `scan`, `compare`, `explain`, and `reproduce`.
-- Use MCP input/output schemas rather than inventing a Viewportable-specific agent transport.
+- Status: V1 complete
+- Local stdio integration now exposes `viewportable_scan` and `viewportable_compare` through the official MCP TypeScript SDK.
+- V1 deliberately reuses the built production CLI/report path instead of introducing a second execution implementation.
+- Compact tool responses return agent-relevant evidence while full reports remain under `.slice/mcp/`.
+- `explain` and `reproduce` remain candidates; add them only after real agent usage shows a stable semantic contract.
+- Do not invent a Viewportable-specific agent transport.
 
 ### Public API
 
