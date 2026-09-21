@@ -181,6 +181,96 @@ describe('slice CLI', () => {
     expect(result.stdout).toContain('375-430px');
   });
 
+  it('refines introduced structural ranges to exact responsive boundaries', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('structural-diff-responsive-candidate.html', [
+      '--baseline-url',
+      `${baseUrl}/structural-diff-baseline.html`,
+      '--widths',
+      '320,375,430,520',
+      '--wait',
+      '0',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(1);
+    const report = JSON.parse(await readFile(path.join(out, 'structural-diff.json'), 'utf8'));
+
+    expect(report.summary).toMatchObject({
+      viewportsChecked: 4,
+      introducedChanges: 4,
+      introducedRanges: 2,
+      exactBoundaries: 4,
+    });
+
+    for (const range of report.ranges) {
+      expect(range).toMatchObject({
+        direction: 'introduced',
+        firstWidth: 375,
+        lastWidth: 430,
+        sampleWidths: [375, 430],
+        boundaries: [
+          {
+            edge: 'lower',
+            sampledPassWidth: 320,
+            sampledFailWidth: 375,
+            boundary: 350,
+            lastGoodWidth: 349,
+            firstBadWidth: 350,
+          },
+          {
+            edge: 'upper',
+            sampledPassWidth: 520,
+            sampledFailWidth: 430,
+            boundary: 499,
+            lastGoodWidth: 500,
+            firstBadWidth: 499,
+          },
+        ],
+      });
+    }
+
+    const logicalProbes = report.ranges.reduce(
+      (sum: number, range: { boundaries: Array<{ probesUsed: number }> }) =>
+        sum +
+        range.boundaries.reduce(
+          (boundarySum: number, boundary: { probesUsed: number }) =>
+            boundarySum + boundary.probesUsed,
+          0,
+        ),
+      0,
+    );
+
+    expect(report.summary.boundaryProbes).toBeGreaterThan(0);
+    expect(report.summary.boundaryProbes).toBeLessThan(logicalProbes);
+    expect(result.stdout).toContain('350-499px exact | sampled 375-430px');
+  });
+
+  it('skips structural boundary probes with --no-boundary', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('structural-diff-responsive-candidate.html', [
+      '--baseline-url',
+      `${baseUrl}/structural-diff-baseline.html`,
+      '--widths',
+      '320,375,430,520',
+      '--wait',
+      '0',
+      '--no-boundary',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(1);
+    const report = JSON.parse(await readFile(path.join(out, 'structural-diff.json'), 'utf8'));
+
+    expect(report.summary.exactBoundaries).toBe(0);
+    expect(report.summary.boundaryProbes).toBe(0);
+    expect(report.ranges.every((range: { boundaries: unknown[] }) => range.boundaries.length === 0)).toBe(
+      true,
+    );
+  });
+
   it('does not fail when structural changes are only resolved', async () => {
     const out = await makeOutDir();
     const result = await runCli('structural-diff-baseline.html', [
