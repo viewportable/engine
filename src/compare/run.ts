@@ -4,6 +4,7 @@ import { captureBrowserSurface } from '../capture.js';
 import { installStabilization, stabilizeViewport } from '../stabilize.js';
 import type { SurfaceSnapshot } from '../surface.js';
 import type { LayoutNode } from '../types.js';
+import { aggregateStructuralChangeRanges, type StructuralChangeRange } from './ranges.js';
 import { compareStructuralSurfaces, type StructuralDiff } from './structural-diff.js';
 
 export interface StructuralCompareRunOptions {
@@ -26,9 +27,13 @@ export interface StructuralCompareReport {
     introducedChanges: number;
     resolvedChanges: number;
     totalChanges: number;
+    introducedRanges: number;
+    resolvedRanges: number;
+    totalRanges: number;
     durationMs: number;
   };
   viewports: StructuralDiff[];
+  ranges: StructuralChangeRange[];
 }
 
 async function navigateAndCapture(
@@ -100,6 +105,10 @@ export async function runStructuralCompare(
       0,
     );
 
+    const ranges = aggregateStructuralChangeRanges(viewports);
+    const introducedRanges = ranges.filter((range) => range.direction === 'introduced').length;
+    const resolvedRanges = ranges.filter((range) => range.direction === 'resolved').length;
+
     return {
       version: 1,
       baselineUrl,
@@ -112,9 +121,13 @@ export async function runStructuralCompare(
         introducedChanges,
         resolvedChanges,
         totalChanges: introducedChanges + resolvedChanges,
+        introducedRanges,
+        resolvedRanges,
+        totalRanges: ranges.length,
         durationMs: Date.now() - startedAt,
       },
       viewports,
+      ranges,
     };
   } finally {
     await runtime.browser.close();
