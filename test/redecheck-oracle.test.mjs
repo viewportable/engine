@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   classifyAntiOracleReport,
   classifyFailure,
-  compatibleFindingsInRange,
   parseAntiOracle,
   parseOracle,
   widthsForPage,
