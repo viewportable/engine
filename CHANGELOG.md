@@ -9,6 +9,7 @@ All notable changes to Viewportable Engine are documented here.
 - Structural base-vs-candidate comparison for sibling overlap and parent containment.
 - Conservative cross-version node matching using authored IDs/test attributes with structural-path fallback.
 - `--baseline-url` CLI mode with `.slice/structural-diff.json`; introduced changes fail the run while resolved-only changes remain non-failing evidence.
+- Canonical sampled-width range aggregation for repeated structural relationship changes while preserving raw per-viewport evidence.
 
 
 
