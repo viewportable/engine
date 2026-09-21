@@ -96,7 +96,9 @@ export function crossVersionNodeKey(
   };
 }
 
-function uniqueKeyIndex(nodes: LayoutNode[]): Map<string, { node: LayoutNode; quality: CrossVersionMatchQuality }> {
+function uniqueKeyIndex(
+  nodes: LayoutNode[],
+): Map<string, { node: LayoutNode; quality: CrossVersionMatchQuality }> {
   const nodesByIndex = new Map(nodes.map((node) => [node.index, node]));
   const grouped = new Map<string, Array<{ node: LayoutNode; quality: CrossVersionMatchQuality }>>();
 
