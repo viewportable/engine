@@ -57,12 +57,9 @@ export function renderStructuralCompareReport(
         range.firstWidth === range.lastWidth
           ? `${range.firstWidth}px`
           : `${range.firstWidth}-${range.lastWidth}px`;
-      const samples =
-        range.sampleCount > 1 ? ` | ${range.sampleCount} sampled widths` : '';
+      const samples = range.sampleCount > 1 ? ` | ${range.sampleCount} sampled widths` : '';
 
-      process.stdout.write(
-        `    ${symbol} ${width}  ${renderChange(range.change)}${samples}\n`,
-      );
+      process.stdout.write(`    ${symbol} ${width}  ${renderChange(range.change)}${samples}\n`);
     }
   }
 
