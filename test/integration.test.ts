@@ -247,6 +247,74 @@ describe('slice CLI', () => {
     expect(result.stdout).toContain('350-499px exact | sampled 375-430px');
   });
 
+  it('refines responsive disappearance and reparenting to exact boundaries', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('structural-identity-responsive-candidate.html', [
+      '--baseline-url',
+      `${baseUrl}/structural-identity-responsive-baseline.html`,
+      '--widths',
+      '320,375,430,520',
+      '--wait',
+      '0',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(1);
+    const report = JSON.parse(await readFile(path.join(out, 'structural-diff.json'), 'utf8'));
+
+    expect(report.summary).toMatchObject({
+      viewportsChecked: 4,
+      introducedChanges: 4,
+      resolvedChanges: 0,
+      introducedRanges: 2,
+      resolvedRanges: 0,
+      exactBoundaries: 4,
+    });
+
+    expect(report.ranges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'node-presence',
+          direction: 'introduced',
+          firstWidth: 375,
+          lastWidth: 430,
+          change: expect.objectContaining({
+            subject: expect.objectContaining({ key: 'id:checkout-button' }),
+            baselineState: 'visible',
+            candidateState: 'missing',
+          }),
+          boundaries: [
+            expect.objectContaining({ edge: 'lower', boundary: 350 }),
+            expect.objectContaining({ edge: 'upper', boundary: 499 }),
+          ],
+        }),
+        expect.objectContaining({
+          kind: 'reparenting',
+          direction: 'introduced',
+          firstWidth: 375,
+          lastWidth: 430,
+          change: expect.objectContaining({
+            subject: expect.objectContaining({ key: 'id:cta' }),
+            baselineParent: expect.objectContaining({ key: 'id:pricing-card' }),
+            candidateParent: expect.objectContaining({ key: 'id:page-root' }),
+          }),
+          boundaries: [
+            expect.objectContaining({ edge: 'lower', boundary: 350 }),
+            expect.objectContaining({ edge: 'upper', boundary: 499 }),
+          ],
+        }),
+      ]),
+    );
+
+    expect(result.stdout).toContain(
+      '350-499px exact | sampled 375-430px  id:checkout-button disappeared',
+    );
+    expect(result.stdout).toContain(
+      '350-499px exact | sampled 375-430px  id:cta reparented id:pricing-card -> id:page-root',
+    );
+  });
+
   it('skips structural boundary probes with --no-boundary', async () => {
     const out = await makeOutDir();
     const result = await runCli('structural-diff-responsive-candidate.html', [

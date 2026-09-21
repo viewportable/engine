@@ -24,28 +24,46 @@ export interface StructuralChangeRange {
 }
 
 export function structuralChangeFingerprint(change: StructuralChange): string {
-  if (change.kind === 'sibling-overlap') {
-    const subjects = change.subjects.map((subject) => subject.key).sort();
+  switch (change.kind) {
+    case 'sibling-overlap': {
+      const subjects = change.subjects.map((subject) => subject.key).sort();
 
-    return [
-      change.kind,
-      change.direction,
-      change.parent.key,
-      subjects[0],
-      subjects[1],
-      change.baselineState,
-      change.candidateState,
-    ].join('|');
+      return [
+        change.kind,
+        change.direction,
+        change.parent.key,
+        subjects[0],
+        subjects[1],
+        change.baselineState,
+        change.candidateState,
+      ].join('|');
+    }
+    case 'parent-containment':
+      return [
+        change.kind,
+        change.direction,
+        change.parent.key,
+        change.subject.key,
+        change.baselineState,
+        change.candidateState,
+      ].join('|');
+    case 'reparenting':
+      return [
+        change.kind,
+        change.direction,
+        change.subject.key,
+        change.baselineParent.key,
+        change.candidateParent.key,
+      ].join('|');
+    case 'node-presence':
+      return [
+        change.kind,
+        change.direction,
+        change.subject.key,
+        change.baselineState,
+        change.candidateState,
+      ].join('|');
   }
-
-  return [
-    change.kind,
-    change.direction,
-    change.parent.key,
-    change.subject.key,
-    change.baselineState,
-    change.candidateState,
-  ].join('|');
 }
 
 export function aggregateStructuralChangeRanges(

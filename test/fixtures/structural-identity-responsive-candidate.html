@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      #page-root { width: 280px; margin: 40px; padding: 16px; }
+      #pricing-card { padding: 16px; }
+      #cta, #checkout-button { display: block; width: 140px; height: 32px; margin: 8px 0; }
+    </style>
+  </head>
+  <body>
+    <main id="page-root">
+      <section id="pricing-card">
+        <button id="cta">Choose plan</button>
+        <button id="checkout-button">Checkout</button>
+      </section>
+    </main>
+    <script>
+      const pageRoot = document.querySelector('#page-root');
+      const pricingCard = document.querySelector('#pricing-card');
+      const cta = document.querySelector('#cta');
+      const checkoutButton = document.querySelector('#checkout-button');
+
+      function applyResponsiveStructure() {
+        const regressed = window.innerWidth >= 350 && window.innerWidth <= 499;
+        (regressed ? pageRoot : pricingCard).appendChild(cta);
+        checkoutButton.style.display = regressed ? 'none' : 'block';
+      }
+
+      applyResponsiveStructure();
+      window.addEventListener('resize', applyResponsiveStructure);
+    </script>
+  </body>
+</html>

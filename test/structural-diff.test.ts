@@ -142,7 +142,7 @@ describe('compareStructuralSurfaces', () => {
     expect(compareStructuralSurfaces(baseline, candidate).changes).toEqual([]);
   });
 
-  it('does not compare a child relationship after reparenting', () => {
+  it('reports conservative reparenting when the child and both parents persist', () => {
     const baseline = surface([
       node(1, -1, 'left', { x: 0, y: 0, width: 200, height: 80 }),
       node(2, -1, 'right', { x: 250, y: 0, width: 200, height: 80 }),
@@ -154,7 +154,67 @@ describe('compareStructuralSurfaces', () => {
       node(22, 21, 'cta', { x: 300, y: 20, width: 100, height: 30 }),
     ]);
 
-    expect(compareStructuralSurfaces(baseline, candidate).changes).toEqual([]);
+    const changes = compareStructuralSurfaces(baseline, candidate).changes;
+
+    expect(changes).toContainEqual({
+      kind: 'reparenting',
+      direction: 'introduced',
+      viewport: { width: 768, height: 900 },
+      subject: { key: 'id:cta', quality: 'explicit', tagName: 'DIV' },
+      baselineParent: { key: 'id:left', quality: 'explicit', tagName: 'DIV' },
+      candidateParent: { key: 'id:right', quality: 'explicit', tagName: 'DIV' },
+    });
+    expect(changes.filter((change) => change.kind === 'parent-containment')).toEqual([]);
+  });
+
+  it('reports disappearance as introduced and appearance as resolved evidence', () => {
+    const baseline = surface([
+      node(1, -1, 'root', { x: 0, y: 0, width: 300, height: 200 }),
+      node(2, 1, 'checkout-button', { x: 20, y: 20, width: 120, height: 30 }),
+    ]);
+    const candidate = surface([
+      node(20, -1, 'root', { x: 0, y: 0, width: 300, height: 200 }),
+      node(21, 20, 'promo-badge', { x: 20, y: 20, width: 120, height: 30 }),
+    ]);
+
+    expect(compareStructuralSurfaces(baseline, candidate).changes).toEqual(
+      expect.arrayContaining([
+        {
+          kind: 'node-presence',
+          direction: 'introduced',
+          viewport: { width: 768, height: 900 },
+          subject: { key: 'id:checkout-button', quality: 'explicit', tagName: 'DIV' },
+          baselineState: 'visible',
+          candidateState: 'missing',
+        },
+        {
+          kind: 'node-presence',
+          direction: 'resolved',
+          viewport: { width: 768, height: 900 },
+          subject: { key: 'id:promo-badge', quality: 'explicit', tagName: 'DIV' },
+          baselineState: 'missing',
+          candidateState: 'visible',
+        },
+      ]),
+    );
+  });
+
+  it('does not call an ambiguous duplicate identity disappeared', () => {
+    const baseline = surface([
+      node(1, -1, 'root', { x: 0, y: 0, width: 300, height: 200 }),
+      node(2, 1, 'item', { x: 20, y: 20, width: 120, height: 30 }),
+    ]);
+    const candidate = surface([
+      node(20, -1, 'root', { x: 0, y: 0, width: 300, height: 200 }),
+      node(21, 20, 'item', { x: 20, y: 20, width: 120, height: 30 }),
+      node(22, 20, 'item', { x: 20, y: 60, width: 120, height: 30 }),
+    ]);
+
+    expect(
+      compareStructuralSurfaces(baseline, candidate).changes.filter(
+        (change) => change.kind === 'node-presence',
+      ),
+    ).toEqual([]);
   });
 
   it('rejects different viewport sizes', () => {

@@ -11,6 +11,10 @@ export interface CrossVersionNodeKey {
   quality: CrossVersionMatchQuality;
 }
 
+export interface CrossVersionNodeIndexEntry extends CrossVersionNodeKey {
+  node: LayoutNode;
+}
+
 export interface CrossVersionNodeMatch {
   key: string;
   quality: CrossVersionMatchQuality;
@@ -22,6 +26,18 @@ export interface CrossVersionNodeMatchResult {
   matches: CrossVersionNodeMatch[];
   baselineMatchedByIndex: Map<number, CrossVersionNodeMatch>;
   candidateMatchedByIndex: Map<number, CrossVersionNodeMatch>;
+  baselineUniqueByKey: Map<string, CrossVersionNodeIndexEntry>;
+  candidateUniqueByKey: Map<string, CrossVersionNodeIndexEntry>;
+  baselineUniqueByIndex: Map<number, CrossVersionNodeIndexEntry>;
+  candidateUniqueByIndex: Map<number, CrossVersionNodeIndexEntry>;
+  baselineObservedKeys: Set<string>;
+  candidateObservedKeys: Set<string>;
+}
+
+interface CrossVersionNodeIndex {
+  uniqueByKey: Map<string, CrossVersionNodeIndexEntry>;
+  uniqueByIndex: Map<number, CrossVersionNodeIndexEntry>;
+  observedKeys: Set<string>;
 }
 
 function stableId(node: LayoutNode): string | null {
@@ -96,11 +112,9 @@ export function crossVersionNodeKey(
   };
 }
 
-function uniqueKeyIndex(
-  nodes: LayoutNode[],
-): Map<string, { node: LayoutNode; quality: CrossVersionMatchQuality }> {
+function indexCrossVersionNodes(nodes: LayoutNode[]): CrossVersionNodeIndex {
   const nodesByIndex = new Map(nodes.map((node) => [node.index, node]));
-  const grouped = new Map<string, Array<{ node: LayoutNode; quality: CrossVersionMatchQuality }>>();
+  const grouped = new Map<string, CrossVersionNodeIndexEntry[]>();
 
   for (const node of nodes) {
     if (!node.isVisible) continue;
@@ -109,30 +123,34 @@ function uniqueKeyIndex(
     if (!identity) continue;
 
     const entries = grouped.get(identity.key) ?? [];
-    entries.push({ node, quality: identity.quality });
+    entries.push({ node, ...identity });
     grouped.set(identity.key, entries);
   }
 
-  const unique = new Map<string, { node: LayoutNode; quality: CrossVersionMatchQuality }>();
+  const uniqueByKey = new Map<string, CrossVersionNodeIndexEntry>();
   for (const [key, entries] of grouped) {
     if (entries.length === 1 && entries[0]) {
-      unique.set(key, entries[0]);
+      uniqueByKey.set(key, entries[0]);
     }
   }
 
-  return unique;
+  return {
+    uniqueByKey,
+    uniqueByIndex: new Map([...uniqueByKey.values()].map((entry) => [entry.node.index, entry])),
+    observedKeys: new Set(grouped.keys()),
+  };
 }
 
 export function matchCrossVersionNodes(
   baseline: LayoutNode[],
   candidate: LayoutNode[],
 ): CrossVersionNodeMatchResult {
-  const baselineByKey = uniqueKeyIndex(baseline);
-  const candidateByKey = uniqueKeyIndex(candidate);
+  const baselineIndex = indexCrossVersionNodes(baseline);
+  const candidateIndex = indexCrossVersionNodes(candidate);
   const matches: CrossVersionNodeMatch[] = [];
 
-  for (const [key, baselineEntry] of baselineByKey) {
-    const candidateEntry = candidateByKey.get(key);
+  for (const [key, baselineEntry] of baselineIndex.uniqueByKey) {
+    const candidateEntry = candidateIndex.uniqueByKey.get(key);
     if (!candidateEntry) continue;
 
     matches.push({
@@ -152,5 +170,11 @@ export function matchCrossVersionNodes(
     matches,
     baselineMatchedByIndex: new Map(matches.map((match) => [match.baseline.index, match])),
     candidateMatchedByIndex: new Map(matches.map((match) => [match.candidate.index, match])),
+    baselineUniqueByKey: baselineIndex.uniqueByKey,
+    candidateUniqueByKey: candidateIndex.uniqueByKey,
+    baselineUniqueByIndex: baselineIndex.uniqueByIndex,
+    candidateUniqueByIndex: candidateIndex.uniqueByIndex,
+    baselineObservedKeys: baselineIndex.observedKeys,
+    candidateObservedKeys: candidateIndex.observedKeys,
   };
 }
