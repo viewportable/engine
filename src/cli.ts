@@ -933,6 +933,7 @@ async function runCompare(
     height,
     waitMs,
     timeoutMs,
+    boundary: options.boundary,
     ...(options.readySelector ? { readySelector: options.readySelector } : {}),
   });
   const outputPath = await writeStructuralCompareReport(options.out, report);

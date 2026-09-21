@@ -4,7 +4,12 @@ import { captureBrowserSurface } from '../capture.js';
 import { installStabilization, stabilizeViewport } from '../stabilize.js';
 import type { SurfaceSnapshot } from '../surface.js';
 import type { LayoutNode } from '../types.js';
-import { aggregateStructuralChangeRanges, type StructuralChangeRange } from './ranges.js';
+import { refineIntroducedStructuralRangeBoundaries } from './boundaries.js';
+import {
+  aggregateStructuralChangeRanges,
+  structuralChangeFingerprint,
+  type StructuralChangeRange,
+} from './ranges.js';
 import { compareStructuralSurfaces, type StructuralDiff } from './structural-diff.js';
 
 export interface StructuralCompareRunOptions {
@@ -12,6 +17,7 @@ export interface StructuralCompareRunOptions {
   height: number;
   waitMs: number;
   timeoutMs: number;
+  boundary: boolean;
   readySelector?: string;
 }
 
@@ -30,6 +36,8 @@ export interface StructuralCompareReport {
     introducedRanges: number;
     resolvedRanges: number;
     totalRanges: number;
+    exactBoundaries: number;
+    boundaryProbes: number;
     durationMs: number;
   };
   viewports: StructuralDiff[];
@@ -66,6 +74,31 @@ async function navigateAndCapture(
   return captures;
 }
 
+async function captureStructuralDiffAtWidth(
+  baselineRuntime: BrowserRuntime,
+  candidateRuntime: BrowserRuntime,
+  width: number,
+  options: StructuralCompareRunOptions,
+): Promise<StructuralDiff> {
+  await Promise.all([
+    stabilizeViewport(baselineRuntime.page, width, options.height, options.waitMs),
+    stabilizeViewport(candidateRuntime.page, width, options.height, options.waitMs),
+  ]);
+
+  const [baseline, candidate] = await Promise.all([
+    captureBrowserSurface(baselineRuntime.cdp, {
+      width,
+      height: options.height,
+    }),
+    captureBrowserSurface(candidateRuntime.cdp, {
+      width,
+      height: options.height,
+    }),
+  ]);
+
+  return compareStructuralSurfaces(baseline, candidate);
+}
+
 export async function runStructuralCompare(
   baselineUrl: string,
   candidateUrl: string,
@@ -80,8 +113,19 @@ export async function runStructuralCompare(
   try {
     await installStabilization(runtime.context);
 
-    const baselineCaptures = await navigateAndCapture(runtime, baselineUrl, options);
-    const candidateCaptures = await navigateAndCapture(runtime, candidateUrl, options);
+    const candidatePage = await runtime.context.newPage();
+    const candidateCdp = await runtime.context.newCDPSession(candidatePage);
+    const candidateRuntime: BrowserRuntime = {
+      browser: runtime.browser,
+      context: runtime.context,
+      page: candidatePage,
+      cdp: candidateCdp,
+    };
+
+    const [baselineCaptures, candidateCaptures] = await Promise.all([
+      navigateAndCapture(runtime, baselineUrl, options),
+      navigateAndCapture(candidateRuntime, candidateUrl, options),
+    ]);
     const viewports: StructuralDiff[] = [];
 
     for (const width of options.widths) {
@@ -105,9 +149,44 @@ export async function runStructuralCompare(
       0,
     );
 
-    const ranges = aggregateStructuralChangeRanges(viewports);
+    let ranges = aggregateStructuralChangeRanges(viewports);
+    let boundaryProbes = 0;
+
+    if (options.boundary) {
+      const diffByWidth = new Map<number, Promise<StructuralDiff>>(
+        viewports.map((viewport) => [viewport.viewport.width, Promise.resolve(viewport)]),
+      );
+      let probeQueue: Promise<void> = Promise.resolve();
+
+      const diffAtWidth = (width: number): Promise<StructuralDiff> => {
+        const existing = diffByWidth.get(width);
+        if (existing) return existing;
+
+        boundaryProbes += 1;
+        const scheduled = probeQueue.then(() =>
+          captureStructuralDiffAtWidth(runtime, candidateRuntime, width, options),
+        );
+        probeQueue = scheduled.then(
+          () => undefined,
+          () => undefined,
+        );
+        diffByWidth.set(width, scheduled);
+        return scheduled;
+      };
+
+      ranges = await refineIntroducedStructuralRangeBoundaries(
+        ranges,
+        viewports,
+        async (width, fingerprint) => {
+          const diff = await diffAtWidth(width);
+          return diff.changes.some((change) => structuralChangeFingerprint(change) === fingerprint);
+        },
+      );
+    }
+
     const introducedRanges = ranges.filter((range) => range.direction === 'introduced').length;
     const resolvedRanges = ranges.filter((range) => range.direction === 'resolved').length;
+    const exactBoundaries = ranges.reduce((sum, range) => sum + range.boundaries.length, 0);
 
     return {
       version: 1,
@@ -124,6 +203,8 @@ export async function runStructuralCompare(
         introducedRanges,
         resolvedRanges,
         totalRanges: ranges.length,
+        exactBoundaries,
+        boundaryProbes,
         durationMs: Date.now() - startedAt,
       },
       viewports,

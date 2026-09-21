@@ -35,7 +35,9 @@ The compare report is written separately from ordinary scan output:
 .slice/structural-diff.json
 ```
 
-Repeated observations of the same relationship across adjacent sampled widths are also grouped into canonical sampled ranges. Raw per-viewport changes remain in `viewports[].changes`, while top-level `ranges[]` gives one product-facing unit such as `375-430px`. A missing observation at an intermediate sampled width splits the range; the Engine does not imply an exact breakpoint between samples.
+Repeated observations of the same relationship across adjacent sampled widths are also grouped into canonical sampled ranges. Raw per-viewport changes remain in `viewports[].changes`, while top-level `ranges[]` gives one product-facing unit such as `375-430px`. A missing observation at an intermediate sampled width splits the range.
+
+When an introduced range is bracketed by a sampled viewport where that exact structural fingerprint is absent, the Engine reuses binary boundary search to refine the sampled edge to an exact pixel boundary. For a band observed at `375` and `430`, with clean samples at `320` and `520`, the report can therefore say `350-499px exact | sampled 375-430px`. Exact probing is cached by viewport width across fingerprints and can be disabled with `--no-boundary`.
 
 Example:
 
