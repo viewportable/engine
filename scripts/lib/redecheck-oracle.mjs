@@ -168,6 +168,44 @@ export function compatibleFindings(pageResult, failure) {
   return matches;
 }
 
+export function compatibleFindingsInRange(pageResult, failure, range) {
+  const mappedTypes = failure.reportTypes.flatMap((type) =>
+    (CLASS_MAPPING[type]?.issueTypes ?? []).map((issueType) => ({
+      reportType: type,
+      issueType,
+    })),
+  );
+
+  if (mappedTypes.length === 0) return [];
+
+  const matches = [];
+
+  for (const viewport of pageResult.viewports ?? []) {
+    if (viewport.width < range.min || viewport.width > range.max) continue;
+
+    for (const issue of viewport.issues ?? []) {
+      const reportTypes = mappedTypes
+        .filter((mapping) => mapping.issueType === issue.type)
+        .map((mapping) => mapping.reportType);
+
+      if (reportTypes.length === 0) continue;
+
+      matches.push({
+        viewportWidth: viewport.width,
+        issueId: issue.id,
+        issueType: issue.type,
+        selector: issue.selector,
+        side: issue.side ?? null,
+        otherSelector: issue.otherSelector ?? null,
+        targetSelector: issue.targetSelector ?? null,
+        oracleReportTypes: [...new Set(reportTypes)],
+      });
+    }
+  }
+
+  return matches;
+}
+
 export function classifyFailure(failure, pageRun) {
   const support = supportForFailure(failure);
 
