@@ -232,9 +232,7 @@ describe('slice CLI', () => {
     ]);
 
     expect(result.code).toBe(0);
-    const research = JSON.parse(
-      await readFile(path.join(out, 'element-protrusion.json'), 'utf8'),
-    );
+    const research = JSON.parse(await readFile(path.join(out, 'element-protrusion.json'), 'utf8'));
 
     expect(research).toEqual({
       version: 1,
