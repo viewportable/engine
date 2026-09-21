@@ -79,14 +79,14 @@ export async function loadSliceConfig(explicitPath?: string): Promise<LoadedSlic
       };
     }
 
-    throw new Error(`Could not read Slice config at ${configPath}`);
+    throw new Error(`Could not read Viewportable Engine config at ${configPath}`);
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(content);
   } catch {
-    throw new Error(`Invalid JSON in Slice config at ${configPath}`);
+    throw new Error(`Invalid JSON in Viewportable Engine config at ${configPath}`);
   }
 
   const result = sliceConfigSchema.safeParse(parsed);
@@ -94,7 +94,7 @@ export async function loadSliceConfig(explicitPath?: string): Promise<LoadedSlic
     const details = result.error.issues
       .map((issue) => `${issue.path.join('.') || '<root>'}: ${issue.message}`)
       .join('; ');
-    throw new Error(`Invalid Slice config at ${configPath}: ${details}`);
+    throw new Error(`Invalid Viewportable Engine config at ${configPath}: ${details}`);
   }
 
   return {
