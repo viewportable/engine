@@ -71,9 +71,12 @@ The benchmark-driven ReDeCheck sequence is tracked in `ROADMAP.md` and `docs/res
 
 ### GitHub App
 
-- Status: deferred
-- The App should add orchestration, shared policy, managed configuration, or interaction that a plain GitHub Action cannot provide.
-- User runners continue to provide compute.
+- Status: architecture complete; activation deferred until backend
+- Installation/repository/project/review modeling and App-owned Check semantics now live under `apps/github-app/`.
+- Standalone Action mode remains the active integration path.
+- Create/register the real Viewportable GitHub App through GitHub's App Manifest flow only when the production backend/control plane exists.
+- Do not create temporary App credentials or webhook infrastructure solely to activate the integration early.
+- User runners may continue to provide compute while the App/control plane owns orchestration and Cloud-mode GitHub state.
 
 ## Performance
 
