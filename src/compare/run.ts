@@ -5,6 +5,7 @@ import { installStabilization, stabilizeViewport } from '../stabilize.js';
 import type { SurfaceSnapshot } from '../surface.js';
 import type { LayoutNode } from '../types.js';
 import { refineIntroducedStructuralRangeBoundaries } from './boundaries.js';
+import { buildStructuralFindings, type StructuralFinding } from './findings.js';
 import {
   aggregateStructuralChangeRanges,
   structuralChangeFingerprint,
@@ -42,6 +43,7 @@ export interface StructuralCompareReport {
   };
   viewports: StructuralDiff[];
   ranges: StructuralChangeRange[];
+  findings: StructuralFinding[];
 }
 
 async function navigateAndCapture(
@@ -187,6 +189,7 @@ export async function runStructuralCompare(
     const introducedRanges = ranges.filter((range) => range.direction === 'introduced').length;
     const resolvedRanges = ranges.filter((range) => range.direction === 'resolved').length;
     const exactBoundaries = ranges.reduce((sum, range) => sum + range.boundaries.length, 0);
+    const findings = buildStructuralFindings(ranges);
 
     return {
       version: 1,
@@ -209,6 +212,7 @@ export async function runStructuralCompare(
       },
       viewports,
       ranges,
+      findings,
     };
   } finally {
     await runtime.browser.close();
