@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Slice are documented here.
+All notable changes to Viewportable Engine are documented here.
 
 ## Unreleased
 
