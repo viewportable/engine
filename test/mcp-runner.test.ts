@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createViewportableMcpServer } from '../src/mcp-server.js';
 import {
   buildEngineArgs,
   compactMcpResult,
@@ -7,6 +8,26 @@ import {
 } from '../src/mcp-runner.js';
 
 describe('Viewportable MCP runner', () => {
+  it('registers scan and compare tools with explicit schemas', () => {
+    const server = createViewportableMcpServer();
+
+    expect(server.toolInputSchemaJson('viewportable_scan')).toMatchObject({
+      type: 'object',
+      properties: {
+        url: { type: 'string' },
+      },
+      required: ['url'],
+    });
+    expect(server.toolInputSchemaJson('viewportable_compare')).toMatchObject({
+      type: 'object',
+      properties: {
+        baselineUrl: { type: 'string' },
+        candidateUrl: { type: 'string' },
+      },
+      required: expect.arrayContaining(['baselineUrl', 'candidateUrl']),
+    });
+  });
+
   it('builds scan CLI arguments from the MCP contract', () => {
     const args = buildEngineArgs({
       candidateUrl: 'http://127.0.0.1:3000',
