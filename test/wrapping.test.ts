@@ -236,7 +236,6 @@ describe('groupWrappingIssues', () => {
   });
 });
 
-
 describe('assessWrappingReflow', () => {
   it('marks explicit flex wrapping as a review candidate without suppressing it', () => {
     expect(
