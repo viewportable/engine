@@ -97,6 +97,7 @@ export interface WrappingIssue {
   viewportWidth: number;
   previousViewportWidth: number;
   bbox: [number, number, number, number];
+  rootCauseId?: string;
   evidence: {
     previousRowSize: number;
     currentRowSize: number;
@@ -104,6 +105,8 @@ export interface WrappingIssue {
     previousRowIndex: number;
     currentRowIndex: number;
     verticalShiftPx: number;
+    parentDisplay: string;
+    parentFlexWrap: string;
   };
 }
 
@@ -166,6 +169,15 @@ export interface RootCauseObservation {
   availableWidthPx: number;
 }
 
+export interface WrappingRootCauseObservation {
+  viewportWidth: number;
+  previousViewportWidth: number;
+  issueIds: string[];
+  wrappedSelectors: string[];
+  stableSiblingCount: number;
+  wrappedSiblingCount: number;
+}
+
 export interface RootCauseBoundary {
   boundary: number;
   lastGoodWidth: number;
@@ -173,7 +185,7 @@ export interface RootCauseBoundary {
   probesUsed: number;
 }
 
-export interface RootCause {
+export interface HorizontalOverflowRootCause {
   id: string;
   type: 'horizontal-overflow';
   severity: 'error';
@@ -185,6 +197,26 @@ export interface RootCause {
   boundaries: RootCauseBoundary[];
   diagnosis?: RootCauseDiagnosis;
 }
+
+export interface WrappingRootCause {
+  id: string;
+  type: 'wrapping';
+  severity: 'error';
+  selector: string;
+  tagName: string;
+  issueIds: string[];
+  observations: WrappingRootCauseObservation[];
+  boundaries: [];
+  evidence: {
+    authoredFlexWrap: boolean;
+    transitionCount: number;
+    repeatedAcrossWidths: boolean;
+    displayValues: string[];
+    flexWrapValues: string[];
+  };
+}
+
+export type RootCause = HorizontalOverflowRootCause | WrappingRootCause;
 
 export interface SliceResults {
   version: 1;

@@ -400,6 +400,69 @@ This reinforces the architecture rule discovered earlier:
 
 > Detector observations are evidence. A canonical user-facing finding may group multiple observations that share one responsive layout cause.
 
+The first canonical-grouping slice now groups active wrapping observations by stable parent selector while preserving every leaf issue in `viewports[].issues`. Each leaf links back to the parent group through `rootCauseId`.
+
+No extra browser capture is required. Existing computed-style evidence is reused to record whether the parent explicitly authors flex wrapping, and cross-viewport observations record whether the same parent reflows repeatedly.
+
+The ReDeCheck corpus remains behaviorally unchanged after grouping:
+
+```text
+33 distinct RLFs
+26 / 26 pages scanned
+14 exact-range candidate matches
+1 shifted-range reproduction
+15 reviewed confirmed reproductions
+296 raw Slice issues
+81.0s aggregate scan time
+```
+
+Canonical grouping changes presentation and evidence structure, not detector truth conditions.
+
+### Duolingo intentional-reflow evidence
+
+The two reviewed wrapping negative candidates now expose materially different parent-level evidence.
+
+The language-options parent is not an authored flex container:
+
+```text
+div.footer-language-options > ul
+display: block
+flex-wrap: nowrap
+16 leaf issue identities
+12 distinct wrap transitions
+repeatedAcrossWidths: true
+```
+
+This is a broad, repeated inline-flow reflow pattern rather than a single isolated transition.
+
+The sitemap parent is explicitly authored to wrap:
+
+```text
+div.sitemap
+display: flex
+flex-wrap: wrap
+3 leaf issue identities
+2 distinct wrap transitions
+authoredFlexWrap: true
+repeatedAcrossWidths: true
+```
+
+The 830-881px reviewed negative range contains observations from both parents. Therefore `flex-wrap: wrap` alone is not a sufficient suppression policy. Likewise, a benchmark-specific transition-count threshold would be premature.
+
+The safe current conclusion is:
+
+```text
+raw structural observation
+        ↓
+canonical parent group
+        ↓
+authored-flow + repeated-flow evidence
+        ↓
+future intentional-reflow classification policy
+```
+
+The engine records the evidence now, but does not automatically downgrade or suppress a wrapping finding merely because the layout appears intentionally reflowable.
+
 ## Initial mapping to Slice
 
 | ReDeCheck concept | Slice today | Research direction |
@@ -411,7 +474,7 @@ This reinforces the architecture rule discovered earlier:
 | element protrusion | not first-class | parent-boundary detector |
 | viewport protrusion | horizontal overflow | unify/clarify semantics |
 | small-range anomaly | exact issue boundaries | relationship-state anomaly |
-| wrapping | sibling row transition prototype with 10/10 behavioral TP coverage | intentional-reflow precision + canonical grouping |
+| wrapping | sibling transition + canonical parent grouping with 10/10 behavioral TP coverage | intentional-reflow classification policy |
 | RLG comparison | not present | structural base-vs-head diff |
 | visual verification | not present | optional verifier module |
 
@@ -495,12 +558,13 @@ Do not generalize this into a full relationship graph until another detector dem
 
 Current sequence:
 
-1. sibling wrapping - prototype implemented and reviewed with 10/10 behavioral TP coverage;
-2. intentional-reflow precision refinement and canonical grouping of detector observations;
-3. relationship intervals only where required by small-range analysis;
-4. small-range anomaly research;
-5. element protrusion / generic collision after stronger observability evidence;
-6. structural base-vs-head graph comparison.
+1. sibling wrapping - implemented and reviewed with 10/10 behavioral TP coverage;
+2. canonical parent grouping + authored/repeated-flow evidence - implemented and benchmarked;
+3. intentional-reflow classification policy - next, without corpus-specific thresholds;
+4. relationship intervals only where required by small-range analysis;
+5. small-range anomaly research;
+6. element protrusion / generic collision after stronger observability evidence;
+7. structural base-vs-head graph comparison.
 
 Each detector must earn its place through reviewed benchmark improvement and acceptable runtime/noise cost.
 

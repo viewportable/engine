@@ -17,7 +17,18 @@ function issueText(issue) {
     return `${issue.type}: ${issue.selector} overlaps ${issue.otherSelector}`;
   }
 
-  return `${issue.type}: ${issue.selector} covers ${issue.targetSelector} (${issue.targetCoveragePct}%)`;
+  if (issue.type === 'fixed-content-occlusion') {
+    return `${issue.type}: ${issue.selector} covers ${issue.targetSelector} (${issue.targetCoveragePct}%)`;
+  }
+
+  if (issue.type === 'wrapping') {
+    return (
+      `${issue.type}: ${issue.selector} wraps below siblings ` +
+      `(${issue.evidence?.stableSiblingCount ?? '?'} stay)`
+    );
+  }
+
+  return `${issue.type}: ${issue.selector}`;
 }
 
 export function renderGitHubSummary(results) {
@@ -49,9 +60,20 @@ export function renderGitHubSummary(results) {
 
     for (const rootCause of results.rootCauses) {
       const boundaries = rootCause.boundaries?.map((boundary) => `${boundary.boundary}px`) ?? [];
-      const reason = rootCause.diagnosis
-        ? `${rootCause.diagnosis.property}: ${rootCause.diagnosis.value}`
-        : 'Grouped layout overflow';
+      const reason =
+        rootCause.type === 'wrapping'
+          ? [
+              'Grouped sibling wrapping',
+              rootCause.evidence?.authoredFlexWrap ? 'authored flex-wrap' : null,
+              rootCause.evidence?.transitionCount
+                ? `${rootCause.evidence.transitionCount} transition${rootCause.evidence.transitionCount === 1 ? '' : 's'}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')
+          : rootCause.diagnosis
+            ? `${rootCause.diagnosis.property}: ${rootCause.diagnosis.value}`
+            : 'Grouped layout overflow';
 
       lines.push(
         `| ${cell(rootCause.selector)} | ${cell(boundaries.join(', ') || '-')} | ${cell(reason)} |`,
