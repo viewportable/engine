@@ -9,6 +9,7 @@ import {
   type DocumentMetrics,
 } from './browser.js';
 import { groupWrappingIssues } from './analyze/wrapping-group.js';
+import { assessWrappingReflow } from './analyze/wrapping-reflow.js';
 import { detectWrappingTransitions } from './analyze/wrapping.js';
 import { findBoundary } from './boundary.js';
 import { captureBrowserSurface } from './capture.js';
@@ -806,6 +807,7 @@ function aggregateWrappingRootCauses(
       observations: group.observations,
       boundaries: [],
       evidence: group.evidence,
+      assessment: assessWrappingReflow(group.evidence),
     };
   });
 
