@@ -32,9 +32,7 @@ function issueText(issue) {
 }
 
 function rootCauseObservationAtWidth(rootCause, width) {
-  return (
-    rootCause.observations?.find((observation) => observation.viewportWidth === width) ?? null
-  );
+  return rootCause.observations?.find((observation) => observation.viewportWidth === width) ?? null;
 }
 
 function rootCauseText(rootCause, observation) {
