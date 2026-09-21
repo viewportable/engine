@@ -89,14 +89,14 @@ try {
 
   process.stdout.write(
     '\n========================================\n' +
-      ' Slice + Responsively visual demo\n' +
+      ' Viewportable Engine + Responsively visual demo\n' +
       '========================================\n\n' +
       'Both tools will inspect the same page:\n' +
       '  ' +
       brokenUrl +
       '\n\n' +
       'Responsively = visual evidence across device previews\n' +
-      'Slice         = deterministic selector, overflow px and exact boundary\n',
+      'Viewportable Engine         = deterministic selector, overflow px and exact boundary\n',
   );
 
   if (shouldOpenResponsively) {
@@ -104,7 +104,7 @@ try {
     await openResponsively(brokenUrl);
   }
 
-  process.stdout.write('\nScanning the same URL with Slice...\n');
+  process.stdout.write('\nScanning the same URL with Viewportable Engine...\n');
   const exitCode = await runSlice(brokenUrl);
 
   if (exitCode !== 1) {
@@ -207,10 +207,10 @@ try {
         .map((viewport) => '    ' + viewport.width + 'px  ' + viewport.status.toUpperCase())
         .join('\n') +
       '\n' +
-      '  Slice report: .slice/demo-responsively/results.json\n\n' +
+      '  Viewportable Engine report: .slice/demo-responsively/results.json\n\n' +
       'For visual boundary verification in Responsively, import:\n' +
       '  examples/responsively/slice-boundary-suite.json\n' +
-      'and activate the "Slice Boundary 742-744" preview suite.\n\n' +
+      'and activate the "Viewportable Engine Boundary 742-744" preview suite.\n\n' +
       'Fixed comparison:\n' +
       '  ' +
       fixedUrl +
