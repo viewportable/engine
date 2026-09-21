@@ -115,18 +115,22 @@ describe('GitHub summary', () => {
             authoredFlexWrap: true,
             transitionCount: 2,
           },
+          assessment: {
+            classification: 'authored-reflow-candidate',
+            reasons: ['explicit-flex-wrap'],
+          },
         },
       ],
       boundaries: [],
     });
 
     expect(markdown).toContain(
-      'wrapping: #footer-links (2 siblings wrap; 4 stay; authored flex-wrap)',
+      'wrapping: #footer-links (2 siblings wrap; 4 stay; review: authored reflow candidate)',
     );
     expect(markdown).not.toContain('wrapping: #terms wraps below siblings');
     expect(markdown).not.toContain('wrapping: #privacy wraps below siblings');
     expect(markdown).toContain(
-      '| #footer-links | - | Grouped sibling wrapping · authored flex-wrap · 2 transitions |',
+      '| #footer-links | - | Grouped sibling wrapping · review: authored reflow candidate · 2 transitions |',
     );
     expect(markdown).not.toContain('undefined');
   });
