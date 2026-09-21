@@ -1,6 +1,6 @@
 # ReDeCheck Benchmark
 
-This benchmark measures the current Viewportable/Slice engine against the independently collected ISSTA 2017 ReDeCheck corpus.
+This benchmark measures the current Viewportable/Viewportable Engine engine against the independently collected ISSTA 2017 ReDeCheck corpus.
 
 ## Ground truth
 
@@ -26,16 +26,16 @@ The automatic baseline is intentionally conservative.
 
 For every distinct RLF the benchmark emits one of:
 
-- `candidate-match` - Slice emitted a rule compatible with at least one report attached to the Distinct RLF at a sampled width inside that report's oracle range;
-- `missed` - Slice has a compatible current rule family, but emitted no compatible finding inside the oracle range;
-- `unsupported` - current Slice has no corresponding detector family;
+- `candidate-match` - Viewportable Engine emitted a rule compatible with at least one report attached to the Distinct RLF at a sampled width inside that report's oracle range;
+- `missed` - Viewportable Engine has a compatible current rule family, but emitted no compatible finding inside the oracle range;
+- `unsupported` - current Viewportable Engine has no corresponding detector family;
 - `environment-error` - the archived page could not be scanned reliably.
 
 A `candidate-match` is **not** automatically called a true detection because page + viewport range + rule family can still coincide with an unrelated issue. Candidate matches are the review queue.
 
 ## Current rule-family mapping
 
-| ReDeCheck class | Current Slice mapping | Support |
+| ReDeCheck class | Current Viewportable Engine mapping | Support |
 | --- | --- | --- |
 | Viewport Protrusion | `horizontal-overflow` | compatible |
 | Element Collision | `fixed-element-collision` | partial, fixed elements only |
@@ -67,7 +67,7 @@ npm run benchmark:redecheck
 The command:
 
 1. downloads/checks out pinned external benchmark sources;
-2. builds Slice;
+2. builds Viewportable Engine;
 3. generates the 33-RLF oracle;
 4. serves the corpus locally;
 5. scans every archived page;
@@ -89,4 +89,4 @@ Outputs:
 - Do not count unsupported classes as misses.
 - Do not count candidate matches as confirmed detections without identity/evidence review.
 - Record scanner/environment failures separately from detector misses.
-- Preserve raw per-page Slice results for later reclassification.
+- Preserve raw per-page Viewportable Engine results for later reclassification.
