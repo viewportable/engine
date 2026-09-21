@@ -78,14 +78,12 @@ export function detectSmallRangeOverlapCandidates(
 
           const key = pairKey(parentIdentity, firstIdentity, secondIdentity);
           const [orderedFirst, orderedSecond] = [firstIdentity, secondIdentity].sort();
-          const observation =
-            pairs.get(key) ??
-            {
-              parentIdentity,
-              firstIdentity: orderedFirst ?? firstIdentity,
-              secondIdentity: orderedSecond ?? secondIdentity,
-              samples: [],
-            };
+          const observation = pairs.get(key) ?? {
+            parentIdentity,
+            firstIdentity: orderedFirst ?? firstIdentity,
+            secondIdentity: orderedSecond ?? secondIdentity,
+            samples: [],
+          };
 
           observation.samples.push({
             width: sample.width,
