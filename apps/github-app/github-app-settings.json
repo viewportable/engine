@@ -7,9 +7,7 @@
     "pull_requests": "write",
     "checks": "write"
   },
-  "events": [
-    "pull_request"
-  ],
+  "events": ["pull_request"],
   "notes": [
     "installation and installation_repositories lifecycle events are consumed by default",
     "Cloud mode uses the GitHub App as the only Viewportable Engine Check writer",
