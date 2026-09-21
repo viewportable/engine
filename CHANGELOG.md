@@ -15,6 +15,8 @@ All notable changes to Viewportable Engine are documented here.
 - GitHub Action structural compare mode via optional `baseline-url`, with dynamic report paths, compare-aware job summaries, artifact upload, and end-to-end Action smoke coverage.
 - Canonical structural `findings[]` contract plus opt-in managed PR evidence comments that update in place and link back to the uploaded structural artifact.
 - Opt-in managed `Viewportable Engine` Check Run on the PR head SHA, with deterministic update semantics, canonical finding summary, artifact/workflow details link, and Engine-to-Check conclusion mapping.
+- GitHub App Installation V1 control-plane slice with signed webhook ingress, installation/repository/project synchronization, deterministic PR review identity, server-side installation-token authentication, and App-owned Check Run completion from Engine results.
+- Public golden PR lifecycle proof in PR #44, showing an exact 350-499px regression caught while ordinary CI stayed green, followed by a fix verified through the same managed PR evidence lifecycle.
 
 
 

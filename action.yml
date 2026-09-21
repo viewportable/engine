@@ -27,11 +27,11 @@ inputs:
     required: false
     default: 'true'
   pr-comment:
-    description: Create or update one managed pull request comment for structural compare evidence
+    description: Standalone Action mode only; create or update one managed pull request comment for structural compare evidence
     required: false
     default: 'false'
   check-run:
-    description: Create or update a Viewportable Engine GitHub Check Run for structural compare evidence
+    description: Standalone Action mode only; Cloud/App mode must leave this false because the GitHub App owns the Check Run
     required: false
     default: 'false'
 

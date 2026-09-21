@@ -10,6 +10,38 @@ After package publication, the intended one-shot form is:
 npx @viewportable/slice http://localhost:3000
 ```
 
+## See it catch a real PR
+
+[PR #44 - Viewportable catches and verifies a responsive regression](https://github.com/viewportable/engine/pull/44) is the public golden lifecycle proof.
+
+The broken candidate introduced two structural regressions only from **350px through 499px**:
+
+```text
+350-499px exact
+#checkout-button disappeared
+visible -> missing
+
+350-499px exact
+#cta reparented
+#pricing-card -> #page-root
+```
+
+The Golden PR workflow failed while the repository's ordinary CI stayed green. Viewportable published the retained `structural-diff.json`, a failing `Viewportable Engine` Check Run, and one managed PR evidence comment.
+
+A follow-up fix commit restored the structure. The next run changed all sampled widths to PASS, created a successful Check Run for the new head, and updated the **same PR comment** from:
+
+```text
+❌ 2 structural regressions introduced
+```
+
+to:
+
+```text
+✅ No structural regressions introduced
+```
+
+The PR body keeps links to both the red and green workflow/check evidence so the failing phase remains inspectable after the managed comment updates in place.
+
 ### Structural baseline comparison
 
 Viewportable Engine can also compare the same UI state between a baseline and candidate URL. This mode reports structural relationship changes instead of treating unusual geometry in one render as a defect by itself.
@@ -407,7 +439,31 @@ with:
 
 PR commenting and Check Run publishing are deliberately non-blocking: a read-only token, such as on some fork PRs, does not hide or replace the Engine result. The scan/report/artifact and exit code remain authoritative.
 
-When `check-run: 'true'` is enabled, the Action creates or updates one `Viewportable Engine` Check Run on the PR head SHA. Re-running the same head updates the managed check instead of creating a duplicate. The Check conclusion follows the Engine contract: `0 -> success`, `1 -> failure`, and scanner/setup failure `2 -> action_required`. The Check output is rendered from canonical `findings[]`; its details link prefers the uploaded structural artifact and falls back to the workflow run.
+### GitHub publishing modes
+
+Direct Action publishing is the **standalone / zero-account mode**. When `check-run: 'true'` is enabled, the Action creates or updates one `Viewportable Engine` Check Run on the PR head SHA. Re-running the same head updates the managed check instead of creating a duplicate. The Check conclusion follows the Engine contract: `0 -> success`, `1 -> failure`, and scanner/setup failure `2 -> action_required`.
+
+In **Viewportable Cloud mode**, leave both direct publishing inputs disabled:
+
+```yaml
+with:
+  pr-comment: 'false'
+  check-run: 'false'
+```
+
+The installed Viewportable GitHub App becomes the only canonical Check writer. Its control-plane lifecycle is:
+
+```text
+installation_id
+  -> repository
+  -> Viewportable project
+  -> pull_request review
+  -> queued App-owned Check Run
+  -> executor result
+  -> completed App-owned Check Run
+```
+
+The first runnable control-plane slice lives in `apps/github-app/`. It verifies signed GitHub webhooks, consumes installation/repository lifecycle events, creates deterministic project/review identities, authenticates with installation access tokens, and completes Checks from returned Engine evidence. App credentials never enter candidate execution. See [ADR-0002](docs/adr/0002-github-app-check-ownership.md).
 
 The copy-ready single-render workflow lives at `examples/github/slice.yml`. A full pull-request example that checks out `base.sha` and `head.sha`, starts both versions, and compares them lives at `examples/github/compare.yml`. The repository CI exercises both Action modes end to end.
 
