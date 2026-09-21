@@ -81,7 +81,7 @@ function viewportFindingTexts(viewport, rootCauses) {
 }
 
 export function renderGitHubSummary(results) {
-  const lines = ['## Slice', ''];
+  const lines = ['## Viewportable Engine', ''];
   const summary = results.summary ?? {};
   const failing = results.viewports?.filter((viewport) => viewport.status === 'fail') ?? [];
   const suppressed = summary.suppressedIssues ?? 0;
@@ -160,7 +160,7 @@ async function main() {
   if (!summaryPath) return;
 
   if (!reportPath) {
-    await appendFile(summaryPath, '## Slice\n\nNo report path was provided.\n');
+    await appendFile(summaryPath, '## Viewportable Engine\n\nNo report path was provided.\n');
     return;
   }
 
@@ -171,7 +171,7 @@ async function main() {
     const message = error instanceof Error ? error.message : String(error);
     await appendFile(
       summaryPath,
-      `## Slice\n\nSlice did not produce a readable report.\n\n${cell(message)}\n`,
+      `## Viewportable Engine\n\nViewportable Engine did not produce a readable report.\n\n${cell(message)}\n`,
     );
   }
 }
