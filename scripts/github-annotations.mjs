@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import path from 'node:path';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { findingLabel, findingRangeText } from './github-pr-comment.mjs';
 
@@ -132,19 +132,24 @@ function sha256(value) {
   return createHash('sha256').update(value).digest('hex');
 }
 
+function sourcePathname(identifier) {
+  if (typeof identifier !== 'string' || identifier.trim() === '') return null;
+
+  try {
+    return decodeURIComponent(new URL(identifier).pathname);
+  } catch {
+    return identifier.split(/[?#]/, 1)[0];
+  }
+}
+
 function relativeSourceCandidate(identifier) {
   if (typeof identifier !== 'string' || identifier.trim() === '') return null;
 
   const absolute = normalizedAbsolutePath(identifier);
   if (absolute) return { absolute };
 
-  let pathname = identifier;
-  try {
-    const url = new URL(identifier);
-    pathname = decodeURIComponent(url.pathname);
-  } catch {
-    pathname = identifier.split(/[?#]/, 1)[0];
-  }
+  const pathname = sourcePathname(identifier);
+  if (!pathname) return null;
 
   const normalized = path.posix.normalize(pathname.replaceAll('\\', '/'));
   const withoutLeading = normalized
@@ -153,6 +158,81 @@ function relativeSourceCandidate(identifier) {
     .replace(/^\.\//, '');
 
   return withoutLeading && withoutLeading !== '.' ? { relative: withoutLeading } : null;
+}
+
+function sourceSuffixes(authored) {
+  const suffixes = new Set();
+
+  for (const identifier of [authored.source, authored.resolvedSource]) {
+    const pathname = sourcePathname(identifier);
+    if (!pathname) continue;
+
+    const normalized = path.posix.normalize(pathname.replaceAll('\\', '/'));
+    const withoutLeading = normalized
+      .replace(/^\/+/, '')
+      .replace(/^(?:\.\.\/)+/, '')
+      .replace(/^\.\//, '');
+
+    if (withoutLeading && withoutLeading !== '.') {
+      suffixes.add(withoutLeading);
+      suffixes.add(path.posix.basename(withoutLeading));
+    }
+  }
+
+  return [...suffixes].filter(Boolean);
+}
+
+const SOURCE_SCAN_SKIPPED_DIRS = new Set([
+  '.git',
+  '.slice',
+  'node_modules',
+  'coverage',
+  'dist',
+  'build',
+]);
+
+async function discoverRepositorySourceCandidates(repositoryRoot, authored, limit = 20_000) {
+  const root = path.resolve(repositoryRoot);
+  const suffixes = sourceSuffixes(authored);
+  if (suffixes.length === 0) return [];
+
+  const matches = [];
+  let visited = 0;
+
+  async function walk(directory) {
+    const entries = await readdir(directory, { withFileTypes: true });
+
+    for (const entry of entries) {
+      visited += 1;
+      if (visited > limit) throw new Error('authored source candidate scan limit exceeded');
+
+      const absolute = path.join(directory, entry.name);
+
+      if (entry.isDirectory()) {
+        if (!SOURCE_SCAN_SKIPPED_DIRS.has(entry.name)) await walk(absolute);
+        continue;
+      }
+
+      if (!entry.isFile()) continue;
+
+      const inside = pathInsideRoot(absolute, root);
+      if (!inside) continue;
+
+      if (
+        suffixes.some(
+          (suffix) =>
+            inside.relative === suffix ||
+            inside.relative.endsWith(`/${suffix}`) ||
+            path.posix.basename(inside.relative) === suffix,
+        )
+      ) {
+        matches.push(inside);
+      }
+    }
+  }
+
+  await walk(root);
+  return matches;
 }
 
 async function authoredAnnotation({ finding, repositoryRoot, readText }) {
@@ -189,24 +269,39 @@ async function authoredAnnotation({ finding, repositoryRoot, readText }) {
     if (resolved) candidates.set(resolved.absolute, resolved);
   }
 
-  const verified = [];
+  async function verifiedCandidates(candidateValues) {
+    const verified = [];
 
-  for (const candidate of candidates.values()) {
-    let content;
-    try {
-      content = await readText(candidate.absolute);
-    } catch {
-      continue;
+    for (const candidate of candidateValues) {
+      let content;
+      try {
+        content = await readText(candidate.absolute);
+      } catch {
+        continue;
+      }
+
+      if (sha256(content) !== authored.sourceContentSha256) continue;
+
+      const lines = content.split(/\r?\n/);
+      const sourceLine = lines[line - 1];
+      if (sourceLine === undefined || column > sourceLine.length + 1) continue;
+      if (!sourceLine.slice(column - 1).startsWith(source.property)) continue;
+
+      verified.push(candidate);
     }
 
-    if (sha256(content) !== authored.sourceContentSha256) continue;
+    return verified;
+  }
 
-    const lines = content.split(/\r?\n/);
-    const sourceLine = lines[line - 1];
-    if (sourceLine === undefined || column > sourceLine.length + 1) continue;
-    if (!sourceLine.slice(column - 1).startsWith(source.property)) continue;
+  let verified = await verifiedCandidates(candidates.values());
 
-    verified.push(candidate);
+  if (verified.length === 0) {
+    try {
+      const discovered = await discoverRepositorySourceCandidates(repositoryRoot, authored);
+      verified = await verifiedCandidates(discovered);
+    } catch {
+      return null;
+    }
   }
 
   if (verified.length !== 1) return null;
