@@ -112,10 +112,7 @@ export function crossVersionNodeKey(
   };
 }
 
-export function uniqueNodeByCrossVersionKey(
-  nodes: LayoutNode[],
-  key: string,
-): LayoutNode | null {
+export function uniqueNodeByCrossVersionKey(nodes: LayoutNode[], key: string): LayoutNode | null {
   return indexCrossVersionNodes(nodes).uniqueByKey.get(key)?.node ?? null;
 }
 
