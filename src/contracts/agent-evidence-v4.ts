@@ -56,6 +56,7 @@ export const AgentEvidenceV4Schema = z
   .strict();
 
 export type AgentEvidenceV4 = z.infer<typeof AgentEvidenceV4Schema>;
+export type AgentEvidenceFindingV4 = z.infer<typeof AgentEvidenceFindingV4Schema>;
 export type AgentEvidenceSourceV4 = z.infer<typeof AgentEvidenceSourceV4Schema>;
 export type AgentEvidenceAuthoredLocationV4 = z.infer<typeof AgentEvidenceAuthoredLocationV4Schema>;
 
