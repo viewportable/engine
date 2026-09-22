@@ -202,7 +202,7 @@ try {
 
   const broken = await scan('before');
   assert(
-    broken.schemaVersion === 'viewportable.agent-evidence.v4',
+    broken.schemaVersion === 'viewportable.agent-evidence.v5',
     `before: unexpected schema ${broken.schemaVersion}`,
   );
   assert(broken.mode === 'scan', `before: expected scan mode, got ${broken.mode}`);
@@ -232,6 +232,12 @@ try {
       ].join('\n'),
     );
   }
+
+  assert(
+    finding.repair?.repairable === true &&
+      finding.repair?.reason === 'deterministic-authored-css',
+    `before: scan finding is not canonically repairable: ${JSON.stringify(finding.repair)}`,
+  );
 
   const source = finding.source;
   const authored = source.authoredLocation;
@@ -310,6 +316,7 @@ try {
         type: finding.type,
         groupId: finding.groupId,
         range: finding.range,
+        repair: finding.repair,
         source,
       },
       reportPath: broken.evidence?.reportPath,
