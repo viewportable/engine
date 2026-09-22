@@ -29,6 +29,7 @@ All notable changes to Viewportable Engine are documented here.
 - Agent Repair Coverage Matrix V1: the same repair loop must clean both deterministic protrusion causes currently supported by authored evidence (`min-width` and fixed pixel `width`). Unsupported `disappearance` and `reparenting` findings are explicitly verified as `source: null` and fail closed with zero repair-tool exposure.
 - Scan-Mode Authored Repair V1: horizontal-overflow root-cause diagnosis now carries browser-proven CSS locations and Source Map v3 authored locations into Agent Evidence V3/V4. A production Sass/Vite acceptance proves `viewportable_scan -> authored SCSS -> one-line repair -> rebuild -> clean scan`.
 - Agent Repair Policy V1 plus Canonical Agent Evidence V5 (`viewportable.agent-evidence.v5`): every finding now carries an authoritative `repair` decision. Deterministic authored compare protrusions and scan horizontal-overflow findings are repairable; unsupported finding semantics and missing proof layers fail closed with explicit reasons. MCP clients are instructed not to infer repairability independently from source fields.
+- Scan Repair Coverage Matrix V1: production Sass/Vite/MCP acceptance now proves both scan-mode direct CSS constraints authorized by V5, pixel `min-width` and uniquely attributed fixed pixel `width`, each through authored SCSS, one-line repair, rebuild, and clean rescan.
 
 
 
