@@ -1,8 +1,5 @@
 import * as z from 'zod/v4';
-import {
-  AgentEvidenceFindingV1Schema,
-  AgentEvidenceSummaryV1Schema,
-} from './agent-evidence.js';
+import { AgentEvidenceFindingV1Schema, AgentEvidenceSummaryV1Schema } from './agent-evidence.js';
 import { AgentEvidenceSourceV2Schema } from './agent-evidence-v2.js';
 
 export const AGENT_EVIDENCE_SCHEMA_VERSION_V3 = 'viewportable.agent-evidence.v3' as const;
