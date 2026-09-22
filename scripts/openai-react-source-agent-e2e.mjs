@@ -28,7 +28,7 @@ const regression = `
 
 @media (min-width: 850px) and (max-width: 949px) {
   [data-viewport-id="iphone-15-pro"] {
-    min-width: 800px;
+    min-width: 1400px;
   }
 }
 `;
@@ -193,7 +193,7 @@ function validateAttributedRegression(evidence) {
   );
   assert(finding.source.selector === '[data-viewport-id="iphone-15-pro"]', 'wrong source selector');
   assert(finding.source.property === 'min-width', 'wrong source property');
-  assert(finding.source.value === '800px', 'wrong source value');
+  assert(finding.source.value === '1400px', 'wrong source value');
   assert(
     finding.source.media === '(min-width: 850px) and (max-width: 949px)',
     'wrong media attribution: ' + finding.source.media,
