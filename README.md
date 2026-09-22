@@ -531,7 +531,10 @@ with:
   baseline-url: http://127.0.0.1:3000
   pr-comment: 'true'
   check-run: 'true'
+  source-root: candidate # when the candidate checkout is ./candidate
 ```
+
+When a deterministic Source Location V1 finding should appear directly on the PR source line, set `source-root` to the candidate repository checkout. The Check writer maps only absolute stylesheets under that root, re-reads the checkout file, and verifies that the exact browser-proven range still contains the attributed CSS property/value before sending a GitHub annotation. Unsupported paths, transformed/mismatched coordinates, and ambiguous locations fail closed with no line annotation. If `source-root` is omitted, standalone mode falls back to `GITHUB_WORKSPACE`.
 
 PR commenting and Check Run publishing are deliberately non-blocking: a read-only token, such as on some fork PRs, does not hide or replace the Engine result. The scan/report/artifact and exit code remain authoritative.
 
