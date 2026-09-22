@@ -1,5 +1,6 @@
 import { appendFile, readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { buildSourceAnnotations } from './github-annotations.mjs';
 import { findingLabel, findingRangeText, stateText } from './github-pr-comment.mjs';
 
 export const CHECK_RUN_NAME = 'Viewportable Engine';
@@ -119,6 +120,7 @@ export async function upsertCheckRun({
   exitCode,
   report,
   detailsUrl,
+  repositoryRoot,
   token,
   apiUrl = 'https://api.github.com',
   request = githubJsonRequest,
@@ -132,7 +134,14 @@ export async function upsertCheckRun({
   const existing = (list?.check_runs ?? []).find(
     (check) => check.name === CHECK_RUN_NAME && check.external_id === id,
   );
-  const output = renderCheckOutput(report, exitCode);
+  const rendered = renderCheckOutput(report, exitCode);
+  const sourceAnnotations = await buildSourceAnnotations(report, { repositoryRoot });
+  const output = {
+    ...rendered,
+    ...(sourceAnnotations.annotations.length > 0
+      ? { annotations: sourceAnnotations.annotations }
+      : {}),
+  };
   const body = {
     name: CHECK_RUN_NAME,
     status: 'completed',
@@ -229,6 +238,7 @@ async function main() {
     exitCode,
     report,
     detailsUrl,
+    repositoryRoot: process.env.SLICE_SOURCE_ROOT?.trim() || process.env.GITHUB_WORKSPACE,
     token,
     apiUrl: process.env.GITHUB_API_URL,
   });
