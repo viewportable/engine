@@ -55,7 +55,7 @@ jobs:
       - name: Install React renderer dependencies
         run: |
           cd react-candidate
-          npm ci --ignore-scripts
+          npm install --ignore-scripts --no-audit --no-fund
           cd ..
           ln -s ../react-candidate/node_modules react-baseline/node_modules
 
