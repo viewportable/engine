@@ -128,6 +128,34 @@ Retained acceptance evidence is written under:
 .slice/build-tool-source-map-acceptance/
 ```
 
+### Real build-tool agent repair E2E
+
+The next acceptance closes the repair loop on the same production fixture:
+
+```bash
+npm run acceptance:build-tool-agent-repair
+```
+
+Normal CI runs this in deterministic `scripted` mode. The harness still uses the packaged MCP server and the real Sass/Vite production build, but the tool choices are scripted so ordinary PR verification does not spend API tokens.
+
+The agent boundary is intentionally narrow:
+
+```text
+V4 finding
+  ↓
+read_source_range        # max 5 lines, bounded byte budget
+  ↓
+replace_source_line      # attributed line only, exactly one write
+  ↓
+rebuild_and_compare      # Sass + Vite + viewportable_compare
+  ↓
+0 findings
+```
+
+There is no shell tool and no full-file read tool. The harness asserts that only one source line changed, exactly one write occurred, and the final V4 comparison is clean.
+
+A repeatable real-model proof is available through the **Real Build-Tool Agent Repair** workflow. It uses the repository `OPEN_API_TOKEN` secret, GPT-5.6 through the OpenAI Responses API, strict JSON-schema function tools, and the same three tool handlers as scripted CI. Evidence is retained under `.slice/build-tool-agent-repair/`.
+
 ### MCP golden agent flow
 
 The repository includes a real stdio MCP acceptance flow using the official MCP client SDK:
