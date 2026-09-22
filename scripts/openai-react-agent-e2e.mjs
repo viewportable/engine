@@ -358,7 +358,8 @@ async function runTool(name, args) {
     );
 
     const next = current.replace(args.oldText, args.newText);
-    await writeFile(stylesPath, next, 'utf8');
+    const normalized = `${next.trimEnd()}\n`;
+    await writeFile(stylesPath, normalized, 'utf8');
     await new Promise((resolveWait) => setTimeout(resolveWait, 500));
     toolHistory.push({
       name,
@@ -459,11 +460,10 @@ try {
   const first = compareHistory[0];
   const last = compareHistory.at(-1);
   const finalStyles = await readFile(resolve(candidateRoot, 'src/renderer/styles.css'), 'utf8');
-  const sourceRestoredModuloTrailingWhitespace =
-    finalStyles.trimEnd() === baselineStyles.trimEnd();
+  const sourceRestoredExactly = finalStyles === baselineStyles;
   assert(
-    sourceRestoredModuloTrailingWhitespace,
-    'agent reached clean layout but changed source beyond trailing whitespace',
+    sourceRestoredExactly,
+    'agent reached clean layout but did not restore the baseline source exactly',
   );
 
   const acceptance = {
@@ -491,7 +491,7 @@ try {
       findingCount: last.summary.findingCount,
       reportPath: last.evidence.reportPath,
     },
-    sourceRestoredModuloTrailingWhitespace,
+    sourceRestoredExactly,
     finalOutput,
   };
 
@@ -507,7 +507,7 @@ try {
       `agent writes: ${writes}`,
       `tool calls: ${toolCalls}`,
       `final findings: ${last.summary.findingCount}`,
-      `source restored modulo trailing whitespace: ${sourceRestoredModuloTrailingWhitespace}`,
+      `source restored exactly: ${sourceRestoredExactly}`,
       `tokens: ${usage.totalTokens}`,
       `final output: ${finalOutput}`,
       '',
