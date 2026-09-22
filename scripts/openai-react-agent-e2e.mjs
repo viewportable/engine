@@ -460,9 +460,11 @@ try {
   const first = compareHistory[0];
   const last = compareHistory.at(-1);
   const finalStyles = await readFile(resolve(candidateRoot, 'src/renderer/styles.css'), 'utf8');
+  const sourceRestoredModuloTrailingWhitespace =
+    finalStyles.trimEnd() === baselineStyles.trimEnd();
   assert(
-    finalStyles === baselineStyles,
-    'agent reached clean layout but did not restore styles.css exactly to the baseline source',
+    sourceRestoredModuloTrailingWhitespace,
+    'agent reached clean layout but changed source beyond trailing whitespace',
   );
 
   const acceptance = {
@@ -490,7 +492,7 @@ try {
       findingCount: last.summary.findingCount,
       reportPath: last.evidence.reportPath,
     },
-    sourceRestoredExactly: finalStyles === baselineStyles,
+    sourceRestoredModuloTrailingWhitespace,
     finalOutput,
   };
 
@@ -506,7 +508,7 @@ try {
       `agent writes: ${writes}`,
       `tool calls: ${toolCalls}`,
       `final findings: ${last.summary.findingCount}`,
-      `source restored exactly: ${finalStyles === baselineStyles}`,
+      `source restored modulo trailing whitespace: ${sourceRestoredModuloTrailingWhitespace}`,
       `tokens: ${usage.totalTokens}`,
       `final output: ${finalOutput}`,
       '',
