@@ -390,9 +390,22 @@ try {
 
   const targetSource = authored.source;
   const targetLine = authored.start.line;
+  const normalizedTargetSource = targetSource.replace(/^(?:\.\.\/)+/, '');
+  const targetSourceAliases = new Set([
+    targetSource,
+    normalizedTargetSource,
+    authored.resolvedSource,
+  ]);
+
+  function assertTargetSource(source, operation) {
+    assert(
+      targetSourceAliases.has(source),
+      `${operation}: unsupported source ${JSON.stringify(source)}; expected deterministic authored target`,
+    );
+  }
 
   async function readSourceRange({ source, startLine, endLine }) {
-    assert(source === targetSource, `read: source must be ${targetSource}`);
+    assertTargetSource(source, 'read');
     assert(
       Number.isInteger(startLine) && Number.isInteger(endLine),
       'read: lines must be integers',
@@ -430,7 +443,7 @@ try {
   }
 
   async function replaceSourceLine({ source, line, expected, replacement }) {
-    assert(source === targetSource, `replace: source must be ${targetSource}`);
+    assertTargetSource(source, 'replace');
     assert(line === targetLine, `replace: line must be attributed line ${targetLine}`);
     assert(writes === 0, 'replace: only one write is permitted');
     assert(typeof expected === 'string', 'replace: expected must be a string');
@@ -510,6 +523,7 @@ try {
       'You repair one deterministic responsive regression using only the supplied tools.',
       'The Viewportable V4 evidence is authoritative.',
       'First read a small range around the authored location.',
+      'The read/edit source may be the raw source-map identifier, its normalized src/... form, or the resolvedSource URL; all resolve to the same fixed authored target.',
       'Then make exactly one single-line edit to the attributed authored line.',
       'Use the smallest fix that removes the attributed min-width regression.',
       'Do not request or infer the full source file.',
