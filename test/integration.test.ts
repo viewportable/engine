@@ -285,11 +285,11 @@ describe('slice CLI', () => {
           confidence: 'deterministic',
           coordinateSpace: 'stylesheet',
           start: {
-            line: 12,
+            line: 8,
             column: 11,
           },
           end: {
-            line: 12,
+            line: 8,
             column: expect.any(Number),
           },
         },
