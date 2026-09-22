@@ -53,7 +53,7 @@ export function createViewportableMcpServer({
     },
     {
       instructions:
-        'Use viewportable_scan for one rendered application state and viewportable_compare to compare baseline and candidate versions. Treat exitCode 1 as product evidence, not a tool failure; exitCode 2 is scanner/setup failure.',
+        'Use viewportable_scan for one rendered application state and viewportable_compare to compare baseline and candidate versions. Treat exitCode 1 as product evidence, not a tool failure; exitCode 2 is scanner/setup failure. Treat finding.repair as the canonical auto-repair eligibility decision; do not infer repairability from source fields independently.',
     },
   );
 
