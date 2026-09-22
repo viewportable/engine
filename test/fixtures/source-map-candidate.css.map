@@ -1,0 +1,11 @@
+{
+  "version": 3,
+  "sources": [
+    "source-map-original.scss"
+  ],
+  "sourcesContent": [
+    "$card-width: 400px;\n\n#parent { width: 300px; border: 1px solid #ccc; }\n#subject { width: 120px; height: 80px; }\n@media (min-width: 350px) and (max-width: 499px) {\n  #subject {\n    min-width: $card-width;\n  }\n}\n"
+  ],
+  "names": [],
+  "mappings": ";;;;IAMI"
+}
