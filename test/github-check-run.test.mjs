@@ -1,4 +1,8 @@
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { buildSourceAnnotations } from '../scripts/github-annotations.mjs';
 import {
   CHECK_RUN_NAME,
   checkConclusion,
@@ -48,7 +52,98 @@ function report() {
   };
 }
 
+function attributedReport(stylesheet) {
+  return {
+    summary: {
+      viewportsChecked: 4,
+      exactBoundaries: 2,
+      durationMs: 900,
+    },
+    findings: [
+      {
+        id: 'structural-protrusion',
+        category: 'structural',
+        type: 'protrusion',
+        direction: 'introduced',
+        subject: { key: 'data-testid:viewport-scroll-zone-iphone-15-pro' },
+        relatedSubjects: [{ key: 'id:viewport-board' }],
+        sampledRange: { minWidth: 875, maxWidth: 925, widths: [875, 925] },
+        exactRange: { minWidth: 850, maxWidth: 949 },
+        baseline: { state: 'contained' },
+        candidate: { state: 'protruding' },
+        source: {
+          stylesheet,
+          selector: '[data-viewport-id="iphone-15-pro"]',
+          property: 'min-width',
+          value: '1400px',
+          media: '(min-width: 850px) and (max-width: 949px)',
+          location: {
+            kind: 'css-property-range',
+            confidence: 'deterministic',
+            coordinateSpace: 'stylesheet',
+            start: { line: 2, column: 5 },
+            end: { line: 2, column: 23 },
+          },
+        },
+      },
+    ],
+  };
+}
+
 describe('GitHub Check Run', () => {
+  it('builds a line-and-column annotation only after repository source verification', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'viewportable-annotations-'));
+    const stylesheet = path.join(root, 'src/renderer/styles.css');
+
+    try {
+      await mkdir(path.dirname(stylesheet), { recursive: true });
+      await writeFile(stylesheet, 'rule {\n    min-width: 1400px;\n}\n', 'utf8');
+
+      const result = await buildSourceAnnotations(attributedReport(stylesheet), {
+        repositoryRoot: root,
+      });
+
+      expect(result).toEqual({
+        annotations: [
+          {
+            path: 'src/renderer/styles.css',
+            start_line: 2,
+            end_line: 2,
+            start_column: 5,
+            end_column: 22,
+            annotation_level: 'failure',
+            title: 'Viewportable: protrusion',
+            message:
+              '850-949px exact - data-testid:viewport-scroll-zone-iphone-15-pro in id:viewport-board',
+            raw_details:
+              'selector: [data-viewport-id="iphone-15-pro"]\n' +
+              'declaration: min-width: 1400px\n' +
+              'media: (min-width: 850px) and (max-width: 949px)',
+          },
+        ],
+        total: 1,
+        skipped: 0,
+        truncated: false,
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('fails closed when the stylesheet is outside the candidate checkout', async () => {
+    const result = await buildSourceAnnotations(attributedReport('/other/src/styles.css'), {
+      repositoryRoot: '/workspace/candidate',
+      readText: async () => '    min-width: 1400px;\n',
+    });
+
+    expect(result).toMatchObject({
+      annotations: [],
+      total: 0,
+      skipped: 1,
+      truncated: false,
+    });
+  });
+
   it('maps Engine exit codes to check conclusions', () => {
     expect(checkConclusion(0)).toBe('success');
     expect(checkConclusion(1)).toBe('failure');
@@ -145,6 +240,101 @@ describe('GitHub Check Run', () => {
         },
       },
     });
+  });
+
+  it('publishes verified source annotations in the managed Check Run', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'viewportable-check-'));
+    const stylesheet = path.join(root, 'src/renderer/styles.css');
+    const calls = [];
+
+    try {
+      await mkdir(path.dirname(stylesheet), { recursive: true });
+      await writeFile(stylesheet, 'rule {\n    min-width: 1400px;\n}\n', 'utf8');
+
+      const request = async (apiPath, options = {}) => {
+        calls.push({ path: apiPath, options });
+        if (options.method === 'POST') {
+          return {
+            id: 101,
+            html_url: 'https://github.com/example/repo/runs/101',
+          };
+        }
+        return { check_runs: [] };
+      };
+
+      await upsertCheckRun({
+        repository: 'example/repo',
+        pullRequestNumber: 7,
+        headSha: 'abc123',
+        exitCode: 1,
+        report: attributedReport(stylesheet),
+        repositoryRoot: root,
+        token: 'token',
+        request,
+      });
+
+      expect(calls[1].options.body.output.annotations).toEqual([
+        expect.objectContaining({
+          path: 'src/renderer/styles.css',
+          start_line: 2,
+          end_line: 2,
+          start_column: 5,
+          end_column: 22,
+          annotation_level: 'failure',
+        }),
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('does not append source annotations again when the managed check already has them', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'viewportable-rerun-'));
+    const stylesheet = path.join(root, 'src/renderer/styles.css');
+    const calls = [];
+
+    try {
+      await mkdir(path.dirname(stylesheet), { recursive: true });
+      await writeFile(stylesheet, 'rule {\n    min-width: 1400px;\n}\n', 'utf8');
+
+      const request = async (apiPath, options = {}) => {
+        calls.push({ path: apiPath, options });
+        if (options.method === 'PATCH') {
+          return {
+            id: 42,
+            html_url: 'https://github.com/example/repo/runs/42',
+          };
+        }
+
+        return {
+          check_runs: [
+            {
+              id: 42,
+              name: CHECK_RUN_NAME,
+              external_id: 'viewportable-engine:pr:7:head:abc123',
+              html_url: 'https://github.com/example/repo/runs/42',
+              output: { annotations_count: 1 },
+            },
+          ],
+        };
+      };
+
+      await upsertCheckRun({
+        repository: 'example/repo',
+        pullRequestNumber: 7,
+        headSha: 'abc123',
+        exitCode: 1,
+        report: attributedReport(stylesheet),
+        repositoryRoot: root,
+        token: 'token',
+        request,
+      });
+
+      expect(calls[1].options.body.output.annotations).toBeUndefined();
+      expect(calls[1].options.body.output.title).toBe('1 structural regression introduced');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it('creates a check when the candidate head has no managed check yet', async () => {

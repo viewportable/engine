@@ -1,3 +1,4 @@
+import { normalizeSubmittedAnnotations } from '../../../scripts/github-annotations.mjs';
 import { renderResult } from './evidence.mjs';
 
 export async function acceptReviewResult({
@@ -5,6 +6,7 @@ export async function acceptReviewResult({
   exitCode,
   report,
   detailsUrl = null,
+  annotations = [],
   store,
   github,
 }) {
@@ -13,7 +15,25 @@ export async function acceptReviewResult({
   if (!review) throw new Error(`unknown review: ${reviewId}`);
   if (!review.checkRunId) throw new Error(`review has no Check Run: ${reviewId}`);
 
+  if (review.status === 'completed' && review.decision) {
+    const conclusion =
+      review.decision === 'allow'
+        ? 'success'
+        : review.decision === 'block'
+          ? 'failure'
+          : 'action_required';
+
+    return {
+      reviewId,
+      conclusion,
+      decision: review.decision,
+      checkUrl: review.checkUrl,
+      duplicate: true,
+    };
+  }
+
   const rendered = renderResult(report, exitCode);
+  const sourceAnnotations = normalizeSubmittedAnnotations(annotations);
   const check = await github.completeCheckRun({
     installationId: review.installationId,
     repositoryFullName: review.repositoryFullName,
@@ -21,6 +41,7 @@ export async function acceptReviewResult({
     conclusion: rendered.conclusion,
     title: rendered.title,
     summary: rendered.summary,
+    annotations: sourceAnnotations,
     detailsUrl: detailsUrl ?? review.detailsUrl,
   });
 

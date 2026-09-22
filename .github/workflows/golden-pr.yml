@@ -89,6 +89,7 @@ jobs:
           artifact-name: viewportable-golden-pr-evidence
           pr-comment: 'true'
           check-run: 'true'
+          source-root: candidate
 
       - name: Stop fixture servers
         if: ${{ always() }}

@@ -34,6 +34,10 @@ inputs:
     description: Standalone Action mode only; Cloud/App mode must leave this false because the GitHub App owns the Check Run
     required: false
     default: 'false'
+  source-root:
+    description: Repository checkout root used to verify and map deterministic stylesheet locations into GitHub annotations
+    required: false
+    default: ''
 
 outputs:
   exit_code:
@@ -135,6 +139,7 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         SLICE_ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
         SLICE_EXIT_CODE: ${{ steps.scan.outputs.exit_code }}
+        SLICE_SOURCE_ROOT: ${{ inputs.source-root }}
       run: node "$GITHUB_ACTION_PATH/scripts/github-check-run.mjs" "${{ steps.scan.outputs.result_path }}"
 
     - name: Update pull request evidence comment

@@ -171,6 +171,24 @@ describe('Viewportable GitHub App Installation V1', () => {
         ],
       },
       detailsUrl: 'https://app.viewportable.dev/reviews/42',
+      annotations: [
+        {
+          path: 'src/renderer/styles.css',
+          start_line: 575,
+          end_line: 575,
+          start_column: 5,
+          end_column: 22,
+          annotation_level: 'notice',
+          title: 'Viewportable: protrusion',
+          message: '850-949px exact - responsive protrusion',
+        },
+        {
+          path: '../outside.css',
+          start_line: 1,
+          end_line: 1,
+          message: 'must be rejected',
+        },
+      ],
       store,
       github,
     });
@@ -186,9 +204,44 @@ describe('Viewportable GitHub App Installation V1', () => {
       checkRunId: 12345,
       conclusion: 'failure',
       title: '1 structural regression introduced',
+      annotations: [
+        {
+          path: 'src/renderer/styles.css',
+          start_line: 575,
+          end_line: 575,
+          start_column: 5,
+          end_column: 22,
+          annotation_level: 'failure',
+          title: 'Viewportable: protrusion',
+          message: '850-949px exact - responsive protrusion',
+        },
+      ],
     });
     expect(github.completed[0].summary).toContain('350-499px exact');
     expect(github.completed[0].summary).toContain('id:checkout-button disappeared');
+
+    const duplicate = await acceptReviewResult({
+      reviewId: 'github:8801:pr:42:head:head456',
+      exitCode: 1,
+      report: { findings: [] },
+      annotations: [
+        {
+          path: 'src/renderer/styles.css',
+          start_line: 575,
+          end_line: 575,
+          message: 'must not be appended twice',
+        },
+      ],
+      store,
+      github,
+    });
+
+    expect(duplicate).toMatchObject({
+      conclusion: 'failure',
+      decision: 'block',
+      duplicate: true,
+    });
+    expect(github.completed).toHaveLength(1);
 
     const state = await store.read();
     expect(state.reviews['github:8801:pr:42:head:head456']).toMatchObject({

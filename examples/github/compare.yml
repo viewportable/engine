@@ -84,6 +84,7 @@ jobs:
           artifact-name: slice-structural-diff
           pr-comment: 'true'
           check-run: 'true'
+          source-root: candidate
 
       - name: Stop applications
         if: ${{ always() }}

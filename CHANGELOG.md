@@ -22,6 +22,7 @@ All notable changes to Viewportable Engine are documented here.
 - Viewportable Canonical Agent Evidence Contract V1 (`viewportable.agent-evidence.v1`): strict versioned agent semantics, runtime validation, normalized scan/compare findings, explicit evidence pointers, and MCP output schema sourced from one Zod contract.
 - Deterministic CSS Source Attribution V1 plus Canonical Agent Evidence V2 (`viewportable.agent-evidence.v2`): direct protrusion constraints can carry uniquely proven stylesheet/source path, selector, property, value, and active media context; ambiguous and indirect causes remain `source: null`.
 - Deterministic CSS Source Location V1 plus Canonical Agent Evidence V3 (`viewportable.agent-evidence.v3`): browser-proven CSS property ranges are exposed as one-based stylesheet line/column ranges after selector/property/value/media agreement and stylesheet-text verification; ambiguous locations remain `null`.
+- GitHub Source Annotations V1: deterministic introduced CSS findings can be attached to exact PR Check Run lines/columns only after candidate-checkout path containment and property/value range re-verification; transformed or unverifiable source locations fail closed, while Cloud/App mode accepts a normalized repo-relative annotation payload from the authenticated executor.
 
 
 

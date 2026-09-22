@@ -106,6 +106,7 @@ export class GitHubAppClient {
     conclusion,
     title,
     summary,
+    annotations = [],
     detailsUrl,
   }) {
     return this.installationRequest(
@@ -118,7 +119,11 @@ export class GitHubAppClient {
           status: 'completed',
           conclusion,
           ...(detailsUrl ? { details_url: detailsUrl } : {}),
-          output: { title, summary },
+          output: {
+            title,
+            summary,
+            ...(annotations.length > 0 ? { annotations } : {}),
+          },
         },
       },
     );
