@@ -124,12 +124,26 @@ export const boundaryResultSchema = z.object({
   probesUsed: z.number().int().nonnegative(),
 });
 
+const cssSourceLocationPointSchema = z.object({
+  line: z.number().int().positive(),
+  column: z.number().int().positive(),
+});
+
+const cssSourceLocationSchema = z.object({
+  kind: z.literal('css-property-range'),
+  confidence: z.literal('deterministic'),
+  coordinateSpace: z.literal('stylesheet'),
+  start: cssSourceLocationPointSchema,
+  end: cssSourceLocationPointSchema,
+});
+
 const cssSourceReferenceSchema = z.object({
   stylesheet: z.string().nullable(),
   selector: z.string().min(1),
   property: z.string().min(1),
   value: z.string().min(1),
   media: z.string().nullable(),
+  location: cssSourceLocationSchema.nullable().optional(),
 });
 
 const rootCauseDiagnosisSchema = z.discriminatedUnion('kind', [
