@@ -35,6 +35,7 @@ import { partitionSuppressedIssues } from './suppress.js';
 import type { SurfaceSnapshot } from './surface.js';
 import type {
   BoundaryResult,
+  CssSourceReference,
   HorizontalOverflowIssue,
   HorizontalOverflowRootCause,
   Issue,
@@ -491,7 +492,7 @@ async function enrichIssues(
         measurement.diagnosis.property,
         measurement.diagnosis.value,
       );
-      const enrichedSource =
+      const enrichedSource: CssSourceReference | null =
         source === null
           ? null
           : {
