@@ -280,8 +280,24 @@ describe('slice CLI', () => {
         property: 'min-width',
         value: '400px',
         media: '(min-width: 350px) and (max-width: 499px)',
+        location: {
+          kind: 'css-property-range',
+          confidence: 'deterministic',
+          coordinateSpace: 'stylesheet',
+          start: {
+            line: 12,
+            column: 11,
+          },
+          end: {
+            line: 12,
+            column: expect.any(Number),
+          },
+        },
       },
     });
+    expect(finding.source.location.end.column).toBeGreaterThan(
+      finding.source.location.start.column,
+    );
   });
 
   it('refines responsive disappearance and reparenting to exact boundaries', async () => {
