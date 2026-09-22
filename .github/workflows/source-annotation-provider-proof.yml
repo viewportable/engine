@@ -1,0 +1,102 @@
+name: Source Annotation Provider Proof
+
+on:
+  pull_request:
+    paths:
+      - 'proof/source-annotation.css'
+      - '.github/workflows/source-annotation-provider-proof.yml'
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout proof head
+        uses: actions/checkout@v7
+
+      - name: Build deterministic proof report
+        shell: bash
+        run: |
+          mkdir -p .slice/provider-proof
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile } from 'node:fs/promises';
+          import path from 'node:path';
+
+          const stylesheet = path.resolve('proof/source-annotation.css');
+          const content = await readFile(stylesheet, 'utf8');
+          const declaration = 'min-width: 1400px;';
+          const lines = content.split('\n');
+          const lineIndex = lines.findIndex((line) => line.includes(declaration));
+          if (lineIndex < 0) throw new Error('proof declaration missing');
+
+          const columnIndex = lines[lineIndex].indexOf(declaration);
+          const report = {
+            summary: {
+              viewportsChecked: 4,
+              exactBoundaries: 2,
+              durationMs: 1,
+            },
+            findings: [
+              {
+                id: 'provider-proof-protrusion',
+                category: 'structural',
+                type: 'protrusion',
+                direction: 'introduced',
+                subject: { key: 'id:proof-card' },
+                relatedSubjects: [{ key: 'id:proof-container' }],
+                sampledRange: {
+                  minWidth: 875,
+                  maxWidth: 925,
+                  widths: [875, 925],
+                },
+                exactRange: {
+                  minWidth: 850,
+                  maxWidth: 949,
+                },
+                baseline: { state: 'contained' },
+                candidate: { state: 'protruding' },
+                source: {
+                  kind: 'css-declaration',
+                  confidence: 'deterministic',
+                  stylesheet,
+                  selector: '.proof-card',
+                  property: 'min-width',
+                  value: '1400px',
+                  media: null,
+                  location: {
+                    kind: 'css-property-range',
+                    confidence: 'deterministic',
+                    coordinateSpace: 'stylesheet',
+                    start: {
+                      line: lineIndex + 1,
+                      column: columnIndex + 1,
+                    },
+                    end: {
+                      line: lineIndex + 1,
+                      column: columnIndex + declaration.length + 1,
+                    },
+                  },
+                },
+              },
+            ],
+          };
+
+          await writeFile(
+            '.slice/provider-proof/structural-diff.json',
+            JSON.stringify(report, null, 2),
+            'utf8',
+          );
+          NODE
+
+      - name: Publish live GitHub source annotation
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SLICE_EXIT_CODE: '1'
+          SLICE_SOURCE_ROOT: ${{ github.workspace }}
+        run: |
+          node scripts/github-check-run.mjs .slice/provider-proof/structural-diff.json
