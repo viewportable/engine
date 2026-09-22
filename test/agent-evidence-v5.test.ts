@@ -37,7 +37,7 @@ const authoredSource = {
   },
 };
 
-function compareRun(source = authoredSource, type = 'protrusion'): EngineMcpRun {
+function compareRun(source: unknown = authoredSource, type = 'protrusion'): EngineMcpRun {
   return {
     mode: 'compare',
     exitCode: 1,
