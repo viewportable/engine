@@ -169,8 +169,7 @@ try {
   assert(
     broken.findings.every(
       (finding) =>
-        finding.repair?.repairable === false &&
-        finding.repair?.reason === 'unsupported-finding',
+        finding.repair?.repairable === false && finding.repair?.reason === 'unsupported-finding',
     ),
     `broken: unsupported structural findings must fail closed: ${JSON.stringify(broken.findings)}`,
   );
