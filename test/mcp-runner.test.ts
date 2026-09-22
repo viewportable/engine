@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createViewportableMcpServer } from '../src/mcp-server.js';
 import {
   buildEngineArgs,
-  compactMcpResult,
+  canonicalMcpResult,
   mcpTextSummary,
   type EngineMcpRun,
 } from '../src/mcp-runner.js';
@@ -109,17 +109,22 @@ describe('Viewportable MCP runner', () => {
       },
     };
 
-    const result = compactMcpResult(run);
+    const result = canonicalMcpResult(run);
 
     expect(result).toMatchObject({
       mode: 'compare',
       outcome: 'findings',
       exitCode: 1,
-      reportPath: '.slice/mcp/compare-123/structural-diff.json',
+      schemaVersion: 'viewportable.agent-evidence.v1',
+      mode: 'compare',
+      outcome: 'findings',
+      exitCode: 1,
       summary: {
         viewportsChecked: 4,
-        introducedRanges: 1,
-        resolvedRanges: 1,
+        findingCount: 1,
+        introducedCount: 1,
+        resolvedCount: 1,
+        durationMs: null,
       },
       findings: [
         {
@@ -128,6 +133,11 @@ describe('Viewportable MCP runner', () => {
           type: 'disappearance',
         },
       ],
+      evidence: {
+        reportPath: '.slice/mcp/compare-123/structural-diff.json',
+        format: 'structural-diff.v1',
+      },
+      error: null,
     });
     expect(mcpTextSummary(result)).toContain('1 introduced finding(s)');
   });
@@ -153,19 +163,31 @@ describe('Viewportable MCP runner', () => {
       },
     };
 
-    const result = compactMcpResult(run);
+    const result = canonicalMcpResult(run);
 
     expect(result).toMatchObject({
+      schemaVersion: 'viewportable.agent-evidence.v1',
       mode: 'scan',
       outcome: 'findings',
-      rootCauses: [{ id: 'root-1', type: 'horizontal-overflow' }],
-      failingViewports: [{ width: 390, status: 'fail' }],
+      summary: {
+        viewportsChecked: 3,
+        findingCount: 0,
+        introducedCount: 0,
+        resolvedCount: 0,
+        durationMs: null,
+      },
+      findings: [],
+      evidence: {
+        reportPath: '.slice/mcp/scan-123/results.json',
+        format: 'results.v1',
+      },
+      error: null,
     });
-    expect(mcpTextSummary(result)).toContain('1 failing viewport(s)');
+    expect(mcpTextSummary(result)).toContain('0 current finding(s)');
   });
 
   it('marks scanner/setup failures as MCP errors while retaining stderr evidence', () => {
-    const result = compactMcpResult({
+    const result = canonicalMcpResult({
       mode: 'scan',
       exitCode: 2,
       outcome: 'infra_failure',
@@ -175,9 +197,11 @@ describe('Viewportable MCP runner', () => {
     });
 
     expect(result).toMatchObject({
+      schemaVersion: 'viewportable.agent-evidence.v1',
       outcome: 'infra_failure',
       exitCode: 2,
-      stderr: 'page did not become ready',
+      findings: [],
+      error: 'page did not become ready',
     });
   });
 });
