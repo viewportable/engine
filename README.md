@@ -215,13 +215,24 @@ viewportable_scan
 clean
 ```
 
-The production acceptance command is:
+The single-scenario production acceptance command is:
 
 ```bash
 npm run acceptance:build-tool-scan-agent-repair
 ```
 
-It uses the same Sass/Vite fixture project as compare-mode acceptance but a dedicated grouped scan page backed by `Scan.source.scss`. The grid has one `min-width` root cause with multiple affected leaves, matching normal scan grouping semantics. The harness calls only `viewportable_scan`, requires V5 to mark the grouped finding repairable and retain its V4 authored evidence, reads only a small range around that location, changes exactly one SCSS line, rebuilds production assets, and requires a clean rescan.
+CI runs the broader scan repair coverage matrix:
+
+```bash
+npm run acceptance:scan-repair-coverage
+```
+
+The matrix uses the same Sass/Vite fixture project as compare-mode acceptance but a dedicated grouped scan page. It proves both deterministic scan root-cause constraints currently authorized by V5:
+
+- `min-width: 700px` from `Scan.source.scss`;
+- fixed `width: 700px` from `Scan.width.source.scss`.
+
+For each scenario the harness calls only `viewportable_scan`, requires V5 to mark the grouped finding repairable and retain its V4 authored evidence, reads only a small range around that location, changes exactly one SCSS line, rebuilds production assets, and requires a clean rescan.
 
 ### MCP golden agent flow
 
