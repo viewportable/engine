@@ -93,6 +93,14 @@ exit 1 -> findings        (successful MCP tool call with product evidence)
 exit 2 -> infra_failure   (MCP tool error)
 ```
 
+MCP structured output now uses the strict, versioned **Viewportable Canonical Agent Evidence Contract V1**:
+
+```text
+schemaVersion = viewportable.agent-evidence.v1
+```
+
+The contract is validated at runtime before MCP returns it. Unknown fields are rejected at every schema level. The rich Engine artifacts remain separate and are referenced through `evidence.reportPath`. See [Canonical Agent Evidence Contract V1](docs/contracts/agent-evidence-v1.md).
+
 `viewportable_compare` returns introduced canonical `findings[]` directly to the agent; resolved evidence remains in the retained full structural report. `viewportable_scan` returns failing viewports and canonical root causes while retaining the complete scan report.
 
 ### MCP golden agent flow
