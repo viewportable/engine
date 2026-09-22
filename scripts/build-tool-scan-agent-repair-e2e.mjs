@@ -220,13 +220,22 @@ try {
   const source = finding.source;
   const authored = source.authoredLocation;
   assert(source.location?.coordinateSpace === 'stylesheet', 'before: missing stylesheet location');
-  assert(authored.coordinateSpace === 'authored-source', 'before: missing authored source location');
+  assert(
+    authored.coordinateSpace === 'authored-source',
+    'before: missing authored source location',
+  );
   assert(
     authored.source.endsWith('Candidate.source.scss'),
     `before: unexpected authored source ${authored.source}`,
   );
-  assert(authored.start?.line === 16, `before: expected authored line 16, got ${authored.start?.line}`);
-  assert(authored.start?.column === 5, `before: expected authored column 5, got ${authored.start?.column}`);
+  assert(
+    authored.start?.line === 16,
+    `before: expected authored line 16, got ${authored.start?.line}`,
+  );
+  assert(
+    authored.start?.column === 5,
+    `before: expected authored column 5, got ${authored.start?.column}`,
+  );
 
   const targetLine = authored.start.line;
   const readStart = Math.max(1, targetLine - 2);
@@ -253,7 +262,10 @@ try {
   assert(fixed.mode === 'scan', `after: expected scan mode, got ${fixed.mode}`);
   assert(fixed.outcome === 'clean', `after: expected clean, got ${fixed.outcome}`);
   assert(fixed.exitCode === 0, `after: expected exit 0, got ${fixed.exitCode}`);
-  assert(fixed.findings.length === 0, `after: expected zero findings, got ${fixed.findings.length}`);
+  assert(
+    fixed.findings.length === 0,
+    `after: expected zero findings, got ${fixed.findings.length}`,
+  );
 
   const finalSource = await readFile(targetPath, 'utf8');
   const finalLines = finalSource.split('\n');
