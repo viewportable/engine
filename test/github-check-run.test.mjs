@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -119,6 +120,64 @@ describe('GitHub Check Run', () => {
               'selector: [data-viewport-id="iphone-15-pro"]\n' +
               'declaration: min-width: 1400px\n' +
               'media: (min-width: 850px) and (max-width: 949px)',
+          },
+        ],
+        total: 1,
+        skipped: 0,
+        truncated: false,
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('prefers a hash-verified authored source-map path over generated CSS', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'viewportable-authored-'));
+    const authoredPath = path.join(root, 'src/styles.scss');
+    const authoredContent = [
+      '$card-width: 1400px;',
+      '',
+      '.viewport {',
+      '  min-width: $card-width;',
+      '}',
+      '',
+    ].join('\n');
+    const evidence = attributedReport('https://example.test/assets/app.css');
+    evidence.findings[0].source.authoredLocation = {
+      kind: 'source-map-property',
+      confidence: 'deterministic',
+      coordinateSpace: 'authored-source',
+      source: '../../src/styles.scss',
+      resolvedSource: 'https://example.test/src/styles.scss',
+      start: { line: 4, column: 3 },
+      sourceContentSha256: createHash('sha256').update(authoredContent).digest('hex'),
+      sourceMap: {
+        version: 3,
+        kind: 'external',
+        url: 'https://example.test/assets/app.css.map',
+      },
+    };
+
+    try {
+      await mkdir(path.dirname(authoredPath), { recursive: true });
+      await writeFile(authoredPath, authoredContent, 'utf8');
+
+      const result = await buildSourceAnnotations(evidence, {
+        repositoryRoot: root,
+      });
+
+      expect(result).toMatchObject({
+        annotations: [
+          {
+            path: 'src/styles.scss',
+            start_line: 4,
+            end_line: 4,
+            start_column: 3,
+            end_column: 11,
+            annotation_level: 'failure',
+            raw_details: expect.stringContaining(
+              'source-map: external -> ../../src/styles.scss',
+            ),
           },
         ],
         total: 1,
