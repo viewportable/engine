@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -24,14 +25,11 @@ function normalizedAbsolutePath(value) {
   return path.resolve(value);
 }
 
-export function repositoryPathForStylesheet(stylesheet, repositoryRoot) {
-  if (typeof repositoryRoot !== 'string' || repositoryRoot.trim() === '') return null;
-
+function pathInsideRoot(filePath, repositoryRoot) {
   const root = path.resolve(repositoryRoot);
-  const sourcePath = normalizedAbsolutePath(stylesheet);
-  if (!sourcePath) return null;
+  const absolute = path.resolve(filePath);
+  const relative = path.relative(root, absolute);
 
-  const relative = path.relative(root, sourcePath);
   if (
     relative === '' ||
     relative === '..' ||
@@ -41,7 +39,19 @@ export function repositoryPathForStylesheet(stylesheet, repositoryRoot) {
     return null;
   }
 
-  return relative.split(path.sep).join('/');
+  return {
+    absolute,
+    relative: relative.split(path.sep).join('/'),
+  };
+}
+
+export function repositoryPathForStylesheet(stylesheet, repositoryRoot) {
+  if (typeof repositoryRoot !== 'string' || repositoryRoot.trim() === '') return null;
+
+  const sourcePath = normalizedAbsolutePath(stylesheet);
+  if (!sourcePath) return null;
+
+  return pathInsideRoot(sourcePath, repositoryRoot)?.relative ?? null;
 }
 
 function rangeOffsets(content, location) {
@@ -104,15 +114,176 @@ function githubRange(offsets) {
   return range;
 }
 
-function annotationDetails(finding) {
+function annotationDetails(finding, authoredLocation = null) {
   const source = finding.source;
   return [
     source?.selector ? `selector: ${source.selector}` : null,
     source?.property && source?.value ? `declaration: ${source.property}: ${source.value}` : null,
     source?.media ? `media: ${source.media}` : null,
+    authoredLocation
+      ? `source-map: ${authoredLocation.sourceMap.kind} -> ${authoredLocation.source}`
+      : null,
   ]
     .filter(Boolean)
     .join('\n');
+}
+
+function sha256(value) {
+  return createHash('sha256').update(value).digest('hex');
+}
+
+function relativeSourceCandidate(identifier) {
+  if (typeof identifier !== 'string' || identifier.trim() === '') return null;
+
+  const absolute = normalizedAbsolutePath(identifier);
+  if (absolute) return { absolute };
+
+  let pathname = identifier;
+  try {
+    const url = new URL(identifier);
+    pathname = decodeURIComponent(url.pathname);
+  } catch {
+    pathname = identifier.split(/[?#]/, 1)[0];
+  }
+
+  const normalized = path.posix.normalize(pathname.replaceAll('\\', '/'));
+  const withoutLeading = normalized
+    .replace(/^\/+/, '')
+    .replace(/^(?:\.\.\/)+/, '')
+    .replace(/^\.\//, '');
+
+  return withoutLeading && withoutLeading !== '.' ? { relative: withoutLeading } : null;
+}
+
+async function authoredAnnotation({
+  finding,
+  repositoryRoot,
+  readText,
+}) {
+  const source = finding.source;
+  const authored = source?.authoredLocation;
+
+  if (
+    !source ||
+    typeof source.property !== 'string' ||
+    !authored ||
+    authored.kind !== 'source-map-property' ||
+    authored.confidence !== 'deterministic' ||
+    authored.coordinateSpace !== 'authored-source' ||
+    typeof authored.sourceContentSha256 !== 'string' ||
+    !/^[0-9a-f]{64}$/.test(authored.sourceContentSha256)
+  ) {
+    return null;
+  }
+
+  const line = positiveInteger(authored.start?.line);
+  const column = positiveInteger(authored.start?.column);
+  if (line === null || column === null) return null;
+
+  const candidates = new Map();
+
+  for (const identifier of [authored.source, authored.resolvedSource]) {
+    const candidate = relativeSourceCandidate(identifier);
+    if (!candidate) continue;
+
+    const resolved = candidate.absolute
+      ? pathInsideRoot(candidate.absolute, repositoryRoot)
+      : pathInsideRoot(path.resolve(repositoryRoot, candidate.relative), repositoryRoot);
+
+    if (resolved) candidates.set(resolved.absolute, resolved);
+  }
+
+  const verified = [];
+
+  for (const candidate of candidates.values()) {
+    let content;
+    try {
+      content = await readText(candidate.absolute);
+    } catch {
+      continue;
+    }
+
+    if (sha256(content) !== authored.sourceContentSha256) continue;
+
+    const lines = content.split(/\r?\n/);
+    const sourceLine = lines[line - 1];
+    if (sourceLine === undefined || column > sourceLine.length + 1) continue;
+    if (!sourceLine.slice(column - 1).startsWith(source.property)) continue;
+
+    verified.push(candidate);
+  }
+
+  if (verified.length !== 1) return null;
+
+  const candidate = verified[0];
+  const details = annotationDetails(finding, authored);
+
+  return {
+    path: candidate.relative,
+    start_line: line,
+    end_line: line,
+    start_column: column,
+    end_column: column + source.property.length - 1,
+    annotation_level: 'failure',
+    title: `Viewportable: ${finding.type ?? 'structural regression'}`,
+    message: `${findingRangeText(finding)} - ${findingLabel(finding)}`,
+    ...(details ? { raw_details: details } : {}),
+  };
+}
+
+async function stylesheetAnnotation({
+  finding,
+  repositoryRoot,
+  readText,
+}) {
+  const source = finding.source;
+  const location = source?.location;
+
+  if (
+    !source ||
+    typeof source.stylesheet !== 'string' ||
+    location?.kind !== 'css-property-range' ||
+    location?.confidence !== 'deterministic' ||
+    location?.coordinateSpace !== 'stylesheet'
+  ) {
+    return null;
+  }
+
+  const repositoryPath = repositoryPathForStylesheet(source.stylesheet, repositoryRoot);
+  const sourcePath = normalizedAbsolutePath(source.stylesheet);
+  if (!repositoryPath || !sourcePath) return null;
+
+  let content;
+  try {
+    content = await readText(sourcePath);
+  } catch {
+    return null;
+  }
+
+  const offsets = rangeOffsets(content, location);
+  const range = offsets ? githubRange(offsets) : null;
+  if (!offsets || !range) return null;
+
+  const snippet = content.slice(offsets.start, offsets.end);
+  if (
+    typeof source.property !== 'string' ||
+    typeof source.value !== 'string' ||
+    !snippet.includes(source.property) ||
+    !snippet.includes(source.value)
+  ) {
+    return null;
+  }
+
+  const details = annotationDetails(finding);
+
+  return {
+    path: repositoryPath,
+    ...range,
+    annotation_level: 'failure',
+    title: `Viewportable: ${finding.type ?? 'structural regression'}`,
+    message: `${findingRangeText(finding)} - ${findingLabel(finding)}`,
+    ...(details ? { raw_details: details } : {}),
+  };
 }
 
 export async function buildSourceAnnotations(
@@ -123,62 +294,24 @@ export async function buildSourceAnnotations(
   const annotations = [];
   let skipped = 0;
 
+  if (typeof repositoryRoot !== 'string' || repositoryRoot.trim() === '') {
+    return {
+      annotations,
+      total: 0,
+      skipped: findings.filter((finding) => finding?.direction === 'introduced').length,
+      truncated: false,
+    };
+  }
+
   for (const finding of findings) {
     if (finding?.direction !== 'introduced') continue;
 
-    const source = finding.source;
-    const location = source?.location;
-    if (
-      !source ||
-      typeof source.stylesheet !== 'string' ||
-      location?.kind !== 'css-property-range' ||
-      location?.confidence !== 'deterministic' ||
-      location?.coordinateSpace !== 'stylesheet'
-    ) {
-      continue;
-    }
+    const annotation =
+      (await authoredAnnotation({ finding, repositoryRoot, readText })) ??
+      (await stylesheetAnnotation({ finding, repositoryRoot, readText }));
 
-    const repositoryPath = repositoryPathForStylesheet(source.stylesheet, repositoryRoot);
-    const sourcePath = normalizedAbsolutePath(source.stylesheet);
-    if (!repositoryPath || !sourcePath) {
-      skipped += 1;
-      continue;
-    }
-
-    let content;
-    try {
-      content = await readText(sourcePath);
-    } catch {
-      skipped += 1;
-      continue;
-    }
-
-    const offsets = rangeOffsets(content, location);
-    const range = offsets ? githubRange(offsets) : null;
-    if (!offsets || !range) {
-      skipped += 1;
-      continue;
-    }
-
-    const snippet = content.slice(offsets.start, offsets.end);
-    if (
-      typeof source.property !== 'string' ||
-      typeof source.value !== 'string' ||
-      !snippet.includes(source.property) ||
-      !snippet.includes(source.value)
-    ) {
-      skipped += 1;
-      continue;
-    }
-
-    annotations.push({
-      path: repositoryPath,
-      ...range,
-      annotation_level: 'failure',
-      title: `Viewportable: ${finding.type ?? 'structural regression'}`,
-      message: `${findingRangeText(finding)} - ${findingLabel(finding)}`,
-      ...(annotationDetails(finding) ? { raw_details: annotationDetails(finding) } : {}),
-    });
+    if (annotation) annotations.push(annotation);
+    else if (finding.source?.location || finding.source?.authoredLocation) skipped += 1;
   }
 
   return {
