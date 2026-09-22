@@ -92,8 +92,7 @@ function scanLocations(
 export function buildCanonicalAgentEvidenceV3(run: EngineMcpRun): AgentEvidenceV3 {
   const v2 = buildCanonicalAgentEvidenceV2(run);
   const report = record(run.report);
-  const locations =
-    run.mode === 'compare' ? compareLocations(report) : scanLocations(report);
+  const locations = run.mode === 'compare' ? compareLocations(report) : scanLocations(report);
 
   return AgentEvidenceV3Schema.parse({
     ...v2,
