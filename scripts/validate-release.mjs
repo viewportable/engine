@@ -79,6 +79,9 @@ for (const required of [
   'test/fixtures/build-tool-source-map/vite.config.mjs',
   'test/fixtures/build-tool-source-map/src/Candidate.source.scss',
   'test/fixtures/build-tool-source-map/src/Candidate.width.source.scss',
+  'test/fixtures/build-tool-source-map/scan.html',
+  'test/fixtures/build-tool-source-map/src/scan.js',
+  'test/fixtures/build-tool-source-map/src/Scan.source.scss',
   'examples/github/compare.yml',
 ]) {
   await requireFile(required);
