@@ -290,7 +290,7 @@ async function runCompare() {
         widths,
         height: 900,
         waitMs: 0,
-        timeoutMs: 15_000,
+        timeoutMs: 30_000,
         boundary: true,
         readySelector: '[data-testid="viewport-scroll-zone-iphone-15-pro"]',
         outBase: '.slice/openai-react-agent-e2e',
@@ -299,7 +299,13 @@ async function runCompare() {
     { timeout: 120_000 },
   );
 
-  assert(result.isError !== true, 'Viewportable MCP returned isError');
+  if (result.isError === true) {
+    throw new Error(
+      `Viewportable MCP returned isError: ${JSON.stringify(
+        result.structuredContent ?? result.content,
+      )}`,
+    );
+  }
   const evidence = result.structuredContent;
   assert(evidence && typeof evidence === 'object', 'missing Viewportable structuredContent');
   assert(
@@ -375,6 +381,8 @@ try {
     waitFor(baselineUrl, baselineServer),
     waitFor(candidateUrl, candidateServer),
   ]);
+  // Let Vite finish cold dependency optimization before the browser readiness gate.
+  await new Promise((resolveWait) => setTimeout(resolveWait, 2_000));
   await mcpClient.connect(mcpTransport);
 
   const preflight = await runCompare();
