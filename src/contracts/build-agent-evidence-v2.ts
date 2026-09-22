@@ -71,7 +71,8 @@ export function buildCanonicalAgentEvidenceV2(run: EngineMcpRun): AgentEvidenceV
     schemaVersion: AGENT_EVIDENCE_SCHEMA_VERSION_V2,
     findings: v1.findings.map((finding) => ({
       ...finding,
-      source: sources.get(finding.id) ?? (finding.groupId ? sources.get(finding.groupId) : null) ?? null,
+      source:
+        sources.get(finding.id) ?? (finding.groupId ? sources.get(finding.groupId) : null) ?? null,
     })),
   });
 }
