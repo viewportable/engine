@@ -15,7 +15,19 @@ const acceptancePath = path.join(retainedRoot, 'acceptance.json');
 const tempRoot = await mkdtemp(path.join(tmpdir(), 'viewportable-agent-repair-'));
 const appRoot = path.join(tempRoot, 'app');
 const distRoot = path.join(appRoot, 'dist');
-const targetPath = path.join(appRoot, 'src/Candidate.source.scss');
+const scenario = process.env.VIEWPORTABLE_REPAIR_SCENARIO ?? 'min-width';
+const scenarioDefinitions = {
+  'min-width': {
+    sourceName: 'Candidate.source.scss',
+    property: 'min-width',
+    value: '400px',
+  },
+  width: {
+    sourceName: 'Candidate.width.source.scss',
+    property: 'width',
+    value: '400px',
+  },
+};
 const mode = process.env.VIEWPORTABLE_AGENT_MODE ?? 'scripted';
 const model = process.env.OPENAI_MODEL ?? 'gpt-5.6';
 const apiKey =
@@ -24,6 +36,10 @@ const apiKey =
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
+
+const scenarioDefinition = scenarioDefinitions[scenario];
+assert(scenarioDefinition, `unsupported VIEWPORTABLE_REPAIR_SCENARIO: ${scenario}`);
+const targetPath = path.join(appRoot, 'src', scenarioDefinition.sourceName);
 
 function run(command, args, { cwd = root, allowed = [0], capture = false } = {}) {
   return new Promise((resolve, reject) => {
@@ -83,7 +99,7 @@ async function buildProduction({ initial = false } = {}) {
   if (initial) {
     await compileSass('Baseline.source.scss', 'baseline.css');
   }
-  await compileSass('Candidate.source.scss', 'candidate.css');
+  await compileSass(scenarioDefinition.sourceName, 'candidate.css');
   await run('npm', ['exec', '--', 'vite', 'build'], { cwd: appRoot });
 }
 
@@ -308,6 +324,7 @@ try {
     [
       'REAL BUILD TOOL AGENT REPAIR E2E',
       `mode: ${mode}`,
+      `scenario: ${scenario}`,
       `model: ${mode === 'openai' ? model : 'scripted'}`,
       'toolchain: Vite 8.3.0 + Sass 1.104.1 + React 19.3.0 + CSS Modules + PostCSS',
       '',
@@ -380,7 +397,15 @@ try {
   const authored = finding.source?.authoredLocation;
   assert(authored, 'before: missing authoredLocation');
   assert(
-    authored.source === '../../src/Candidate.source.scss',
+    finding.source?.property === scenarioDefinition.property,
+    `before: expected ${scenarioDefinition.property}, got ${finding.source?.property}`,
+  );
+  assert(
+    finding.source?.value === scenarioDefinition.value,
+    `before: expected ${scenarioDefinition.value}, got ${finding.source?.value}`,
+  );
+  assert(
+    authored.source === `../../src/${scenarioDefinition.sourceName}`,
     `before: unexpected authored source ${authored.source}`,
   );
   assert(
@@ -525,7 +550,7 @@ try {
       'First read a small range around the authored location.',
       'The read/edit source may be the raw source-map identifier, its normalized src/... form, or the resolvedSource URL; all resolve to the same fixed authored target.',
       'Then make exactly one single-line edit to the attributed authored line.',
-      'Use the smallest fix that removes the attributed min-width regression.',
+      'Use the smallest fix that removes the attributed CSS declaration regression.',
       'Do not request or infer the full source file.',
       'After editing, rebuild and compare.',
       'Finish only after the comparison reports outcome clean and zero findings.',
@@ -633,6 +658,7 @@ try {
 
   const acceptance = {
     version: 1,
+    scenario,
     mode,
     model: mode === 'openai' ? model : null,
     initial: {
@@ -640,6 +666,8 @@ try {
       outcome: broken.outcome,
       findingCount: broken.findings.length,
       type: finding.type,
+      sourceProperty: finding.source?.property ?? null,
+      sourceValue: finding.source?.value ?? null,
       exactRange: { minWidth: 350, maxWidth: 499 },
       authoredLocation: authored,
       reportPath: broken.evidence?.reportPath,
@@ -673,7 +701,8 @@ try {
     [
       'REAL BUILD TOOL AGENT REPAIR E2E PASS',
       `mode: ${mode}`,
-      `before: 1 protrusion @ 350-499px exact`,
+      `scenario: ${scenario}`,
+      `before: 1 protrusion @ 350-499px exact (${scenarioDefinition.property}: ${scenarioDefinition.value})`,
       `authored: ${targetSource}:${targetLine}:${authored.start.column}`,
       `source bytes read: ${readBytes} / ${sourceByteLength}`,
       `agent writes: ${writes}`,

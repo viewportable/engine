@@ -2,6 +2,15 @@ name: Real Build-Tool Agent Repair
 
 on:
   workflow_dispatch:
+    inputs:
+      scenario:
+        description: Deterministic CSS cause to repair
+        required: true
+        default: min-width
+        type: choice
+        options:
+          - min-width
+          - width
 
 permissions:
   contents: read
@@ -16,6 +25,7 @@ jobs:
       OPENAI_API_TOKEN: ${{ secrets.OPENAI_API_TOKEN }}
       OPEN_API_TOKEN: ${{ secrets.OPEN_API_TOKEN }}
       OPENAI_MODEL: gpt-5.6
+      VIEWPORTABLE_REPAIR_SCENARIO: ${{ inputs.scenario }}
 
     steps:
       - name: Checkout
