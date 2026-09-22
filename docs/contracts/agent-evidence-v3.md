@@ -78,15 +78,8 @@ Source Location V1 follows Source Attribution V1 scope:
 
 Other finding types and scan-mode locations remain `null` until equally deterministic browser evidence exists.
 
-## Future authored source maps
+## Authored source maps
 
-V3 intentionally distinguishes runtime stylesheet coordinates from authored-file coordinates.
+V3 intentionally remains limited to runtime stylesheet coordinates.
 
-A future source-map extension may add a new version with fields such as:
-
-```text
-coordinateSpace = authored-source
-sourceMap = deterministic
-```
-
-only when the generated CSS range can be mapped back to an original source position without ambiguity.
+Authored source-map positions are added by [Canonical Agent Evidence V4](agent-evidence-v4.md) through a separate nullable `authoredLocation`. V4 does not reinterpret the V3 `location` field, so existing V3 consumers keep the same coordinate semantics.
