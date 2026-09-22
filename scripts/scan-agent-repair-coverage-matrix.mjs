@@ -39,7 +39,9 @@ function runScenario(scenario) {
     child.once('error', reject);
     child.once('close', async (code) => {
       if (code !== 0) {
-        reject(new Error(`scan repair scenario ${scenario} failed with ${code}\n${stdout}\n${stderr}`));
+        reject(
+          new Error(`scan repair scenario ${scenario} failed with ${code}\n${stdout}\n${stderr}`),
+        );
         return;
       }
 
