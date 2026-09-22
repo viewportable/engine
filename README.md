@@ -158,6 +158,28 @@ A repeatable real-model proof is available through the **Real Build-Tool Agent R
 
 The accepted GPT-5.6 proof on 2026-09-22 read 121 of 258 source bytes, performed exactly one write, used exactly three tool calls (`read_source_range -> replace_source_line -> rebuild_and_compare`), and finished with zero findings. The API run consumed 5,170 total tokens.
 
+### Agent repair coverage matrix
+
+The repair boundary is also tested as a capability matrix:
+
+```bash
+npm run acceptance:agent-repair-coverage
+```
+
+Positive cases reuse the same constrained three-tool repair loop and production Sass/Vite build:
+
+- responsive `min-width: 400px` protrusion -> one authored-line edit -> clean;
+- responsive fixed `width: 400px` protrusion -> the same repair machinery -> clean.
+
+Negative cases intentionally remain non-repairable:
+
+- `disappearance`;
+- `reparenting`.
+
+Those findings currently have `source: null` in Canonical Agent Evidence V4. The matrix therefore exposes zero repair tools for them and records a fail-closed decision instead of asking an agent to guess a source edit. This is deliberate capability accounting, not a missing fallback.
+
+The manual **Real Build-Tool Agent Repair** workflow accepts a `min-width` or `width` scenario so either deterministic CSS cause can be re-proven with GPT-5.6.
+
 ### MCP golden agent flow
 
 The repository includes a real stdio MCP acceptance flow using the official MCP client SDK:
