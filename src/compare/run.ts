@@ -194,6 +194,7 @@ export async function runStructuralCompare(
 
     await attributeStructuralFindingSources({
       page: candidateRuntime.page,
+      cdp: candidateRuntime.cdp,
       candidateCaptures,
       findings,
       height: options.height,

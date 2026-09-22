@@ -21,6 +21,7 @@ All notable changes to Viewportable Engine are documented here.
 - MCP Golden Agent Flow acceptance using the official client SDK over real stdio: broken candidate -> two exact 350-499px canonical findings -> fixed candidate -> zero findings through the same MCP connection.
 - Viewportable Canonical Agent Evidence Contract V1 (`viewportable.agent-evidence.v1`): strict versioned agent semantics, runtime validation, normalized scan/compare findings, explicit evidence pointers, and MCP output schema sourced from one Zod contract.
 - Deterministic CSS Source Attribution V1 plus Canonical Agent Evidence V2 (`viewportable.agent-evidence.v2`): direct protrusion constraints can carry uniquely proven stylesheet/source path, selector, property, value, and active media context; ambiguous and indirect causes remain `source: null`.
+- Deterministic CSS Source Location V1 plus Canonical Agent Evidence V3 (`viewportable.agent-evidence.v3`): browser-proven CSS property ranges are exposed as one-based stylesheet line/column ranges after selector/property/value/media agreement and stylesheet-text verification; ambiguous locations remain `null`.
 
 
 

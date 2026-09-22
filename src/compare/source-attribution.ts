@@ -1,5 +1,6 @@
-import type { Page } from 'playwright';
+import type { CDPSession, Page } from 'playwright';
 import { findUniqueCssSource } from '../css-source.js';
+import { findCssSourceLocation } from '../css-source-location.js';
 import { buildStableSelector, makePageUniquenessCheck } from '../selector.js';
 import { stabilizeViewport } from '../stabilize.js';
 import type { SurfaceSnapshot } from '../surface.js';
@@ -39,12 +40,14 @@ function protrusionConstraint(
 
 export async function attributeStructuralFindingSources({
   page,
+  cdp,
   candidateCaptures,
   findings,
   height,
   waitMs,
 }: {
   page: Page;
+  cdp: CDPSession;
   candidateCaptures: Map<number, SurfaceSnapshot<LayoutNode>>;
   findings: StructuralFinding[];
   height: number;
@@ -76,7 +79,13 @@ export async function attributeStructuralFindingSources({
     const selector = await buildStableSelector(node, capture.nodes, isUnique);
     const source = await findUniqueCssSource(page, selector, constraint.property, constraint.value);
 
-    if (source) finding.source = source;
+    if (source) {
+      const location = await findCssSourceLocation(cdp, selector, source);
+      finding.source = {
+        ...source,
+        location,
+      };
+    }
   }
 }
 
