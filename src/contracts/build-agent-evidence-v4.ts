@@ -86,8 +86,7 @@ function compareAuthoredLocations(
 export function buildCanonicalAgentEvidenceV4(run: EngineMcpRun): AgentEvidenceV4 {
   const v3 = buildCanonicalAgentEvidenceV3(run);
   const report = record(run.report);
-  const authoredLocations =
-    run.mode === 'compare' ? compareAuthoredLocations(report) : new Map();
+  const authoredLocations = run.mode === 'compare' ? compareAuthoredLocations(report) : new Map();
 
   return AgentEvidenceV4Schema.parse({
     ...v3,
