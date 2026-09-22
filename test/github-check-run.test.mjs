@@ -52,7 +52,6 @@ function report() {
   };
 }
 
-
 function attributedReport(stylesheet) {
   return {
     summary: {
@@ -92,7 +91,6 @@ function attributedReport(stylesheet) {
 }
 
 describe('GitHub Check Run', () => {
-
   it('builds a line-and-column annotation only after repository source verification', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'viewportable-annotations-'));
     const stylesheet = path.join(root, 'src/renderer/styles.css');
@@ -243,7 +241,6 @@ describe('GitHub Check Run', () => {
       },
     });
   });
-
 
   it('publishes verified source annotations in the managed Check Run', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'viewportable-check-'));
