@@ -1,0 +1,151 @@
+name: Authored Source Map Provider Proof
+
+on:
+  pull_request:
+    paths:
+      - 'proof/source-map-authored.scss'
+      - '.github/workflows/source-map-authored-provider-proof.yml'
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout proof head
+        uses: actions/checkout@v7
+
+      - name: Build authored source-map evidence
+        shell: bash
+        run: |
+          mkdir -p .slice/source-map-provider-proof
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto';
+          import { readFile, writeFile } from 'node:fs/promises';
+
+          const authoredPath = 'proof/source-map-authored.scss';
+          const authoredContent = await readFile(authoredPath, 'utf8');
+          const property = 'min-width';
+          const lines = authoredContent.split('\n');
+          const lineIndex = lines.findIndex((line) => line.includes(property));
+          if (lineIndex < 0) throw new Error('authored proof property missing');
+
+          const columnIndex = lines[lineIndex].indexOf(property);
+          const sourceContentSha256 = createHash('sha256').update(authoredContent).digest('hex');
+
+          const report = {
+            summary: {
+              viewportsChecked: 4,
+              exactBoundaries: 2,
+              durationMs: 1,
+            },
+            findings: [
+              {
+                id: 'source-map-provider-proof',
+                category: 'structural',
+                type: 'protrusion',
+                direction: 'introduced',
+                subject: { key: 'id:proof-card' },
+                relatedSubjects: [{ key: 'id:proof-container' }],
+                sampledRange: {
+                  minWidth: 875,
+                  maxWidth: 925,
+                  widths: [875, 925],
+                },
+                exactRange: {
+                  minWidth: 850,
+                  maxWidth: 949,
+                },
+                baseline: { state: 'contained' },
+                candidate: { state: 'protruding' },
+                source: {
+                  stylesheet: 'https://example.test/assets/app.css',
+                  selector: '.proof-card',
+                  property,
+                  value: '1400px',
+                  media: null,
+                  location: {
+                    kind: 'css-property-range',
+                    confidence: 'deterministic',
+                    coordinateSpace: 'stylesheet',
+                    start: { line: 2, column: 5 },
+                    end: { line: 2, column: 23 },
+                  },
+                  authoredLocation: {
+                    kind: 'source-map-property',
+                    confidence: 'deterministic',
+                    coordinateSpace: 'authored-source',
+                    source: '../../proof/source-map-authored.scss',
+                    resolvedSource: 'https://example.test/proof/source-map-authored.scss',
+                    start: {
+                      line: lineIndex + 1,
+                      column: columnIndex + 1,
+                    },
+                    sourceContentSha256,
+                    sourceMap: {
+                      version: 3,
+                      kind: 'external',
+                      url: 'https://example.test/assets/app.css.map',
+                    },
+                  },
+                },
+              },
+            ],
+          };
+
+          await writeFile(
+            '.slice/source-map-provider-proof/structural-diff.json',
+            JSON.stringify(report, null, 2),
+            'utf8',
+          );
+          NODE
+
+      - name: Publish authored GitHub annotation
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SLICE_EXIT_CODE: '1'
+          SLICE_SOURCE_ROOT: ${{ github.workspace }}
+        run: |
+          node scripts/github-check-run.mjs .slice/source-map-provider-proof/structural-diff.json
+
+      - name: Verify provider accepted authored annotation
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          CHECKS="$(
+            curl -fsSL               -H "Accept: application/vnd.github+json"               -H "Authorization: Bearer $GITHUB_TOKEN"               -H "X-GitHub-Api-Version: 2022-11-28"               "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/check-runs?check_name=Viewportable%20Engine&per_page=100"
+          )"
+
+          EXTERNAL_ID="viewportable-engine:pr:$PR_NUMBER:head:$HEAD_SHA"
+          CHECK_ID="$(
+            printf '%s' "$CHECKS"               | jq -r --arg external_id "$EXTERNAL_ID"                   '.check_runs[] | select(.name == "Viewportable Engine" and .external_id == $external_id) | .id'               | head -n 1
+          )"
+
+          if [[ -z "$CHECK_ID" || "$CHECK_ID" == "null" ]]; then
+            echo "Managed Viewportable Engine Check Run not found"
+            exit 1
+          fi
+
+          printf '%s' "$CHECKS"             | jq -e --argjson id "$CHECK_ID"                 '.check_runs[] | select(.id == $id) | .conclusion == "failure" and .output.annotations_count == 1'
+
+          ANNOTATIONS="$(
+            curl -fsSL               -H "Accept: application/vnd.github+json"               -H "Authorization: Bearer $GITHUB_TOKEN"               -H "X-GitHub-Api-Version: 2022-11-28"               "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/check-runs/$CHECK_ID/annotations"
+          )"
+
+          printf '%s\n' "$ANNOTATIONS" | jq .
+          printf '%s' "$ANNOTATIONS"             | jq -e '
+                length == 1
+                and .[0].path == "proof/source-map-authored.scss"
+                and .[0].start_line == 4
+                and .[0].end_line == 4
+                and .[0].start_column == 5
+                and .[0].end_column == 13
+                and .[0].annotation_level == "failure"
+              '
