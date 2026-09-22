@@ -146,6 +146,21 @@ export interface CssSourceLocation {
   end: CssSourceLocationPoint;
 }
 
+export interface CssAuthoredSourceLocation {
+  kind: 'source-map-property';
+  confidence: 'deterministic';
+  coordinateSpace: 'authored-source';
+  source: string;
+  resolvedSource: string;
+  start: CssSourceLocationPoint;
+  sourceContentSha256: string;
+  sourceMap: {
+    version: 3;
+    kind: 'inline' | 'external';
+    url: string | null;
+  };
+}
+
 export interface CssSourceReference {
   stylesheet: string | null;
   selector: string;
@@ -153,6 +168,7 @@ export interface CssSourceReference {
   value: string;
   media: string | null;
   location?: CssSourceLocation | null;
+  authoredLocation?: CssAuthoredSourceLocation | null;
 }
 
 export type RootCauseDiagnosis =

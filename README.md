@@ -93,17 +93,17 @@ exit 1 -> findings        (successful MCP tool call with product evidence)
 exit 2 -> infra_failure   (MCP tool error)
 ```
 
-MCP structured output uses the strict, versioned **Viewportable Canonical Agent Evidence Contract V3**:
+MCP structured output uses the strict, versioned **Viewportable Canonical Agent Evidence Contract V4**:
 
 ```text
-schemaVersion = viewportable.agent-evidence.v3
+schemaVersion = viewportable.agent-evidence.v4
 ```
 
-V3 preserves V2 deterministic CSS attribution and adds a nullable browser-proven declaration `location`. Locations are produced from Chromium CSS rule/property ranges, converted to one-based line/column coordinates, and explicitly labeled `coordinateSpace: "stylesheet"`. If the browser cannot prove one unique range, `location` is `null`.
+V4 preserves the V3 browser-proven stylesheet `location` and adds nullable `authoredLocation` source-map evidence. Viewportable accepts an authored mapping only from an exact generated source-map segment at the CSS property start, requires embedded `sourcesContent`, verifies that the mapped original position begins with the same property, and carries a SHA-256 content proof for later checkout verification. Unsupported or ambiguous mappings remain `authoredLocation: null`.
 
 The contract is validated at runtime before MCP returns it. Unknown fields are rejected at every schema level. Rich Engine artifacts remain separate and are referenced through `evidence.reportPath`.
 
-See [Canonical Agent Evidence Contract V3](docs/contracts/agent-evidence-v3.md). The [V2](docs/contracts/agent-evidence-v2.md) and [V1](docs/contracts/agent-evidence-v1.md) contracts remain available as compatibility boundaries.
+See [Canonical Agent Evidence Contract V4](docs/contracts/agent-evidence-v4.md). The [V3](docs/contracts/agent-evidence-v3.md), [V2](docs/contracts/agent-evidence-v2.md), and [V1](docs/contracts/agent-evidence-v1.md) contracts remain available as compatibility boundaries.
 
 `viewportable_compare` returns introduced canonical `findings[]` directly to the agent; resolved evidence remains in the retained full structural report. `viewportable_scan` returns failing viewports and canonical root causes while retaining the complete scan report.
 
@@ -534,7 +534,7 @@ with:
   source-root: candidate # when the candidate checkout is ./candidate
 ```
 
-When a deterministic Source Location V1 finding should appear directly on the PR source line, set `source-root` to the candidate repository checkout. The Check writer maps only absolute stylesheets under that root, re-reads the checkout file, and verifies that the exact browser-proven range still contains the attributed CSS property/value before sending a GitHub annotation. Unsupported paths, transformed/mismatched coordinates, and ambiguous locations fail closed with no line annotation. If `source-root` is omitted, standalone mode falls back to `GITHUB_WORKSPACE`.
+When deterministic source evidence should appear directly on the PR source line, set `source-root` to the candidate repository checkout. The Check writer prefers V4 `authoredLocation` evidence, resolves the source-map path inside that checkout, verifies the local file against the source-map SHA-256 content proof, and confirms the mapped line/column still begins with the attributed property. If authored mapping is unavailable, it falls back to the V3 direct stylesheet verification path. Unsupported, transformed, mismatched, cross-origin, or ambiguous mappings fail closed. If `source-root` is omitted, standalone mode falls back to `GITHUB_WORKSPACE`.
 
 PR commenting and Check Run publishing are deliberately non-blocking: a read-only token, such as on some fork PRs, does not hide or replace the Engine result. The scan/report/artifact and exit code remain authoritative.
 
