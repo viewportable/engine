@@ -382,9 +382,10 @@ async function runCompare() {
         candidateUrl,
         widths,
         height: 900,
-        waitMs: 300,
+        waitMs: 1_000,
         timeoutMs: 30_000,
         boundary: true,
+        readySelector: '[data-testid="device-card-iphone-15-pro"]',
         outBase: '.slice/openai-react-agent-e2e',
       },
     },
@@ -502,7 +503,7 @@ try {
     waitFor(candidateUrl, candidateServer),
   ]);
   // Let Vite finish cold dependency optimization before the browser readiness gate.
-  await new Promise((resolveWait) => setTimeout(resolveWait, 2_000));
+  await new Promise((resolveWait) => setTimeout(resolveWait, 5_000));
   await mcpClient.connect(mcpTransport);
 
   const preflight = await runCompare();
