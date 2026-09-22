@@ -187,10 +187,7 @@ try {
     assert(finding, `negative: missing ${type} finding`);
     assert(finding.source === null, `negative: ${type} unexpectedly has source evidence`);
 
-    assert(
-      finding.repair?.repairable === false,
-      `negative: ${type} must not be auto-repairable`,
-    );
+    assert(finding.repair?.repairable === false, `negative: ${type} must not be auto-repairable`);
     assert(
       finding.repair?.reason === 'unsupported-finding',
       `negative: ${type} unexpected repair reason ${finding.repair?.reason}`,
@@ -238,9 +235,7 @@ process.stdout.write(
         `  ${item.scenario}: ${item.sourceProperty}: ${item.sourceValue} -> clean, ${item.writes} write`,
     ),
     'refused:',
-    ...negative.findings.map(
-      (item) => `  ${item.type}: ${item.repair.reason} -> no repair tools`,
-    ),
+    ...negative.findings.map((item) => `  ${item.type}: ${item.repair.reason} -> no repair tools`),
     'false repair attempts: 0',
     `acceptance: ${path.relative(root, acceptancePath)}`,
     '',
