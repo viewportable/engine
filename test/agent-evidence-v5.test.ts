@@ -27,8 +27,7 @@ const authoredSource = {
     source: '../../src/subject.scss',
     resolvedSource: 'https://example.test/src/subject.scss',
     start: { line: 18, column: 5 },
-    sourceContentSha256:
-      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    sourceContentSha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
     sourceMap: {
       version: 3,
       kind: 'external',
