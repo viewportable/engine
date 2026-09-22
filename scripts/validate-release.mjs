@@ -74,8 +74,10 @@ for (const required of [
   'scripts/github-annotations.mjs',
   'scripts/build-tool-source-map-acceptance.mjs',
   'scripts/build-tool-agent-repair-e2e.mjs',
+  'scripts/agent-repair-coverage-matrix.mjs',
   'test/fixtures/build-tool-source-map/vite.config.mjs',
   'test/fixtures/build-tool-source-map/src/Candidate.source.scss',
+  'test/fixtures/build-tool-source-map/src/Candidate.width.source.scss',
   'examples/github/compare.yml',
 ]) {
   await requireFile(required);
