@@ -24,6 +24,7 @@ All notable changes to Viewportable Engine are documented here.
 - Deterministic CSS Source Location V1 plus Canonical Agent Evidence V3 (`viewportable.agent-evidence.v3`): browser-proven CSS property ranges are exposed as one-based stylesheet line/column ranges after selector/property/value/media agreement and stylesheet-text verification; ambiguous locations remain `null`.
 - GitHub Source Annotations V1: deterministic introduced CSS findings can be attached to exact PR Check Run lines/columns only after candidate-checkout path containment and property/value range re-verification; transformed or unverifiable source locations fail closed, while Cloud/App mode accepts a normalized repo-relative annotation payload from the authenticated executor.
 - Source Map Mapping V1 plus Canonical Agent Evidence V4 (`viewportable.agent-evidence.v4`): exact generated CSS property segments can map through inline or same-origin external Source Map v3 data to hash-verified authored source positions; GitHub annotations prefer the authored file when the candidate checkout matches the source-map content proof.
+- Real Build-Tool Source Map Acceptance V1: CI production-builds a React fixture with Vite 8.3.0, Sass 1.104.1, CSS Modules, and PostCSS; Viewportable must recover the authored `Card.module.scss` line from the generated CSS map and produce a hash-verified repo-relative source annotation.
 
 
 
