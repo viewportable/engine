@@ -146,7 +146,7 @@ try {
   const broken = structured(brokenCall, 'broken');
 
   assert(
-    broken.schemaVersion === 'viewportable.agent-evidence.v4',
+    broken.schemaVersion === 'viewportable.agent-evidence.v5',
     `broken: unexpected schema version ${broken.schemaVersion}`,
   );
   assert(broken.outcome === 'findings', `broken: expected findings, got ${broken.outcome}`);
@@ -165,6 +165,14 @@ try {
   assert(
     broken.findings.every(exactRange),
     `broken: findings do not share exact 350-499px range: ${JSON.stringify(broken.findings)}`,
+  );
+  assert(
+    broken.findings.every(
+      (finding) =>
+        finding.repair?.repairable === false &&
+        finding.repair?.reason === 'unsupported-finding',
+    ),
+    `broken: unsupported structural findings must fail closed: ${JSON.stringify(broken.findings)}`,
   );
 
   candidateHtml = fixedCandidate(baselineHtml);
@@ -188,7 +196,7 @@ try {
   const fixed = structured(fixedCall, 'fixed');
 
   assert(
-    fixed.schemaVersion === 'viewportable.agent-evidence.v4',
+    fixed.schemaVersion === 'viewportable.agent-evidence.v5',
     `fixed: unexpected schema version ${fixed.schemaVersion}`,
   );
   assert(fixed.outcome === 'clean', `fixed: expected clean, got ${fixed.outcome}`);
