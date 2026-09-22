@@ -1,0 +1,79 @@
+name: Controlled OpenAI Real React Source Location E2E
+
+on:
+  push:
+    branches:
+      - manual/openai-react-location-e2e-v1
+    paths:
+      - scripts/openai-react-location-agent-e2e.mjs
+      - .github/workflows/openai-react-location-agent-e2e.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: controlled-openai-react-location-agent-e2e
+  cancel-in-progress: true
+
+jobs:
+  react-location-agent-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Viewportable Engine
+        uses: actions/checkout@v7
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Verify OpenAI secret is present
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: test -n "$OPENAI_API_KEY"
+
+      - name: Install Engine dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build Engine and MCP server
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Checkout real Viewportable React renderer twice
+        run: |
+          git clone --quiet https://github.com/viewportable/viewportable.git react-baseline
+          git -C react-baseline checkout --quiet 7ce05528496e4ffae6f166387885bb325c35797f
+          cp -a react-baseline react-candidate
+
+      - name: Install React renderer dependencies
+        run: |
+          cd react-candidate
+          npm install --ignore-scripts --no-audit --no-fund
+          cd ..
+          ln -s ../react-candidate/node_modules react-baseline/node_modules
+
+      - name: Run source-location OpenAI agent against real React UI
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: gpt-5.6-terra
+          REACT_BASELINE_ROOT: react-baseline
+          REACT_CANDIDATE_ROOT: react-candidate
+        run: node scripts/openai-react-location-agent-e2e.mjs
+
+      - name: Print sanitized acceptance evidence
+        if: ${{ always() }}
+        run: |
+          if [[ -f .slice/openai-react-agent-e2e-acceptance.json ]]; then
+            cat .slice/openai-react-agent-e2e-acceptance.json
+          fi
+
+      - name: Show candidate source diff
+        if: ${{ always() }}
+        run: git -C react-candidate diff -- src/renderer/styles.css || true
