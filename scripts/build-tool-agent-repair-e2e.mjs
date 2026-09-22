@@ -18,7 +18,8 @@ const distRoot = path.join(appRoot, 'dist');
 const targetPath = path.join(appRoot, 'src/Candidate.source.scss');
 const mode = process.env.VIEWPORTABLE_AGENT_MODE ?? 'scripted';
 const model = process.env.OPENAI_MODEL ?? 'gpt-5.6';
-const apiKey = process.env.OPENAI_API_KEY ?? process.env.OPEN_API_TOKEN ?? '';
+const apiKey =
+  process.env.OPENAI_API_KEY || process.env.OPENAI_API_TOKEN || process.env.OPEN_API_TOKEN || '';
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
