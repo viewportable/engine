@@ -1,0 +1,42 @@
+name: Real GPT Agent Repair PR Proof
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/real-agent-repair-pr-proof.yml'
+      - 'scripts/build-tool-agent-repair-e2e.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VIEWPORTABLE_AGENT_MODE: openai
+      OPEN_API_TOKEN: ${{ secrets.OPEN_API_TOKEN }}
+      OPENAI_MODEL: gpt-5.6
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Require OpenAI API credential
+        shell: bash
+        run: |
+          if [[ -z "$OPEN_API_TOKEN" ]]; then
+            echo "OPEN_API_TOKEN repository secret is required"
+            exit 1
+          fi
+
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run real GPT repair
+        run: npm run acceptance:build-tool-agent-repair
