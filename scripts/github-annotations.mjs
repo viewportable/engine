@@ -155,11 +155,7 @@ function relativeSourceCandidate(identifier) {
   return withoutLeading && withoutLeading !== '.' ? { relative: withoutLeading } : null;
 }
 
-async function authoredAnnotation({
-  finding,
-  repositoryRoot,
-  readText,
-}) {
+async function authoredAnnotation({ finding, repositoryRoot, readText }) {
   const source = finding.source;
   const authored = source?.authoredLocation;
 
@@ -231,11 +227,7 @@ async function authoredAnnotation({
   };
 }
 
-async function stylesheetAnnotation({
-  finding,
-  repositoryRoot,
-  readText,
-}) {
+async function stylesheetAnnotation({ finding, repositoryRoot, readText }) {
   const source = finding.source;
   const location = source?.location;
 
