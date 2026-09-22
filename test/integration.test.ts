@@ -23,9 +23,18 @@ async function startFixtureServer(): Promise<{ server: Server; baseUrl: string }
     const filePath = path.join(fixturesDir, fixture);
 
     try {
-      const html = await readFile(filePath);
-      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      response.end(html);
+      const body = await readFile(filePath);
+      const extension = path.extname(filePath);
+      const contentType =
+        extension === '.css'
+          ? 'text/css; charset=utf-8'
+          : extension === '.map'
+            ? 'application/json; charset=utf-8'
+            : extension === '.scss'
+              ? 'text/plain; charset=utf-8'
+              : 'text/html; charset=utf-8';
+      response.writeHead(200, { 'content-type': contentType });
+      response.end(body);
     } catch {
       response.writeHead(404);
       response.end('Not found');
@@ -298,6 +307,64 @@ describe('slice CLI', () => {
     expect(finding.source.location.end.column).toBeGreaterThan(
       finding.source.location.start.column,
     );
+  });
+
+  it('maps generated CSS evidence back to one exact authored source-map property', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('source-map-candidate.html', [
+      '--baseline-url',
+      `${baseUrl}/source-map-baseline.html`,
+      '--widths',
+      '320,375,430,520',
+      '--wait',
+      '0',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(1);
+    const report = JSON.parse(await readFile(path.join(out, 'structural-diff.json'), 'utf8'));
+    const finding = report.findings.find(
+      (entry: { type: string; subject: { key: string } }) =>
+        entry.type === 'protrusion' && entry.subject.key === 'id:subject',
+    );
+
+    expect(finding).toMatchObject({
+      type: 'protrusion',
+      direction: 'introduced',
+      source: {
+        stylesheet: `${baseUrl}/source-map-candidate.css`,
+        selector: '#subject',
+        property: 'min-width',
+        value: '400px',
+        location: {
+          kind: 'css-property-range',
+          confidence: 'deterministic',
+          coordinateSpace: 'stylesheet',
+          start: {
+            line: 6,
+            column: 5,
+          },
+        },
+        authoredLocation: {
+          kind: 'source-map-property',
+          confidence: 'deterministic',
+          coordinateSpace: 'authored-source',
+          source: 'source-map-original.scss',
+          resolvedSource: `${baseUrl}/source-map-original.scss`,
+          start: {
+            line: 8,
+            column: 5,
+          },
+          sourceContentSha256: expect.stringMatching(/^[0-9a-f]{64}$/),
+          sourceMap: {
+            version: 3,
+            kind: 'external',
+            url: `${baseUrl}/source-map-candidate.css.map`,
+          },
+        },
+      },
+    });
   });
 
   it('refines responsive disappearance and reparenting to exact boundaries', async () => {
