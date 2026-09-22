@@ -67,6 +67,11 @@ jobs:
       - name: Real build-tool source-map acceptance
         run: npm run acceptance:build-tool-source-map
 
+      - name: Build-tool agent repair plumbing
+        env:
+          VIEWPORTABLE_AGENT_MODE: scripted
+        run: npm run acceptance:build-tool-agent-repair
+
       - name: Smoke test built CLI
         run: npm run smoke
 
