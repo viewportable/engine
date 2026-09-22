@@ -133,12 +133,26 @@ export interface BoundaryResult {
   probesUsed: number;
 }
 
+export interface CssSourceLocationPoint {
+  line: number;
+  column: number;
+}
+
+export interface CssSourceLocation {
+  kind: 'css-property-range';
+  confidence: 'deterministic';
+  coordinateSpace: 'stylesheet';
+  start: CssSourceLocationPoint;
+  end: CssSourceLocationPoint;
+}
+
 export interface CssSourceReference {
   stylesheet: string | null;
   selector: string;
   property: string;
   value: string;
   media: string | null;
+  location?: CssSourceLocation | null;
 }
 
 export type RootCauseDiagnosis =
