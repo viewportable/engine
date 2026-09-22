@@ -175,9 +175,7 @@ describe('GitHub Check Run', () => {
             start_column: 3,
             end_column: 11,
             annotation_level: 'failure',
-            raw_details: expect.stringContaining(
-              'source-map: external -> ../../src/styles.scss',
-            ),
+            raw_details: expect.stringContaining('source-map: external -> ../../src/styles.scss'),
           },
         ],
         total: 1,
