@@ -6,11 +6,7 @@ import {
   traceSegment,
   type SourceMapInput,
 } from '@jridgewell/trace-mapping';
-import type {
-  CssAuthoredSourceLocation,
-  CssSourceLocation,
-  CssSourceReference,
-} from './types.js';
+import type { CssAuthoredSourceLocation, CssSourceLocation, CssSourceReference } from './types.js';
 
 interface SourceMapPayload {
   map: SourceMapInput;
@@ -179,7 +175,9 @@ export async function findAuthoredCssSourceLocation({
     const sourceContent = sourceContentFor(tracer, sourceName);
     if (sourceContent === null) return null;
 
-    if (!sourcePositionStartsWithProperty(sourceContent, sourceLine, sourceColumn, source.property)) {
+    if (
+      !sourcePositionStartsWithProperty(sourceContent, sourceLine, sourceColumn, source.property)
+    ) {
       return null;
     }
 
