@@ -93,17 +93,28 @@ exit 1 -> findings        (successful MCP tool call with product evidence)
 exit 2 -> infra_failure   (MCP tool error)
 ```
 
-MCP structured output uses the strict, versioned **Viewportable Canonical Agent Evidence Contract V4**:
+MCP structured output uses the strict, versioned **Viewportable Canonical Agent Evidence Contract V5**:
 
 ```text
-schemaVersion = viewportable.agent-evidence.v4
+schemaVersion = viewportable.agent-evidence.v5
 ```
 
-V4 preserves the V3 browser-proven stylesheet `location` and adds nullable `authoredLocation` source-map evidence. Viewportable accepts an authored mapping only from an exact generated source-map segment at the CSS property start, requires embedded `sourcesContent`, verifies that the mapped original position begins with the same property, and carries a SHA-256 content proof for later checkout verification. Unsupported or ambiguous mappings remain `authoredLocation: null`.
+V5 preserves all V4 source evidence and adds a required canonical repair policy to every finding:
 
-The contract is validated at runtime before MCP returns it. Unknown fields are rejected at every schema level. Rich Engine artifacts remain separate and are referenced through `evidence.reportPath`.
+```json
+{
+  "repair": {
+    "repairable": true,
+    "reason": "deterministic-authored-css"
+  }
+}
+```
 
-See [Canonical Agent Evidence Contract V4](docs/contracts/agent-evidence-v4.md). The [V3](docs/contracts/agent-evidence-v3.md), [V2](docs/contracts/agent-evidence-v2.md), and [V1](docs/contracts/agent-evidence-v1.md) contracts remain available as compatibility boundaries.
+If automatic repair is not authorized, `repairable` is `false` with one explicit fail-closed reason such as `unsupported-finding`, `missing-deterministic-source`, `missing-stylesheet-location`, or `missing-authored-location`.
+
+Agents must treat `finding.repair` as authoritative and must not recreate the eligibility decision from source fields independently. The contract is validated at runtime before MCP returns it. Unknown fields are rejected at every schema level. Rich Engine artifacts remain separate and are referenced through `evidence.reportPath`.
+
+See [Canonical Agent Evidence Contract V5](docs/contracts/agent-evidence-v5.md). The [V4](docs/contracts/agent-evidence-v4.md), [V3](docs/contracts/agent-evidence-v3.md), [V2](docs/contracts/agent-evidence-v2.md), and [V1](docs/contracts/agent-evidence-v1.md) contracts remain available as compatibility boundaries.
 
 `viewportable_compare` returns introduced canonical `findings[]` directly to the agent; resolved evidence remains in the retained full structural report. `viewportable_scan` returns failing viewports and canonical root causes while retaining the complete scan report.
 
@@ -141,7 +152,7 @@ Normal CI runs this in deterministic `scripted` mode. The harness still uses the
 The agent boundary is intentionally narrow:
 
 ```text
-V4 finding
+V5 repairable finding
   ↓
 read_source_range        # max 5 lines, bounded byte budget
   ↓
@@ -152,7 +163,7 @@ rebuild_and_compare      # Sass + Vite + viewportable_compare
 0 findings
 ```
 
-There is no shell tool and no full-file read tool. The harness asserts that only one source line changed, exactly one write occurred, and the final V4 comparison is clean. Source-map identifiers may arrive as the raw `../../src/...` path, the normalized `src/...` form, or the resolved URL; all accepted aliases map to the same fixed authored target and never enable arbitrary path access.
+There is no shell tool and no full-file read tool. The harness asserts that only one source line changed, exactly one write occurred, and the final V5 comparison is clean. Source-map identifiers may arrive as the raw `../../src/...` path, the normalized `src/...` form, or the resolved URL; all accepted aliases map to the same fixed authored target and never enable arbitrary path access.
 
 A repeatable real-model proof is available through the **Real Build-Tool Agent Repair** workflow. It accepts any one of the repository secrets `OPENAI_API_KEY`, `OPENAI_API_TOKEN`, or `OPEN_API_TOKEN`, then uses GPT-5.6 through the OpenAI Responses API with strict JSON-schema function tools and the same three tool handlers as scripted CI. Evidence is retained under `.slice/build-tool-agent-repair/`.
 
@@ -176,7 +187,7 @@ Negative cases intentionally remain non-repairable:
 - `disappearance`;
 - `reparenting`.
 
-Those findings currently have `source: null` in Canonical Agent Evidence V4. The matrix therefore exposes zero repair tools for them and records a fail-closed decision instead of asking an agent to guess a source edit. This is deliberate capability accounting, not a missing fallback.
+Canonical Agent Evidence V5 marks those findings `repairable: false` with `reason: unsupported-finding`. The matrix consumes that policy directly and exposes zero repair tools instead of asking an agent to infer eligibility or guess a source edit.
 
 The manual **Real Build-Tool Agent Repair** workflow accepts a `min-width` or `width` scenario so either deterministic CSS cause can be re-proven with GPT-5.6.
 
@@ -210,7 +221,7 @@ The production acceptance command is:
 npm run acceptance:build-tool-scan-agent-repair
 ```
 
-It uses the same Sass/Vite fixture project as compare-mode acceptance but a dedicated grouped scan page backed by `Scan.source.scss`. The grid has one `min-width` root cause with multiple affected leaves, matching normal scan grouping semantics. The harness calls only `viewportable_scan`, requires V4 authored evidence for the grouped finding, reads only a small range around that location, changes exactly one SCSS line, rebuilds production assets, and requires a clean rescan.
+It uses the same Sass/Vite fixture project as compare-mode acceptance but a dedicated grouped scan page backed by `Scan.source.scss`. The grid has one `min-width` root cause with multiple affected leaves, matching normal scan grouping semantics. The harness calls only `viewportable_scan`, requires V5 to mark the grouped finding repairable and retain its V4 authored evidence, reads only a small range around that location, changes exactly one SCSS line, rebuilds production assets, and requires a clean rescan.
 
 ### MCP golden agent flow
 

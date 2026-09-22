@@ -375,7 +375,7 @@ try {
 
   const broken = await compare('before');
   assert(
-    broken.schemaVersion === 'viewportable.agent-evidence.v4',
+    broken.schemaVersion === 'viewportable.agent-evidence.v5',
     `before: unexpected schema version ${broken.schemaVersion}`,
   );
   assert(broken.outcome === 'findings', `before: expected findings, got ${broken.outcome}`);
@@ -387,6 +387,10 @@ try {
 
   const finding = broken.findings[0];
   assert(finding.type === 'protrusion', `before: unexpected finding ${finding.type}`);
+  assert(
+    finding.repair?.repairable === true && finding.repair?.reason === 'deterministic-authored-css',
+    `before: finding is not canonically repairable: ${JSON.stringify(finding.repair)}`,
+  );
   assert(
     finding.range?.kind === 'exact' &&
       finding.range.minWidth === 350 &&
@@ -546,7 +550,7 @@ try {
   } else if (mode === 'openai') {
     const instructions = [
       'You repair one deterministic responsive regression using only the supplied tools.',
-      'The Viewportable V4 evidence is authoritative.',
+      'The Viewportable V5 repair policy is authoritative. Proceed only because repair.repairable is true; preserve the nested deterministic source evidence as the edit target.',
       'First read a small range around the authored location.',
       'The read/edit source may be the raw source-map identifier, its normalized src/... form, or the resolvedSource URL; all resolve to the same fixed authored target.',
       'Then make exactly one single-line edit to the attributed authored line.',
@@ -557,7 +561,7 @@ try {
     ].join(' ');
 
     const first = await openAiResponse({
-      input: `${instructions}\n\nV4 evidence:\n${JSON.stringify(broken, null, 2)}`,
+      input: `${instructions}\n\nV5 evidence:\n${JSON.stringify(broken, null, 2)}`,
       tools: [readTool],
       toolChoice: forcedTool('read_source_range'),
     });
@@ -666,6 +670,7 @@ try {
       outcome: broken.outcome,
       findingCount: broken.findings.length,
       type: finding.type,
+      repair: finding.repair,
       sourceProperty: finding.source?.property ?? null,
       sourceValue: finding.source?.value ?? null,
       exactRange: { minWidth: 350, maxWidth: 499 },

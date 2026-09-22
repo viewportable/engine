@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
-import { AgentEvidenceV4Schema, type AgentEvidenceV4 } from './contracts/agent-evidence-v4.js';
+import { AgentEvidenceV5Schema, type AgentEvidenceV5 } from './contracts/agent-evidence-v5.js';
 import { canonicalMcpResult, mcpTextSummary, runEngineForMcp } from './mcp-runner.js';
 
 const widthsSchema = z
@@ -31,9 +31,9 @@ const commonShape = {
     .describe('Directory under which MCP evidence directories are retained'),
 };
 
-const outputSchema = AgentEvidenceV4Schema;
+const outputSchema = AgentEvidenceV5Schema;
 
-function toolResult(result: AgentEvidenceV4) {
+function toolResult(result: AgentEvidenceV5) {
   return {
     content: [{ type: 'text' as const, text: mcpTextSummary(result) }],
     structuredContent: result,
@@ -53,7 +53,7 @@ export function createViewportableMcpServer({
     },
     {
       instructions:
-        'Use viewportable_scan for one rendered application state and viewportable_compare to compare baseline and candidate versions. Treat exitCode 1 as product evidence, not a tool failure; exitCode 2 is scanner/setup failure.',
+        'Use viewportable_scan for one rendered application state and viewportable_compare to compare baseline and candidate versions. Treat exitCode 1 as product evidence, not a tool failure; exitCode 2 is scanner/setup failure. Treat finding.repair as the canonical auto-repair eligibility decision; do not infer repairability from source fields independently.',
     },
   );
 
