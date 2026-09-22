@@ -146,7 +146,7 @@ try {
   const broken = structured(brokenCall, 'broken');
 
   assert(
-    broken.schemaVersion === 'viewportable.agent-evidence.v2',
+    broken.schemaVersion === 'viewportable.agent-evidence.v3',
     `broken: unexpected schema version ${broken.schemaVersion}`,
   );
   assert(broken.outcome === 'findings', `broken: expected findings, got ${broken.outcome}`);
@@ -188,7 +188,7 @@ try {
   const fixed = structured(fixedCall, 'fixed');
 
   assert(
-    fixed.schemaVersion === 'viewportable.agent-evidence.v2',
+    fixed.schemaVersion === 'viewportable.agent-evidence.v3',
     `fixed: unexpected schema version ${fixed.schemaVersion}`,
   );
   assert(fixed.outcome === 'clean', `fixed: expected clean, got ${fixed.outcome}`);
