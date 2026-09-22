@@ -9,10 +9,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: vite-css-map-diagnostic-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   diagnose:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -22,34 +26,26 @@ jobs:
       - name: Install fixture toolchain
         working-directory: test/fixtures/build-tool-source-map
         run: npm install --ignore-scripts --no-audit --no-fund --package-lock=false
-      - name: Diagnose Vite CSS source maps
+      - name: Diagnose external production CSS source maps
         working-directory: test/fixtures/build-tool-source-map
         shell: bash
         run: |
-          set -euxo pipefail
-          cp vite.config.mjs /tmp/vite.config.original.mjs
+          set -euo pipefail
           cp postcss.config.mjs /tmp/postcss.config.original.mjs
 
           echo "=== external + postcss ==="
-          npm exec -- vite build
-          find dist -maxdepth 3 -type f -print | sort
-          grep -R "sourceMappingURL" dist || true
+          npm exec -- vite build >/tmp/vite-postcss.log
+          cat /tmp/vite-postcss.log
+          find dist -maxdepth 3 -type f -printf '%P\n' | sort
+          printf 'css_maps='
+          find dist -type f -name '*.css.map' | wc -l
 
           echo "=== external + no postcss ==="
           rm postcss.config.mjs
-          npm exec -- vite build
-          find dist -maxdepth 3 -type f -print | sort
-          grep -R "sourceMappingURL" dist || true
+          npm exec -- vite build >/tmp/vite-no-postcss.log
+          cat /tmp/vite-no-postcss.log
+          find dist -maxdepth 3 -type f -printf '%P\n' | sort
+          printf 'css_maps='
+          find dist -type f -name '*.css.map' | wc -l
 
-          echo "=== inline + postcss ==="
           cp /tmp/postcss.config.original.mjs postcss.config.mjs
-          sed "s/sourcemap: true/sourcemap: 'inline'/" /tmp/vite.config.original.mjs > vite.config.mjs
-          npm exec -- vite build
-          find dist -maxdepth 3 -type f -print | sort
-          grep -R "sourceMappingURL" dist || true
-
-          echo "=== inline + no postcss ==="
-          rm postcss.config.mjs
-          npm exec -- vite build
-          find dist -maxdepth 3 -type f -print | sort
-          grep -R "sourceMappingURL" dist || true
