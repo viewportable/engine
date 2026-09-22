@@ -44,11 +44,7 @@ function run(command, args, { cwd = root, allowed = [0], capture = false } = {})
     child.once('close', (code) => {
       const exitCode = code ?? 2;
       if (!allowed.includes(exitCode)) {
-        reject(
-          new Error(
-            `${command} ${args.join(' ')} exited ${exitCode}\n${stdout}\n${stderr}`,
-          ),
-        );
+        reject(new Error(`${command} ${args.join(' ')} exited ${exitCode}\n${stdout}\n${stderr}`));
         return;
       }
 
@@ -135,13 +131,7 @@ try {
 
   await run(
     'npm',
-    [
-      'install',
-      '--ignore-scripts',
-      '--no-audit',
-      '--no-fund',
-      '--package-lock=false',
-    ],
+    ['install', '--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false'],
     { cwd: appRoot },
   );
 
@@ -220,14 +210,14 @@ try {
       `unexpected authored source: ${authored.source}`,
     );
     assert(authored.start?.line === 21, `expected authored line 21, got ${authored.start?.line}`);
-    assert(authored.start?.column === 5, `expected authored column 5, got ${authored.start?.column}`);
+    assert(
+      authored.start?.column === 5,
+      `expected authored column 5, got ${authored.start?.column}`,
+    );
     assert(authored.sourceMap?.version === 3, 'expected Source Map v3');
     assert(authored.sourceMap?.kind === 'external', 'expected external production CSS source map');
 
-    const repositoryAuthoredPath = path.join(
-      fixtureRoot,
-      'src/Card.module.scss',
-    );
+    const repositoryAuthoredPath = path.join(fixtureRoot, 'src/Card.module.scss');
     const repositoryAuthoredContent = await readFile(repositoryAuthoredPath, 'utf8');
     const repositoryHash = createHash('sha256').update(repositoryAuthoredContent).digest('hex');
     assert(
