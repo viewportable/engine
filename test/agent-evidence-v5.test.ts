@@ -216,7 +216,7 @@ describe('Viewportable Canonical Agent Evidence Contract V5', () => {
     ).toBe(false);
   });
 
-  it('exports strict V5 JSON Schema', () => {
+  it('exports the strict V5 JSON Schema', () => {
     expect(agentEvidenceV5JsonSchema()).toMatchObject({
       type: 'object',
       additionalProperties: false,
