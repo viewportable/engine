@@ -269,13 +269,9 @@ try {
   );
 
   const expectedTargetLine =
-    originalLines.findIndex((line) =>
-      line.trim().startsWith(`${scenarioDefinition.property}:`),
-    ) + 1;
-  assert(
-    expectedTargetLine > 0,
-    `fixture: missing ${scenarioDefinition.property} declaration`,
-  );
+    originalLines.findIndex((line) => line.trim().startsWith(`${scenarioDefinition.property}:`)) +
+    1;
+  assert(expectedTargetLine > 0, `fixture: missing ${scenarioDefinition.property} declaration`);
   assert(
     authored.start?.line === expectedTargetLine,
     `before: expected authored line ${expectedTargetLine}, got ${authored.start?.line}`,
