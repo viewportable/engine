@@ -45,9 +45,7 @@ export async function findUniqueCssSource(
           if (rule instanceof CSSMediaRule) {
             if (!window.matchMedia(rule.conditionText).matches) continue;
 
-            const nestedMedia = media
-              ? `${media} and ${rule.conditionText}`
-              : rule.conditionText;
+            const nestedMedia = media ? `${media} and ${rule.conditionText}` : rule.conditionText;
             visitRules(rule.cssRules, stylesheet, nestedMedia);
             continue;
           }
