@@ -112,9 +112,6 @@ describe('Viewportable MCP runner', () => {
     const result = canonicalMcpResult(run);
 
     expect(result).toMatchObject({
-      mode: 'compare',
-      outcome: 'findings',
-      exitCode: 1,
       schemaVersion: 'viewportable.agent-evidence.v1',
       mode: 'compare',
       outcome: 'findings',
