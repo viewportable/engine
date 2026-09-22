@@ -37,12 +37,7 @@ function location(value: unknown): AgentEvidenceSourceLocationV3 | null {
   const endLine = positiveInteger(end?.line);
   const endColumn = positiveInteger(end?.column);
 
-  if (
-    startLine === null ||
-    startColumn === null ||
-    endLine === null ||
-    endColumn === null
-  ) {
+  if (startLine === null || startColumn === null || endLine === null || endColumn === null) {
     return null;
   }
 
