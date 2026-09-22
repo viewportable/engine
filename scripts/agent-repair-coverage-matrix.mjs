@@ -97,22 +97,6 @@ function structured(result) {
   return result.structuredContent;
 }
 
-function repairEligibility(finding) {
-  const source = finding?.source;
-  const eligible =
-    source?.confidence === 'deterministic' &&
-    source?.location?.confidence === 'deterministic' &&
-    source?.authoredLocation?.confidence === 'deterministic';
-
-  return {
-    id: finding?.id ?? null,
-    type: finding?.type ?? null,
-    eligible,
-    reason: eligible ? null : 'deterministic-authored-source-required',
-    source: source ?? null,
-  };
-}
-
 await rm(retainedRoot, { recursive: true, force: true });
 await mkdir(retainedRoot, { recursive: true });
 
@@ -186,7 +170,7 @@ try {
 
   const evidence = structured(result);
   assert(
-    evidence.schemaVersion === 'viewportable.agent-evidence.v4',
+    evidence.schemaVersion === 'viewportable.agent-evidence.v5',
     `negative: unexpected schema ${evidence.schemaVersion}`,
   );
   assert(evidence.outcome === 'findings', `negative: expected findings, got ${evidence.outcome}`);
@@ -197,9 +181,20 @@ try {
     assert(finding, `negative: missing ${type} finding`);
     assert(finding.source === null, `negative: ${type} unexpectedly has source evidence`);
 
-    const eligibility = repairEligibility(finding);
-    assert(eligibility.eligible === false, `negative: ${type} must not be auto-repairable`);
-    return eligibility;
+    assert(
+      finding.repair?.repairable === false,
+      `negative: ${type} must not be auto-repairable`,
+    );
+    assert(
+      finding.repair?.reason === 'unsupported-finding',
+      `negative: ${type} unexpected repair reason ${finding.repair?.reason}`,
+    );
+    return {
+      id: finding.id,
+      type: finding.type,
+      repair: finding.repair,
+      source: finding.source,
+    };
   });
 
   negative = {
@@ -207,7 +202,7 @@ try {
     exactRange: { minWidth: 350, maxWidth: 499 },
     findings: unsupported,
     repairToolExposure: 0,
-    policy: 'fail-closed-without-deterministic-authored-source',
+    policy: 'canonical-agent-evidence-v5',
     reportPath: evidence.evidence?.reportPath ?? null,
   };
 } finally {
@@ -237,7 +232,9 @@ process.stdout.write(
         `  ${item.scenario}: ${item.sourceProperty}: ${item.sourceValue} -> clean, ${item.writes} write`,
     ),
     'refused:',
-    ...negative.findings.map((item) => `  ${item.type}: source=null -> no repair tools`),
+    ...negative.findings.map(
+      (item) => `  ${item.type}: ${item.repair.reason} -> no repair tools`,
+    ),
     'false repair attempts: 0',
     `acceptance: ${path.relative(root, acceptancePath)}`,
     '',
