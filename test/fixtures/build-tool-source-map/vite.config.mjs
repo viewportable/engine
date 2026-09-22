@@ -16,6 +16,7 @@ export default defineConfig({
       input: {
         baseline: path.join(root, 'baseline.html'),
         candidate: path.join(root, 'candidate.html'),
+        scan: path.join(root, 'scan.html'),
       },
     },
   },
