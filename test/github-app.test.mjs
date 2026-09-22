@@ -220,6 +220,29 @@ describe('Viewportable GitHub App Installation V1', () => {
     expect(github.completed[0].summary).toContain('350-499px exact');
     expect(github.completed[0].summary).toContain('id:checkout-button disappeared');
 
+    const duplicate = await acceptReviewResult({
+      reviewId: 'github:8801:pr:42:head:head456',
+      exitCode: 1,
+      report: { findings: [] },
+      annotations: [
+        {
+          path: 'src/renderer/styles.css',
+          start_line: 575,
+          end_line: 575,
+          message: 'must not be appended twice',
+        },
+      ],
+      store,
+      github,
+    });
+
+    expect(duplicate).toMatchObject({
+      conclusion: 'failure',
+      decision: 'block',
+      duplicate: true,
+    });
+    expect(github.completed).toHaveLength(1);
+
     const state = await store.read();
     expect(state.reviews['github:8801:pr:42:head:head456']).toMatchObject({
       status: 'completed',
