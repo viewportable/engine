@@ -167,6 +167,10 @@ export async function findAuthoredCssSourceLocation({
     const sourceIndex = segment[1];
     const sourceLine = segment[2];
     const sourceColumn = segment[3];
+    if (sourceIndex === undefined || sourceLine === undefined || sourceColumn === undefined) {
+      return null;
+    }
+
     const sourceName = tracer.sources[sourceIndex];
     const resolvedSource = tracer.resolvedSources[sourceIndex];
 
