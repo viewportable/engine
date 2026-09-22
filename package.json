@@ -51,6 +51,7 @@
     "golden:mcp-agent": "npm run build --silent && node scripts/mcp-golden-agent.mjs"
   },
   "dependencies": {
+    "@jridgewell/trace-mapping": "0.3.31",
     "@modelcontextprotocol/server": "2.0.0",
     "commander": "^14.0.1",
     "picocolors": "^1.1.1",
