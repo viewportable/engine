@@ -241,6 +241,6 @@ export function buildCanonicalAgentEvidenceV1(run: EngineMcpRun): AgentEvidenceV
       reportPath: run.reportPath,
       format: run.mode === 'compare' ? 'structural-diff.v1' : 'results.v1',
     },
-    error: exitCode === 2 ? stringValue(run.stderr) ?? 'engine execution failed' : null,
+    error: exitCode === 2 ? (stringValue(run.stderr) ?? 'engine execution failed') : null,
   });
 }
