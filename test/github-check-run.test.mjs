@@ -288,6 +288,55 @@ describe('GitHub Check Run', () => {
     }
   });
 
+  it('does not append source annotations again when the managed check already has them', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'viewportable-rerun-'));
+    const stylesheet = path.join(root, 'src/renderer/styles.css');
+    const calls = [];
+
+    try {
+      await mkdir(path.dirname(stylesheet), { recursive: true });
+      await writeFile(stylesheet, 'rule {\n    min-width: 1400px;\n}\n', 'utf8');
+
+      const request = async (apiPath, options = {}) => {
+        calls.push({ path: apiPath, options });
+        if (options.method === 'PATCH') {
+          return {
+            id: 42,
+            html_url: 'https://github.com/example/repo/runs/42',
+          };
+        }
+
+        return {
+          check_runs: [
+            {
+              id: 42,
+              name: CHECK_RUN_NAME,
+              external_id: 'viewportable-engine:pr:7:head:abc123',
+              html_url: 'https://github.com/example/repo/runs/42',
+              output: { annotations_count: 1 },
+            },
+          ],
+        };
+      };
+
+      await upsertCheckRun({
+        repository: 'example/repo',
+        pullRequestNumber: 7,
+        headSha: 'abc123',
+        exitCode: 1,
+        report: attributedReport(stylesheet),
+        repositoryRoot: root,
+        token: 'token',
+        request,
+      });
+
+      expect(calls[1].options.body.output.annotations).toBeUndefined();
+      expect(calls[1].options.body.output.title).toBe('1 structural regression introduced');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('creates a check when the candidate head has no managed check yet', async () => {
     const calls = [];
     const request = async (path, options = {}) => {
