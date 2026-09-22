@@ -1,6 +1,7 @@
 import type { CDPSession, Page } from 'playwright';
 import { findUniqueCssSource } from '../css-source.js';
 import { findCssSourceLocation } from '../css-source-location.js';
+import { findAuthoredCssSourceLocation } from '../css-source-map.js';
 import { buildStableSelector, makePageUniquenessCheck } from '../selector.js';
 import { stabilizeViewport } from '../stabilize.js';
 import type { SurfaceSnapshot } from '../surface.js';
@@ -81,9 +82,26 @@ export async function attributeStructuralFindingSources({
 
     if (source) {
       const location = await findCssSourceLocation(cdp, selector, source);
+      const authoredLocation =
+        location === null
+          ? null
+          : await findAuthoredCssSourceLocation({
+              source,
+              location,
+              fetchText: async (url) => {
+                try {
+                  const response = await page.request.get(url);
+                  return response.ok() ? response.text() : null;
+                } catch {
+                  return null;
+                }
+              },
+            });
+
       finding.source = {
         ...source,
         location,
+        authoredLocation,
       };
     }
   }
