@@ -26,7 +26,6 @@ const sourceFiles = [
 
 const regression = `
 
-/* Controlled agent E2E regression: intentionally added only in the candidate working copy. */
 @media (min-width: 850px) and (max-width: 949px) {
   [data-viewport-id="iphone-15-pro"] {
     min-width: 800px;
@@ -81,7 +80,7 @@ async function prepareRenderer(root) {
 async function appendRegression() {
   const stylesPath = resolve(candidateRoot, 'src/renderer/styles.css');
   const styles = await readFile(stylesPath, 'utf8');
-  assert(!styles.includes('Controlled agent E2E regression'), 'candidate regression already present');
+  assert(!styles.includes(regression.trim()), 'candidate regression already present');
   await writeFile(stylesPath, `${styles.trimEnd()}${regression}\n`, 'utf8');
 }
 
@@ -179,18 +178,23 @@ const tools = [
   },
   {
     type: 'function',
-    name: 'write_styles',
+    name: 'replace_in_styles',
     description:
-      'Replace the complete src/renderer/styles.css in the candidate working copy. This is the only writable source file.',
+      'Apply one exact, minimal text replacement to src/renderer/styles.css. oldText must occur exactly once. Use this instead of rewriting the whole file.',
     parameters: {
       type: 'object',
       properties: {
-        content: {
+        oldText: {
           type: 'string',
-          description: 'Complete replacement styles.css content.',
+          minLength: 1,
+          description: 'Exact existing text to replace. It must occur exactly once.',
+        },
+        newText: {
+          type: 'string',
+          description: 'Replacement text. May be empty when removing an erroneous block.',
         },
       },
-      required: ['content'],
+      required: ['oldText', 'newText'],
       additionalProperties: false,
     },
     strict: true,
@@ -204,9 +208,9 @@ const instructions = [
   'Your FIRST tool call must be viewportable_compare.',
   'Use canonical finding subject, type, direction, and range to decide what source to inspect.',
   'You may read only the allowlisted real React/CSS source files.',
-  'You may write only src/renderer/styles.css.',
-  'Make the smallest source change that fixes the regression.',
-  'After every write_styles call, call viewportable_compare again.',
+  'You may modify only src/renderer/styles.css through replace_in_styles.',
+  'Make the smallest exact source replacement that fixes the regression. Never rewrite or reformat the whole file.',
+  'After every replace_in_styles call, call viewportable_compare again.',
   'Do not stop based on code inspection alone. Stop only after Viewportable returns outcome clean.',
   'Do not rewrite unrelated styling.',
 ].join('\n');
@@ -251,6 +255,7 @@ function finalText(response) {
 
 await prepareRenderer(baselineRoot);
 await prepareRenderer(candidateRoot);
+const baselineStyles = await readFile(resolve(baselineRoot, 'src/renderer/styles.css'), 'utf8');
 await appendRegression();
 
 const baselineServer = startVite(baselineRoot, 5173);
@@ -333,18 +338,33 @@ async function runTool(name, args) {
     return { path: args.path, content };
   }
 
-  if (name === 'write_styles') {
+  if (name === 'replace_in_styles') {
     writes += 1;
     assert(writes <= maxWrites, `write limit exceeded: ${writes}`);
-    assert(typeof args.content === 'string', 'write_styles.content must be a string');
-    assert(args.content.length > 1000, 'replacement styles.css is unexpectedly small');
-    assert(args.content.includes('.viewport-card'), 'replacement must preserve viewport card styles');
-    assert(args.content.includes('.viewport-host'), 'replacement must preserve viewport host styles');
+    assert(typeof args.oldText === 'string' && args.oldText.length > 0, 'oldText is required');
+    assert(typeof args.newText === 'string', 'newText must be a string');
 
-    await writeFile(resolve(candidateRoot, 'src/renderer/styles.css'), args.content, 'utf8');
+    const stylesPath = resolve(candidateRoot, 'src/renderer/styles.css');
+    const current = await readFile(stylesPath, 'utf8');
+    const occurrences = current.split(args.oldText).length - 1;
+    assert(
+      occurrences === 1,
+      `oldText must occur exactly once in styles.css; found ${occurrences}`,
+    );
+
+    const next = current.replace(args.oldText, args.newText);
+    await writeFile(stylesPath, next, 'utf8');
     await new Promise((resolveWait) => setTimeout(resolveWait, 500));
-    toolHistory.push({ name, bytes: Buffer.byteLength(args.content) });
-    return { ok: true, bytes: Buffer.byteLength(args.content) };
+    toolHistory.push({
+      name,
+      removedBytes: Buffer.byteLength(args.oldText),
+      addedBytes: Buffer.byteLength(args.newText),
+    });
+    return {
+      ok: true,
+      removedBytes: Buffer.byteLength(args.oldText),
+      addedBytes: Buffer.byteLength(args.newText),
+    };
   }
 
   throw new Error(`unknown tool: ${name}`);
@@ -432,7 +452,10 @@ try {
   const first = compareHistory[0];
   const last = compareHistory.at(-1);
   const finalStyles = await readFile(resolve(candidateRoot, 'src/renderer/styles.css'), 'utf8');
-  assert(!finalStyles.includes('Controlled agent E2E regression'), 'agent left the controlled regression marker in styles.css');
+  assert(
+    finalStyles === baselineStyles,
+    'agent reached clean layout but did not restore styles.css exactly to the baseline source',
+  );
 
   const acceptance = {
     version: 1,
@@ -459,6 +482,7 @@ try {
       findingCount: last.summary.findingCount,
       reportPath: last.evidence.reportPath,
     },
+    sourceRestoredExactly: finalStyles === baselineStyles,
     finalOutput,
   };
 
@@ -474,6 +498,7 @@ try {
       `agent writes: ${writes}`,
       `tool calls: ${toolCalls}`,
       `final findings: ${last.summary.findingCount}`,
+      `source restored exactly: ${finalStyles === baselineStyles}`,
       `tokens: ${usage.totalTokens}`,
       `final output: ${finalOutput}`,
       '',
