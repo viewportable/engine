@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import type { CssSourceReference } from '../types.js';
 import type { StructuralChangeDirection, StructuralSubject } from './structural-diff.js';
 import type { StructuralChangeRange, StructuralRangeBoundary } from './ranges.js';
 
@@ -36,6 +37,7 @@ export interface StructuralFinding {
   exactRange: StructuralFindingExactRange | null;
   baseline: StructuralFindingState;
   candidate: StructuralFindingState;
+  source: CssSourceReference | null;
   evidence: {
     fingerprint: string;
     sampleCount: number;
@@ -78,6 +80,7 @@ function findingFromRange(range: StructuralChangeRange): StructuralFinding {
       widths: [...range.sampleWidths],
     },
     exactRange: exactRange(range.boundaries),
+    source: null,
     evidence: {
       fingerprint: range.fingerprint,
       sampleCount: range.sampleCount,
