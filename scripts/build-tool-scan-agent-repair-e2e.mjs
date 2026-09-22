@@ -15,7 +15,24 @@ const acceptancePath = path.join(retainedRoot, 'acceptance.json');
 const tempRoot = await mkdtemp(path.join(tmpdir(), 'viewportable-scan-agent-repair-'));
 const appRoot = path.join(tempRoot, 'app');
 const distRoot = path.join(appRoot, 'dist');
-const targetPath = path.join(appRoot, 'src/Scan.source.scss');
+const scenario = process.env.VIEWPORTABLE_SCAN_REPAIR_SCENARIO ?? 'min-width';
+const scenarioDefinitions = {
+  'min-width': {
+    sourceName: 'Scan.source.scss',
+    property: 'min-width',
+    value: '700px',
+  },
+  width: {
+    sourceName: 'Scan.width.source.scss',
+    property: 'width',
+    value: '700px',
+  },
+};
+const scenarioDefinition = scenarioDefinitions[scenario];
+if (!scenarioDefinition) {
+  throw new Error(`unsupported VIEWPORTABLE_SCAN_REPAIR_SCENARIO: ${scenario}`);
+}
+const targetPath = path.join(appRoot, 'src', scenarioDefinition.sourceName);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -67,7 +84,7 @@ async function compileCandidate() {
       '--source-map',
       '--embed-sources',
       '--style=expanded',
-      'src/Scan.source.scss',
+      `src/${scenarioDefinition.sourceName}`,
       'public/precompiled/scan.css',
     ],
     { cwd: appRoot },
@@ -154,6 +171,7 @@ try {
   process.stdout.write(
     [
       'REAL BUILD TOOL SCAN AGENT REPAIR E2E',
+      `scenario: ${scenario}`,
       'toolchain: Vite 8.3.0 + Sass 1.104.1 + React 19.3.0',
       '',
     ].join('\n'),
@@ -212,7 +230,7 @@ try {
   const finding = broken.findings.find(
     (entry) =>
       entry.type === 'horizontal-overflow' &&
-      entry.source?.property === 'min-width' &&
+      entry.source?.property === scenarioDefinition.property &&
       entry.source?.authoredLocation,
   );
   if (!finding) {
@@ -226,7 +244,7 @@ try {
 
     throw new Error(
       [
-        'before: missing horizontal-overflow finding with authored min-width source',
+        `before: missing horizontal-overflow finding with authored ${scenarioDefinition.property} source`,
         `findings: ${JSON.stringify(broken.findings)}`,
         `rootCauses: ${JSON.stringify(rawRootCauses)}`,
       ].join('\n'),
@@ -246,13 +264,18 @@ try {
     'before: missing authored source location',
   );
   assert(
-    authored.source.endsWith('Scan.source.scss'),
+    authored.source.endsWith(scenarioDefinition.sourceName),
     `before: unexpected authored source ${authored.source}`,
   );
 
   const expectedTargetLine =
-    originalLines.findIndex((line) => line.trim().startsWith('min-width:')) + 1;
-  assert(expectedTargetLine > 0, 'fixture: missing min-width declaration');
+    originalLines.findIndex((line) =>
+      line.trim().startsWith(`${scenarioDefinition.property}:`),
+    ) + 1;
+  assert(
+    expectedTargetLine > 0,
+    `fixture: missing ${scenarioDefinition.property} declaration`,
+  );
   assert(
     authored.start?.line === expectedTargetLine,
     `before: expected authored line ${expectedTargetLine}, got ${authored.start?.line}`,
@@ -273,8 +296,8 @@ try {
 
   const expectedLine = originalLines[targetLine - 1];
   assert(
-    expectedLine.trim().startsWith('min-width:'),
-    `before: attributed line does not start with min-width: ${expectedLine}`,
+    expectedLine.trim().startsWith(`${scenarioDefinition.property}:`),
+    `before: attributed line does not start with ${scenarioDefinition.property}: ${expectedLine}`,
   );
 
   const repairedLines = [...originalLines];
@@ -307,6 +330,7 @@ try {
 
   const acceptance = {
     version: 1,
+    scenario,
     mode: 'scan',
     before: {
       outcome: broken.outcome,
@@ -314,6 +338,8 @@ try {
       finding: {
         type: finding.type,
         groupId: finding.groupId,
+        sourceProperty: source.property,
+        sourceValue: source.value,
         range: finding.range,
         repair: finding.repair,
         source,
@@ -342,6 +368,7 @@ try {
   process.stdout.write(
     [
       'REAL BUILD TOOL SCAN AGENT REPAIR E2E PASS',
+      `scenario: ${scenario}`,
       `before: horizontal-overflow with ${source.property}: ${source.value}`,
       `generated: ${source.stylesheet}`,
       `authored: ${authored.source}:${authored.start.line}:${authored.start.column}`,
