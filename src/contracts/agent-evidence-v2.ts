@@ -52,8 +52,4 @@ export function agentEvidenceV2JsonSchema(): Record<string, unknown> {
 }
 
 // Re-export stable nested V1 primitives for consumers that share subject/range/state semantics.
-export {
-  AgentEvidenceRangeV1Schema,
-  AgentEvidenceStateV1Schema,
-  AgentEvidenceSubjectV1Schema,
-};
+export { AgentEvidenceRangeV1Schema, AgentEvidenceStateV1Schema, AgentEvidenceSubjectV1Schema };
