@@ -247,6 +247,43 @@ describe('slice CLI', () => {
     expect(result.stdout).toContain('350-499px exact | sampled 375-430px');
   });
 
+  it('attributes an exact protrusion to one authored CSS declaration', async () => {
+    const out = await makeOutDir();
+    const result = await runCli('source-attribution-candidate.html', [
+      '--baseline-url',
+      `${baseUrl}/source-attribution-baseline.html`,
+      '--widths',
+      '320,375,430,520',
+      '--wait',
+      '0',
+      '--out',
+      out,
+    ]);
+
+    expect(result.code).toBe(1);
+    const report = JSON.parse(await readFile(path.join(out, 'structural-diff.json'), 'utf8'));
+    const finding = report.findings.find(
+      (entry: { type: string; subject: { key: string } }) =>
+        entry.type === 'protrusion' && entry.subject.key === 'id:subject',
+    );
+
+    expect(finding).toMatchObject({
+      type: 'protrusion',
+      direction: 'introduced',
+      exactRange: {
+        minWidth: 350,
+        maxWidth: 499,
+      },
+      source: {
+        stylesheet: null,
+        selector: '#subject',
+        property: 'min-width',
+        value: '400px',
+        media: '(min-width: 350px) and (max-width: 499px)',
+      },
+    });
+  });
+
   it('refines responsive disappearance and reparenting to exact boundaries', async () => {
     const out = await makeOutDir();
     const result = await runCli('structural-identity-responsive-candidate.html', [
