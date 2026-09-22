@@ -98,6 +98,7 @@ export async function createGitHubAppServer({
           exitCode: payload.exitCode,
           report: payload.report,
           detailsUrl: payload.detailsUrl ?? null,
+          annotations: payload.annotations ?? [],
           store,
           github,
         });
