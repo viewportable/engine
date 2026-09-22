@@ -72,10 +72,27 @@ function compareLocations(
   return result;
 }
 
+function scanLocations(
+  report: UnknownRecord | null,
+): Map<string, AgentEvidenceSourceLocationV3 | null> {
+  const result = new Map<string, AgentEvidenceSourceLocationV3 | null>();
+  const roots = Array.isArray(report?.rootCauses) ? report.rootCauses : [];
+
+  for (const value of roots) {
+    const root = record(value);
+    if (!root || typeof root.id !== 'string') continue;
+    const diagnosis = record(root.diagnosis);
+    const source = record(diagnosis?.source);
+    result.set(root.id, location(source?.location));
+  }
+
+  return result;
+}
+
 export function buildCanonicalAgentEvidenceV3(run: EngineMcpRun): AgentEvidenceV3 {
   const v2 = buildCanonicalAgentEvidenceV2(run);
   const report = record(run.report);
-  const locations = run.mode === 'compare' ? compareLocations(report) : new Map();
+  const locations = run.mode === 'compare' ? compareLocations(report) : scanLocations(report);
 
   return AgentEvidenceV3Schema.parse({
     ...v2,
@@ -87,7 +104,10 @@ export function buildCanonicalAgentEvidenceV3(run: EngineMcpRun): AgentEvidenceV
           ? null
           : {
               ...finding.source,
-              location: locations.get(finding.id) ?? null,
+              location:
+                locations.get(finding.id) ??
+                (finding.groupId ? locations.get(finding.groupId) : null) ??
+                null,
             },
     })),
   });

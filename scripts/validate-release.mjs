@@ -75,9 +75,13 @@ for (const required of [
   'scripts/build-tool-source-map-acceptance.mjs',
   'scripts/build-tool-agent-repair-e2e.mjs',
   'scripts/agent-repair-coverage-matrix.mjs',
+  'scripts/build-tool-scan-agent-repair-e2e.mjs',
   'test/fixtures/build-tool-source-map/vite.config.mjs',
   'test/fixtures/build-tool-source-map/src/Candidate.source.scss',
   'test/fixtures/build-tool-source-map/src/Candidate.width.source.scss',
+  'test/fixtures/build-tool-source-map/scan.html',
+  'test/fixtures/build-tool-source-map/src/scan.js',
+  'test/fixtures/build-tool-source-map/src/Scan.source.scss',
   'examples/github/compare.yml',
 ]) {
   await requireFile(required);

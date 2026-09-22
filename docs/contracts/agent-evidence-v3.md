@@ -73,10 +73,11 @@ There is no line-number guessing by searching project files.
 Source Location V1 follows Source Attribution V1 scope:
 
 - structural compare direct protrusion constraints;
+- scan-mode horizontal-overflow root causes with deterministic CSS diagnosis;
 - pixel `min-width`;
 - uniquely attributable fixed pixel `width`.
 
-Other finding types and scan-mode locations remain `null` until equally deterministic browser evidence exists.
+For scan mode, the location is attached to the root-cause diagnosis source and normalized onto grouped findings through their `groupId`. Other finding types remain `null` until equally deterministic browser evidence exists.
 
 ## Authored source maps
 

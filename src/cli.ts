@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command, CommanderError } from 'commander';
-import type { Page } from 'playwright';
+import type { CDPSession, Page } from 'playwright';
 import pc from 'picocolors';
 import {
   documentOverflowsHorizontally,
@@ -18,6 +18,8 @@ import { runStructuralCompare } from './compare/run.js';
 import { captureBrowserSurface } from './capture.js';
 import { loadSliceConfig, type SliceConfig, type SuppressionRule } from './config.js';
 import { findUniqueCssSource } from './css-source.js';
+import { findCssSourceLocation } from './css-source-location.js';
+import { findAuthoredCssSourceLocation } from './css-source-map.js';
 import { fixedElementCollisionDetector } from './detect/fixed-collision.js';
 import { fixedContentOcclusionDetector } from './detect/fixed-occlusion.js';
 import { horizontalOverflowDetector } from './detect/overflow.js';
@@ -33,6 +35,7 @@ import { partitionSuppressedIssues } from './suppress.js';
 import type { SurfaceSnapshot } from './surface.js';
 import type {
   BoundaryResult,
+  CssSourceReference,
   HorizontalOverflowIssue,
   HorizontalOverflowRootCause,
   Issue,
@@ -446,6 +449,7 @@ function rootCauseKey(selector: string, side: 'right' | 'left'): string {
 
 async function enrichIssues(
   page: Page,
+  cdp: CDPSession,
   surface: SurfaceSnapshot<LayoutNode>,
   metrics: DocumentMetrics,
   issueIds: Map<string, string>,
@@ -488,18 +492,40 @@ async function enrichIssues(
         measurement.diagnosis.property,
         measurement.diagnosis.value,
       );
+      const enrichedSource: CssSourceReference | null =
+        source === null
+          ? null
+          : {
+              ...source,
+              location: await findCssSourceLocation(cdp, selector, source),
+            };
+
+      if (enrichedSource?.location) {
+        enrichedSource.authoredLocation = await findAuthoredCssSourceLocation({
+          source: enrichedSource,
+          location: enrichedSource.location,
+          fetchText: async (url) => {
+            try {
+              const response = await page.request.get(url);
+              return response.ok() ? response.text() : null;
+            } catch {
+              return null;
+            }
+          },
+        });
+      }
 
       if (measurement.diagnosis.kind === 'fixed-width-constraint') {
-        if (source) {
+        if (enrichedSource) {
           diagnosis = {
             ...measurement.diagnosis,
-            source,
+            source: enrichedSource,
           };
         }
       } else {
         diagnosis = {
           ...measurement.diagnosis,
-          source,
+          source: enrichedSource,
         };
       }
     }
@@ -699,7 +725,14 @@ async function captureAtWidth(
   await stabilizeViewport(runtime.page, width, height, waitMs);
   const metrics = await getDocumentMetrics(runtime.page);
   const surface = await captureBrowserSurface(runtime.cdp, { width, height });
-  const captured = await enrichIssues(runtime.page, surface, metrics, issueIds, rootCauseIds);
+  const captured = await enrichIssues(
+    runtime.page,
+    runtime.cdp,
+    surface,
+    metrics,
+    issueIds,
+    rootCauseIds,
+  );
   const { issues, suppressedIssues } = partitionSuppressedIssues(captured.issues, suppressions);
   const activeIssueIds = new Set(issues.map((issue) => issue.id));
   const rootCauses = captured.rootCauses

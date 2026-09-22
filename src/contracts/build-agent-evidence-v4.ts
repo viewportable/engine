@@ -83,10 +83,28 @@ function compareAuthoredLocations(
   return result;
 }
 
+function scanAuthoredLocations(
+  report: UnknownRecord | null,
+): Map<string, AgentEvidenceAuthoredLocationV4 | null> {
+  const result = new Map<string, AgentEvidenceAuthoredLocationV4 | null>();
+  const roots = Array.isArray(report?.rootCauses) ? report.rootCauses : [];
+
+  for (const value of roots) {
+    const root = record(value);
+    if (!root || typeof root.id !== 'string') continue;
+    const diagnosis = record(root.diagnosis);
+    const source = record(diagnosis?.source);
+    result.set(root.id, authoredLocation(source?.authoredLocation));
+  }
+
+  return result;
+}
+
 export function buildCanonicalAgentEvidenceV4(run: EngineMcpRun): AgentEvidenceV4 {
   const v3 = buildCanonicalAgentEvidenceV3(run);
   const report = record(run.report);
-  const authoredLocations = run.mode === 'compare' ? compareAuthoredLocations(report) : new Map();
+  const authoredLocations =
+    run.mode === 'compare' ? compareAuthoredLocations(report) : scanAuthoredLocations(report);
 
   return AgentEvidenceV4Schema.parse({
     ...v3,
@@ -98,7 +116,10 @@ export function buildCanonicalAgentEvidenceV4(run: EngineMcpRun): AgentEvidenceV
           ? null
           : {
               ...finding.source,
-              authoredLocation: authoredLocations.get(finding.id) ?? null,
+              authoredLocation:
+                authoredLocations.get(finding.id) ??
+                (finding.groupId ? authoredLocations.get(finding.groupId) : null) ??
+                null,
             },
     })),
   });

@@ -70,6 +70,9 @@ jobs:
       - name: Agent repair coverage matrix
         run: npm run acceptance:agent-repair-coverage
 
+      - name: Scan-mode authored repair E2E
+        run: npm run acceptance:build-tool-scan-agent-repair
+
       - name: Smoke test built CLI
         run: npm run smoke
 

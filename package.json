@@ -51,7 +51,8 @@
     "golden:mcp-agent": "npm run build --silent && node scripts/mcp-golden-agent.mjs",
     "acceptance:build-tool-source-map": "node scripts/build-tool-source-map-acceptance.mjs",
     "acceptance:build-tool-agent-repair": "node scripts/build-tool-agent-repair-e2e.mjs",
-    "acceptance:agent-repair-coverage": "node scripts/agent-repair-coverage-matrix.mjs"
+    "acceptance:agent-repair-coverage": "node scripts/agent-repair-coverage-matrix.mjs",
+    "acceptance:build-tool-scan-agent-repair": "node scripts/build-tool-scan-agent-repair-e2e.mjs"
   },
   "dependencies": {
     "@jridgewell/trace-mapping": "0.3.31",

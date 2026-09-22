@@ -69,6 +69,8 @@ Viewportable accepts an authored location only when all of the following are tru
 
 If any condition fails, Viewportable preserves the V3 stylesheet location and returns `authoredLocation: null`.
 
+The same mapping rules now apply to deterministic scan-mode horizontal-overflow root causes. Scan findings inherit the root cause's V3/V4 source evidence through `groupId`; there is no separate or weaker scan attribution algorithm.
+
 ## GitHub annotation verification
 
 Standalone GitHub Action mode prefers `authoredLocation` when present.

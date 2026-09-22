@@ -180,6 +180,38 @@ Those findings currently have `source: null` in Canonical Agent Evidence V4. The
 
 The manual **Real Build-Tool Agent Repair** workflow accepts a `min-width` or `width` scenario so either deterministic CSS cause can be re-proven with GPT-5.6.
 
+### Scan-mode authored repair
+
+Scan mode now carries the same deterministic location chain for horizontal-overflow root causes:
+
+```text
+viewportable_scan
+  ↓
+horizontal-overflow finding
+  ↓
+root-cause CSS diagnosis
+  ↓
+browser-proven stylesheet location
+  ↓
+source-map authoredLocation
+  ↓
+narrow source edit
+  ↓
+production rebuild
+  ↓
+viewportable_scan
+  ↓
+clean
+```
+
+The production acceptance command is:
+
+```bash
+npm run acceptance:build-tool-scan-agent-repair
+```
+
+It uses the same Sass/Vite fixture project as compare-mode acceptance but a dedicated grouped scan page backed by `Scan.source.scss`. The grid has one `min-width` root cause with multiple affected leaves, matching normal scan grouping semantics. The harness calls only `viewportable_scan`, requires V4 authored evidence for the grouped finding, reads only a small range around that location, changes exactly one SCSS line, rebuilds production assets, and requires a clean rescan.
+
 ### MCP golden agent flow
 
 The repository includes a real stdio MCP acceptance flow using the official MCP client SDK:
