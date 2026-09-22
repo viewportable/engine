@@ -234,8 +234,7 @@ try {
   }
 
   assert(
-    finding.repair?.repairable === true &&
-      finding.repair?.reason === 'deterministic-authored-css',
+    finding.repair?.repairable === true && finding.repair?.reason === 'deterministic-authored-css',
     `before: scan finding is not canonically repairable: ${JSON.stringify(finding.repair)}`,
   );
 
