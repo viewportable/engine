@@ -1,0 +1,27 @@
+name: Build Tool Formatter Preview
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/build-tool-format-preview.yml'
+      - 'scripts/build-tool-source-map-acceptance.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Render formatter diff
+        shell: bash
+        run: |
+          npm run fmt
+          git diff -- scripts/build-tool-source-map-acceptance.mjs
