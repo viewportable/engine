@@ -215,7 +215,23 @@ try {
       entry.source?.property === 'min-width' &&
       entry.source?.authoredLocation,
   );
-  assert(finding, 'before: missing horizontal-overflow finding with authored min-width source');
+  if (!finding) {
+    let rawRootCauses = null;
+    try {
+      const rawReport = JSON.parse(await readFile(broken.evidence.reportPath, 'utf8'));
+      rawRootCauses = rawReport.rootCauses ?? null;
+    } catch {
+      rawRootCauses = null;
+    }
+
+    throw new Error(
+      [
+        'before: missing horizontal-overflow finding with authored min-width source',
+        `findings: ${JSON.stringify(broken.findings)}`,
+        `rootCauses: ${JSON.stringify(rawRootCauses)}`,
+      ].join('\n'),
+    );
+  }
 
   const source = finding.source;
   const authored = source.authoredLocation;
