@@ -126,6 +126,66 @@ describe('Viewportable Canonical Agent Evidence Contract V3', () => {
     expect(result.findings[0]?.source?.location).toBeNull();
   });
 
+  it('maps scan root-cause source location onto grouped findings', () => {
+    const result = buildCanonicalAgentEvidenceV3({
+      mode: 'scan',
+      exitCode: 1,
+      outcome: 'findings',
+      reportPath: '.slice/results.json',
+      stderr: '',
+      report: {
+        summary: {
+          viewportsChecked: 1,
+          durationMs: 120,
+        },
+        viewports: [
+          {
+            width: 390,
+            status: 'fail',
+            issues: [
+              {
+                id: 'issue-1',
+                type: 'horizontal-overflow',
+                selector: '.grid',
+                tagName: 'SECTION',
+                rootCauseId: 'root-1',
+              },
+            ],
+          },
+        ],
+        rootCauses: [
+          {
+            id: 'root-1',
+            diagnosis: {
+              source: {
+                stylesheet: '/src/app.css',
+                selector: '.grid',
+                property: 'min-width',
+                value: '700px',
+                media: null,
+                location: {
+                  kind: 'css-property-range',
+                  confidence: 'deterministic',
+                  coordinateSpace: 'stylesheet',
+                  start: { line: 8, column: 5 },
+                  end: { line: 8, column: 14 },
+                },
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    expect(result.findings[0]?.source?.location).toEqual({
+      kind: 'css-property-range',
+      confidence: 'deterministic',
+      coordinateSpace: 'stylesheet',
+      start: { line: 8, column: 5 },
+      end: { line: 8, column: 14 },
+    });
+  });
+
   it('keeps V3 strict at location boundaries', () => {
     const valid = buildCanonicalAgentEvidenceV3(compareRun());
     const finding = valid.findings[0];
