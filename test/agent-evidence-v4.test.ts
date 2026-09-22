@@ -110,6 +110,86 @@ describe('Viewportable Canonical Agent Evidence Contract V4', () => {
     });
   });
 
+  it('maps scan root-cause authored location onto grouped findings', () => {
+    const result = buildCanonicalAgentEvidenceV4({
+      mode: 'scan',
+      exitCode: 1,
+      outcome: 'findings',
+      reportPath: '.slice/results.json',
+      stderr: '',
+      report: {
+        summary: {
+          viewportsChecked: 1,
+          durationMs: 120,
+        },
+        viewports: [
+          {
+            width: 390,
+            status: 'fail',
+            issues: [
+              {
+                id: 'issue-1',
+                type: 'horizontal-overflow',
+                selector: '.grid',
+                tagName: 'SECTION',
+                rootCauseId: 'root-1',
+              },
+            ],
+          },
+        ],
+        rootCauses: [
+          {
+            id: 'root-1',
+            diagnosis: {
+              source: {
+                stylesheet: 'https://example.test/assets/app.css',
+                selector: '.grid',
+                property: 'min-width',
+                value: '700px',
+                media: null,
+                location: {
+                  kind: 'css-property-range',
+                  confidence: 'deterministic',
+                  coordinateSpace: 'stylesheet',
+                  start: { line: 8, column: 5 },
+                  end: { line: 8, column: 14 },
+                },
+                authoredLocation: {
+                  kind: 'source-map-property',
+                  confidence: 'deterministic',
+                  coordinateSpace: 'authored-source',
+                  source: '../src/grid.scss',
+                  resolvedSource: 'https://example.test/src/grid.scss',
+                  start: { line: 12, column: 5 },
+                  sourceContentSha256:
+                    'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+                  sourceMap: {
+                    version: 3,
+                    kind: 'external',
+                    url: 'https://example.test/assets/app.css.map',
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    expect(result.findings[0]?.source).toMatchObject({
+      property: 'min-width',
+      location: {
+        coordinateSpace: 'stylesheet',
+        start: { line: 8, column: 5 },
+      },
+      authoredLocation: {
+        coordinateSpace: 'authored-source',
+        source: '../src/grid.scss',
+        start: { line: 12, column: 5 },
+      },
+    });
+  });
+
   it('keeps authoredLocation null when mapping is unavailable', () => {
     const run = compareRun();
     const report = run.report as { findings: Array<Record<string, unknown>> };
