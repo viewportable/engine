@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
-import { compactMcpResult, mcpTextSummary, runEngineForMcp } from './mcp-runner.js';
+import { AgentEvidenceV1Schema, type AgentEvidenceV1 } from './contracts/agent-evidence.js';
+import { canonicalMcpResult, mcpTextSummary, runEngineForMcp } from './mcp-runner.js';
 
 const widthsSchema = z
   .array(z.number().int().positive())
@@ -30,21 +31,9 @@ const commonShape = {
     .describe('Directory under which MCP evidence directories are retained'),
 };
 
-const outputSchema = z
-  .object({
-    mode: z.enum(['scan', 'compare']),
-    outcome: z.enum(['clean', 'findings', 'infra_failure']),
-    exitCode: z.number().int(),
-    reportPath: z.string(),
-    summary: z.record(z.string(), z.unknown()).nullable(),
-    findings: z.array(z.record(z.string(), z.unknown())).optional(),
-    rootCauses: z.array(z.record(z.string(), z.unknown())).optional(),
-    failingViewports: z.array(z.record(z.string(), z.unknown())).optional(),
-    stderr: z.string().optional(),
-  })
-  .passthrough();
+const outputSchema = AgentEvidenceV1Schema;
 
-function toolResult(result: Record<string, unknown>) {
+function toolResult(result: AgentEvidenceV1) {
   return {
     content: [{ type: 'text' as const, text: mcpTextSummary(result) }],
     structuredContent: result,
@@ -90,7 +79,7 @@ export function createViewportableMcpServer({
         candidateUrl: url,
         options,
       });
-      return toolResult(compactMcpResult(execution));
+      return toolResult(canonicalMcpResult(execution));
     },
   );
 
@@ -118,7 +107,7 @@ export function createViewportableMcpServer({
         candidateUrl,
         options,
       });
-      return toolResult(compactMcpResult(execution));
+      return toolResult(canonicalMcpResult(execution));
     },
   );
 

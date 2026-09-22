@@ -2,6 +2,8 @@ import { spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { AgentEvidenceV1 } from './contracts/agent-evidence.js';
+import { buildCanonicalAgentEvidenceV1 } from './contracts/build-agent-evidence.js';
 
 export interface EngineMcpOptions {
   widths?: number[];
@@ -123,73 +125,22 @@ export async function runEngineForMcp({
   };
 }
 
-export function compactMcpResult(run: EngineMcpRun): Record<string, unknown> {
-  const summary =
-    run.report && typeof run.report.summary === 'object' && run.report.summary !== null
-      ? run.report.summary
-      : null;
-
-  if (run.mode === 'compare') {
-    const findings =
-      run.report && Array.isArray(run.report.findings)
-        ? run.report.findings.filter(
-            (finding) =>
-              typeof finding === 'object' &&
-              finding !== null &&
-              'direction' in finding &&
-              finding.direction === 'introduced',
-          )
-        : [];
-
-    return {
-      mode: run.mode,
-      outcome: run.outcome,
-      exitCode: run.exitCode,
-      reportPath: run.reportPath,
-      summary,
-      findings,
-      ...(run.stderr ? { stderr: run.stderr } : {}),
-    };
-  }
-
-  const rootCauses =
-    run.report && Array.isArray(run.report.rootCauses) ? run.report.rootCauses : [];
-  const failingViewports =
-    run.report && Array.isArray(run.report.viewports)
-      ? run.report.viewports.filter(
-          (viewport) =>
-            typeof viewport === 'object' &&
-            viewport !== null &&
-            'status' in viewport &&
-            viewport.status === 'fail',
-        )
-      : [];
-
-  return {
-    mode: run.mode,
-    outcome: run.outcome,
-    exitCode: run.exitCode,
-    reportPath: run.reportPath,
-    summary,
-    rootCauses,
-    failingViewports,
-    ...(run.stderr ? { stderr: run.stderr } : {}),
-  };
+export function canonicalMcpResult(run: EngineMcpRun): AgentEvidenceV1 {
+  return buildCanonicalAgentEvidenceV1(run);
 }
 
-export function mcpTextSummary(result: Record<string, unknown>): string {
-  const outcome = String(result.outcome ?? 'unknown');
-  const reportPath = String(result.reportPath ?? '');
-  const summary =
-    result.summary && typeof result.summary === 'object'
-      ? JSON.stringify(result.summary)
-      : 'no summary';
+export function mcpTextSummary(result: AgentEvidenceV1): string {
+  const evidencePath = result.evidence.reportPath;
 
   if (result.mode === 'compare') {
-    const findings = Array.isArray(result.findings) ? result.findings.length : 0;
-    return `Viewportable compare: ${outcome}; ${findings} introduced finding(s); ${summary}; evidence: ${reportPath}`;
+    return (
+      `Viewportable compare: ${result.outcome}; ${result.summary.findingCount} introduced finding(s); ` +
+      `${result.summary.viewportsChecked} viewport(s); evidence: ${evidencePath}`
+    );
   }
 
-  const failing = Array.isArray(result.failingViewports) ? result.failingViewports.length : 0;
-  return `Viewportable scan: ${outcome}; ${failing} failing viewport(s); ${summary}; evidence: ${reportPath}`;
+  return (
+    `Viewportable scan: ${result.outcome}; ${result.summary.findingCount} current finding(s); ` +
+    `${result.summary.viewportsChecked} viewport(s); evidence: ${evidencePath}`
+  );
 }

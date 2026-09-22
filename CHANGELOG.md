@@ -19,6 +19,7 @@ All notable changes to Viewportable Engine are documented here.
 - Public golden PR lifecycle proof in PR #44, showing an exact 350-499px regression caught while ordinary CI stayed green, followed by a fix verified through the same managed PR evidence lifecycle.
 - Local MCP Server V1 using the official TypeScript MCP server SDK and stdio transport, exposing `viewportable_scan` and `viewportable_compare` while reusing the production CLI/report contract and retaining full evidence under `.slice/mcp/`.
 - MCP Golden Agent Flow acceptance using the official client SDK over real stdio: broken candidate -> two exact 350-499px canonical findings -> fixed candidate -> zero findings through the same MCP connection.
+- Viewportable Canonical Agent Evidence Contract V1 (`viewportable.agent-evidence.v1`): strict versioned agent semantics, runtime validation, normalized scan/compare findings, explicit evidence pointers, and MCP output schema sourced from one Zod contract.
 
 
 
