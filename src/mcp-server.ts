@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
-import { AgentEvidenceV2Schema, type AgentEvidenceV2 } from './contracts/agent-evidence-v2.js';
+import { AgentEvidenceV3Schema, type AgentEvidenceV3 } from './contracts/agent-evidence-v3.js';
 import { canonicalMcpResult, mcpTextSummary, runEngineForMcp } from './mcp-runner.js';
 
 const widthsSchema = z
@@ -31,9 +31,9 @@ const commonShape = {
     .describe('Directory under which MCP evidence directories are retained'),
 };
 
-const outputSchema = AgentEvidenceV2Schema;
+const outputSchema = AgentEvidenceV3Schema;
 
-function toolResult(result: AgentEvidenceV2) {
+function toolResult(result: AgentEvidenceV3) {
   return {
     content: [{ type: 'text' as const, text: mcpTextSummary(result) }],
     structuredContent: result,
