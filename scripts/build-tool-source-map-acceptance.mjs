@@ -164,12 +164,8 @@ try {
   const builtFiles = await walk(distRoot);
   const cssFiles = builtFiles.filter((file) => file.endsWith('.css'));
   const cssMaps = builtFiles.filter((file) => file.endsWith('.css.map'));
-  const nativeCssFiles = cssFiles.filter((file) =>
-    file.includes(`${path.sep}assets${path.sep}`),
-  );
-  const nativeCssMaps = cssMaps.filter((file) =>
-    file.includes(`${path.sep}assets${path.sep}`),
-  );
+  const nativeCssFiles = cssFiles.filter((file) => file.includes(`${path.sep}assets${path.sep}`));
+  const nativeCssMaps = cssMaps.filter((file) => file.includes(`${path.sep}assets${path.sep}`));
   const precompiledCssMaps = cssMaps.filter((file) =>
     file.includes(`${path.sep}precompiled${path.sep}`),
   );
@@ -184,9 +180,9 @@ try {
     `expected two Sass precompile maps copied by Vite, got ${precompiledCssMaps.length}`,
   );
 
-  const nativeCss = (
-    await Promise.all(nativeCssFiles.map((file) => readFile(file, 'utf8')))
-  ).join('\n');
+  const nativeCss = (await Promise.all(nativeCssFiles.map((file) => readFile(file, 'utf8')))).join(
+    '\n',
+  );
   assert(
     nativeCss.includes('-webkit-user-select'),
     'PostCSS transform did not run on the Vite CSS Module asset',
