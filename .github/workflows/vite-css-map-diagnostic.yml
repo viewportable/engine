@@ -1,0 +1,55 @@
+name: Vite CSS Map Diagnostic
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/vite-css-map-diagnostic.yml'
+      - 'test/fixtures/build-tool-source-map/**'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Install fixture toolchain
+        working-directory: test/fixtures/build-tool-source-map
+        run: npm install --ignore-scripts --no-audit --no-fund --package-lock=false
+      - name: Diagnose Vite CSS source maps
+        working-directory: test/fixtures/build-tool-source-map
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cp vite.config.mjs /tmp/vite.config.original.mjs
+          cp postcss.config.mjs /tmp/postcss.config.original.mjs
+
+          echo "=== external + postcss ==="
+          npm exec -- vite build
+          find dist -maxdepth 3 -type f -print | sort
+          grep -R "sourceMappingURL" dist || true
+
+          echo "=== external + no postcss ==="
+          rm postcss.config.mjs
+          npm exec -- vite build
+          find dist -maxdepth 3 -type f -print | sort
+          grep -R "sourceMappingURL" dist || true
+
+          echo "=== inline + postcss ==="
+          cp /tmp/postcss.config.original.mjs postcss.config.mjs
+          sed "s/sourcemap: true/sourcemap: 'inline'/" /tmp/vite.config.original.mjs > vite.config.mjs
+          npm exec -- vite build
+          find dist -maxdepth 3 -type f -print | sort
+          grep -R "sourceMappingURL" dist || true
+
+          echo "=== inline + no postcss ==="
+          rm postcss.config.mjs
+          npm exec -- vite build
+          find dist -maxdepth 3 -type f -print | sort
+          grep -R "sourceMappingURL" dist || true
