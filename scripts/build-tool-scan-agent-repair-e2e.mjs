@@ -15,7 +15,7 @@ const acceptancePath = path.join(retainedRoot, 'acceptance.json');
 const tempRoot = await mkdtemp(path.join(tmpdir(), 'viewportable-scan-agent-repair-'));
 const appRoot = path.join(tempRoot, 'app');
 const distRoot = path.join(appRoot, 'dist');
-const targetPath = path.join(appRoot, 'src/Candidate.source.scss');
+const targetPath = path.join(appRoot, 'src/Scan.source.scss');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -67,8 +67,8 @@ async function compileCandidate() {
       '--source-map',
       '--embed-sources',
       '--style=expanded',
-      'src/Candidate.source.scss',
-      'public/precompiled/candidate.css',
+      'src/Scan.source.scss',
+      'public/precompiled/scan.css',
     ],
     { cwd: appRoot },
   );
@@ -184,13 +184,13 @@ try {
       {
         name: 'viewportable_scan',
         arguments: {
-          url: `${fixtureServer.baseUrl}/candidate.html`,
+          url: `${fixtureServer.baseUrl}/scan.html`,
           widths: [320, 375, 430, 520],
           height: 900,
           waitMs: 0,
           timeoutMs: 10_000,
           boundary: true,
-          readySelector: '#subject',
+          readySelector: '#scan-grid',
           outBase: evidenceRoot,
         },
       },
@@ -241,16 +241,20 @@ try {
     'before: missing authored source location',
   );
   assert(
-    authored.source.endsWith('Candidate.source.scss'),
+    authored.source.endsWith('Scan.source.scss'),
     `before: unexpected authored source ${authored.source}`,
   );
+
+  const expectedTargetLine =
+    originalLines.findIndex((line) => line.trim().startsWith('min-width:')) + 1;
+  assert(expectedTargetLine > 0, 'fixture: missing min-width declaration');
   assert(
-    authored.start?.line === 16,
-    `before: expected authored line 16, got ${authored.start?.line}`,
+    authored.start?.line === expectedTargetLine,
+    `before: expected authored line ${expectedTargetLine}, got ${authored.start?.line}`,
   );
   assert(
-    authored.start?.column === 5,
-    `before: expected authored column 5, got ${authored.start?.column}`,
+    authored.start?.column === 3,
+    `before: expected authored column 3, got ${authored.start?.column}`,
   );
 
   const targetLine = authored.start.line;
