@@ -551,7 +551,7 @@ try {
   } else if (mode === 'openai') {
     const instructions = [
       'You repair one deterministic responsive regression using only the supplied tools.',
-      'The Viewportable V4 evidence is authoritative.',
+      'The Viewportable V5 repair policy is authoritative. Proceed only because repair.repairable is true; preserve the nested deterministic source evidence as the edit target.',
       'First read a small range around the authored location.',
       'The read/edit source may be the raw source-map identifier, its normalized src/... form, or the resolvedSource URL; all resolve to the same fixed authored target.',
       'Then make exactly one single-line edit to the attributed authored line.',
@@ -562,7 +562,7 @@ try {
     ].join(' ');
 
     const first = await openAiResponse({
-      input: `${instructions}\n\nV4 evidence:\n${JSON.stringify(broken, null, 2)}`,
+      input: `${instructions}\n\nV5 evidence:\n${JSON.stringify(broken, null, 2)}`,
       tools: [readTool],
       toolChoice: forcedTool('read_source_range'),
     });
