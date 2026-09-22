@@ -1,0 +1,30 @@
+name: Format Preview
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/format-preview.yml'
+      - 'scripts/github-annotations.mjs'
+      - 'src/contracts/build-agent-evidence-v4.ts'
+      - 'src/css-source-map.ts'
+      - 'test/github-check-run.test.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Render formatter diff
+        shell: bash
+        run: |
+          npm run fmt
+          git diff -- scripts/github-annotations.mjs src/contracts/build-agent-evidence-v4.ts src/css-source-map.ts test/github-check-run.test.mjs
