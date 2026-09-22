@@ -64,6 +64,9 @@ jobs:
       - name: MCP golden agent flow
         run: npm run golden:mcp-agent
 
+      - name: Real build-tool source-map acceptance
+        run: npm run acceptance:build-tool-source-map
+
       - name: Smoke test built CLI
         run: npm run smoke
 

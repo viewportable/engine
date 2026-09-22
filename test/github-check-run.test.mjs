@@ -187,6 +187,101 @@ describe('GitHub Check Run', () => {
     }
   });
 
+  it('finds one real build-tool source by suffix plus exact content hash', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'viewportable-build-tool-source-'));
+    const authoredPath = path.join(
+      root,
+      'test/fixtures/build-tool-source-map/src/Card.module.scss',
+    );
+    const authoredContent = [
+      '$card-width: 1400px;',
+      '',
+      '.card {',
+      '  min-width: $card-width;',
+      '}',
+      '',
+    ].join('\n');
+    const evidence = attributedReport('https://example.test/assets/app.css');
+    evidence.findings[0].source.authoredLocation = {
+      kind: 'source-map-property',
+      confidence: 'deterministic',
+      coordinateSpace: 'authored-source',
+      source: '../../src/Card.module.scss',
+      resolvedSource: 'https://example.test/src/Card.module.scss',
+      start: { line: 4, column: 3 },
+      sourceContentSha256: createHash('sha256').update(authoredContent).digest('hex'),
+      sourceMap: {
+        version: 3,
+        kind: 'external',
+        url: 'https://example.test/assets/app.css.map',
+      },
+    };
+
+    try {
+      await mkdir(path.dirname(authoredPath), { recursive: true });
+      await writeFile(authoredPath, authoredContent, 'utf8');
+
+      const result = await buildSourceAnnotations(evidence, {
+        repositoryRoot: root,
+      });
+
+      expect(result).toMatchObject({
+        annotations: [
+          {
+            path: 'test/fixtures/build-tool-source-map/src/Card.module.scss',
+            start_line: 4,
+            start_column: 3,
+            end_column: 11,
+          },
+        ],
+        total: 1,
+        skipped: 0,
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('fails closed when two checkout files match the same authored source content', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'viewportable-ambiguous-build-source-'));
+    const authoredContent = '.card {\n  min-width: 1400px;\n}\n';
+    const evidence = attributedReport('https://example.test/assets/app.css');
+    evidence.findings[0].source.authoredLocation = {
+      kind: 'source-map-property',
+      confidence: 'deterministic',
+      coordinateSpace: 'authored-source',
+      source: '../../src/Card.module.scss',
+      resolvedSource: 'https://example.test/src/Card.module.scss',
+      start: { line: 2, column: 3 },
+      sourceContentSha256: createHash('sha256').update(authoredContent).digest('hex'),
+      sourceMap: {
+        version: 3,
+        kind: 'external',
+        url: 'https://example.test/assets/app.css.map',
+      },
+    };
+
+    try {
+      for (const prefix of ['app-a', 'app-b']) {
+        const candidate = path.join(root, prefix, 'src/Card.module.scss');
+        await mkdir(path.dirname(candidate), { recursive: true });
+        await writeFile(candidate, authoredContent, 'utf8');
+      }
+
+      const result = await buildSourceAnnotations(evidence, {
+        repositoryRoot: root,
+      });
+
+      expect(result).toMatchObject({
+        annotations: [],
+        total: 0,
+        skipped: 1,
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('fails closed when the stylesheet is outside the candidate checkout', async () => {
     const result = await buildSourceAnnotations(attributedReport('/other/src/styles.css'), {
       repositoryRoot: '/workspace/candidate',

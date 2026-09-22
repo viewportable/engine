@@ -1,0 +1,11 @@
+$parent-width: 300px;
+
+#parent {
+  width: $parent-width;
+  border: 1px solid #ccc;
+}
+
+#subject {
+  width: 120px;
+  height: 80px;
+}

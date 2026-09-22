@@ -107,6 +107,27 @@ See [Canonical Agent Evidence Contract V4](docs/contracts/agent-evidence-v4.md).
 
 `viewportable_compare` returns introduced canonical `findings[]` directly to the agent; resolved evidence remains in the retained full structural report. `viewportable_scan` returns failing viewports and canonical root causes while retaining the complete scan report.
 
+### Real build-tool source-map acceptance
+
+The repository also keeps a production-build acceptance path for authored source mapping:
+
+```bash
+npm run acceptance:build-tool-source-map
+```
+
+The harness builds a temporary React application with pinned Vite 8.3.0 and Dart Sass 1.104.1, CSS Modules, and a PostCSS declaration transform. The acceptance deliberately covers two production CSS paths:
+
+- Vite-native CSS Module output: Vite 8.3.0 currently emits the CSS asset but no CSS `.map` even with `build.sourcemap: true`; the harness records that limitation instead of inventing authored coordinates.
+- Sass precompile -> Vite public asset copy: Dart Sass emits an external Source Map v3 with embedded sources, Vite copies the CSS/map unchanged into `dist/`, and Viewportable must map the exact 350-499px protrusion back to the checked-in `test/fixtures/build-tool-source-map/src/Candidate.source.scss`.
+
+Because real build tools often emit source paths such as `../../src/Candidate.source.scss`, GitHub source resolution may use a checkout search only when the path suffix and SHA-256 `sourcesContent` proof identify exactly one file. Zero or multiple verified files fail closed.
+
+Retained acceptance evidence is written under:
+
+```text
+.slice/build-tool-source-map-acceptance/
+```
+
 ### MCP golden agent flow
 
 The repository includes a real stdio MCP acceptance flow using the official MCP client SDK:

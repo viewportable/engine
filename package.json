@@ -48,7 +48,8 @@
     "benchmark:redecheck:prepare": "node scripts/redecheck-prepare.mjs",
     "benchmark:redecheck": "npm run benchmark:redecheck:prepare && npm run build --silent && node scripts/redecheck-benchmark.mjs",
     "mcp": "npm run build --silent && node dist/mcp.mjs",
-    "golden:mcp-agent": "npm run build --silent && node scripts/mcp-golden-agent.mjs"
+    "golden:mcp-agent": "npm run build --silent && node scripts/mcp-golden-agent.mjs",
+    "acceptance:build-tool-source-map": "node scripts/build-tool-source-map-acceptance.mjs"
   },
   "dependencies": {
     "@jridgewell/trace-mapping": "0.3.31",
