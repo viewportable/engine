@@ -237,9 +237,7 @@ process.stdout.write(
         `  ${item.scenario}: ${item.sourceProperty}: ${item.sourceValue} -> clean, ${item.writes} write`,
     ),
     'refused:',
-    ...negative.findings.map(
-      (item) => `  ${item.type}: source=null -> no repair tools`,
-    ),
+    ...negative.findings.map((item) => `  ${item.type}: source=null -> no repair tools`),
     'false repair attempts: 0',
     `acceptance: ${path.relative(root, acceptancePath)}`,
     '',
