@@ -18,10 +18,38 @@ export async function findUniqueCssSource(
         selector: string;
         property: string;
         value: string;
+        media: string | null;
       }> = [];
 
-      const visitRules = (rules: CSSRuleList, stylesheet: string | null): void => {
+      const sourceName = (sheet: CSSStyleSheet): string | null => {
+        if (sheet.href) return sheet.href;
+
+        const owner = sheet.ownerNode;
+        if (owner instanceof Element) {
+          return (
+            owner.getAttribute('data-vite-dev-id') ??
+            owner.getAttribute('data-source') ??
+            owner.getAttribute('href')
+          );
+        }
+
+        return null;
+      };
+
+      const visitRules = (
+        rules: CSSRuleList,
+        stylesheet: string | null,
+        media: string | null,
+      ): void => {
         for (const rule of Array.from(rules)) {
+          if (rule instanceof CSSMediaRule) {
+            if (!window.matchMedia(rule.conditionText).matches) continue;
+
+            const nestedMedia = media ? `${media} and ${rule.conditionText}` : rule.conditionText;
+            visitRules(rule.cssRules, stylesheet, nestedMedia);
+            continue;
+          }
+
           if (rule instanceof CSSStyleRule) {
             let matchesElement = false;
 
@@ -39,6 +67,7 @@ export async function findUniqueCssSource(
                   selector: rule.selectorText,
                   property: targetProperty,
                   value,
+                  media,
                 });
               }
             }
@@ -46,7 +75,7 @@ export async function findUniqueCssSource(
 
           if ('cssRules' in rule) {
             try {
-              visitRules((rule as CSSGroupingRule).cssRules, stylesheet);
+              visitRules((rule as CSSGroupingRule).cssRules, stylesheet, media);
             } catch {
               // Ignore inaccessible nested rules.
             }
@@ -56,7 +85,7 @@ export async function findUniqueCssSource(
 
       for (const sheet of Array.from(document.styleSheets)) {
         try {
-          visitRules(sheet.cssRules, sheet.href);
+          visitRules(sheet.cssRules, sourceName(sheet), null);
         } catch {
           // Cross-origin stylesheets are intentionally ignored.
         }

@@ -129,6 +129,7 @@ const cssSourceReferenceSchema = z.object({
   selector: z.string().min(1),
   property: z.string().min(1),
   value: z.string().min(1),
+  media: z.string().nullable(),
 });
 
 const rootCauseDiagnosisSchema = z.discriminatedUnion('kind', [

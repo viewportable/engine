@@ -20,6 +20,7 @@ All notable changes to Viewportable Engine are documented here.
 - Local MCP Server V1 using the official TypeScript MCP server SDK and stdio transport, exposing `viewportable_scan` and `viewportable_compare` while reusing the production CLI/report contract and retaining full evidence under `.slice/mcp/`.
 - MCP Golden Agent Flow acceptance using the official client SDK over real stdio: broken candidate -> two exact 350-499px canonical findings -> fixed candidate -> zero findings through the same MCP connection.
 - Viewportable Canonical Agent Evidence Contract V1 (`viewportable.agent-evidence.v1`): strict versioned agent semantics, runtime validation, normalized scan/compare findings, explicit evidence pointers, and MCP output schema sourced from one Zod contract.
+- Deterministic CSS Source Attribution V1 plus Canonical Agent Evidence V2 (`viewportable.agent-evidence.v2`): direct protrusion constraints can carry uniquely proven stylesheet/source path, selector, property, value, and active media context; ambiguous and indirect causes remain `source: null`.
 
 
 

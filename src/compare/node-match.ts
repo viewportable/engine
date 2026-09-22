@@ -112,6 +112,10 @@ export function crossVersionNodeKey(
   };
 }
 
+export function uniqueNodeByCrossVersionKey(nodes: LayoutNode[], key: string): LayoutNode | null {
+  return indexCrossVersionNodes(nodes).uniqueByKey.get(key)?.node ?? null;
+}
+
 function indexCrossVersionNodes(nodes: LayoutNode[]): CrossVersionNodeIndex {
   const nodesByIndex = new Map(nodes.map((node) => [node.index, node]));
   const grouped = new Map<string, CrossVersionNodeIndexEntry[]>();

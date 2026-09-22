@@ -138,6 +138,7 @@ export interface CssSourceReference {
   selector: string;
   property: string;
   value: string;
+  media: string | null;
 }
 
 export type RootCauseDiagnosis =
