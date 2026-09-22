@@ -23,11 +23,7 @@ function protrusionConstraint(
   const minWidthValue = node.styles['min-width']?.trim() ?? '';
   const minWidth = parsePixelValue(minWidthValue);
 
-  if (
-    minWidth !== null &&
-    minWidth > availableWidth + 1 &&
-    node.rect.width + 1 >= minWidth
-  ) {
+  if (minWidth !== null && minWidth > availableWidth + 1 && node.rect.width + 1 >= minWidth) {
     return { property: 'min-width', value: minWidthValue };
   }
 
@@ -78,19 +74,12 @@ export async function attributeStructuralFindingSources({
 
     await stabilizeViewport(page, width, height, waitMs);
     const selector = await buildStableSelector(node, capture.nodes, isUnique);
-    const source = await findUniqueCssSource(
-      page,
-      selector,
-      constraint.property,
-      constraint.value,
-    );
+    const source = await findUniqueCssSource(page, selector, constraint.property, constraint.value);
 
     if (source) finding.source = source;
   }
 }
 
-export function sourceAttributionForFinding(
-  finding: StructuralFinding,
-): CssSourceReference | null {
+export function sourceAttributionForFinding(finding: StructuralFinding): CssSourceReference | null {
   return finding.source ?? null;
 }
