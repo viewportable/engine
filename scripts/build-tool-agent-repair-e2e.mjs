@@ -375,7 +375,7 @@ try {
 
   const broken = await compare('before');
   assert(
-    broken.schemaVersion === 'viewportable.agent-evidence.v4',
+    broken.schemaVersion === 'viewportable.agent-evidence.v5',
     `before: unexpected schema version ${broken.schemaVersion}`,
   );
   assert(broken.outcome === 'findings', `before: expected findings, got ${broken.outcome}`);
@@ -387,6 +387,11 @@ try {
 
   const finding = broken.findings[0];
   assert(finding.type === 'protrusion', `before: unexpected finding ${finding.type}`);
+  assert(
+    finding.repair?.repairable === true &&
+      finding.repair?.reason === 'deterministic-authored-css',
+    `before: finding is not canonically repairable: ${JSON.stringify(finding.repair)}`,
+  );
   assert(
     finding.range?.kind === 'exact' &&
       finding.range.minWidth === 350 &&
@@ -666,6 +671,7 @@ try {
       outcome: broken.outcome,
       findingCount: broken.findings.length,
       type: finding.type,
+      repair: finding.repair,
       sourceProperty: finding.source?.property ?? null,
       sourceValue: finding.source?.value ?? null,
       exactRange: { minWidth: 350, maxWidth: 499 },
