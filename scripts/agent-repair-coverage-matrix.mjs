@@ -108,6 +108,11 @@ for (const scenario of ['min-width', 'width']) {
   assert(acceptance.scenario === scenario, `${scenario}: acceptance scenario mismatch`);
   assert(acceptance.initial?.type === 'protrusion', `${scenario}: expected protrusion`);
   assert(
+    acceptance.initial?.repair?.repairable === true &&
+      acceptance.initial?.repair?.reason === 'deterministic-authored-css',
+    `${scenario}: expected canonical repairable policy`,
+  );
+  assert(
     acceptance.initial?.sourceProperty === scenario,
     `${scenario}: expected source property ${scenario}, got ${acceptance.initial?.sourceProperty}`,
   );
@@ -123,6 +128,7 @@ for (const scenario of ['min-width', 'width']) {
 
   positive.push({
     scenario,
+    repair: acceptance.initial.repair,
     sourceProperty: acceptance.initial.sourceProperty,
     sourceValue: acceptance.initial.sourceValue,
     authoredLocation: acceptance.initial.authoredLocation,
