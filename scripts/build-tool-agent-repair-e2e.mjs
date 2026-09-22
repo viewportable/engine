@@ -388,8 +388,7 @@ try {
   const finding = broken.findings[0];
   assert(finding.type === 'protrusion', `before: unexpected finding ${finding.type}`);
   assert(
-    finding.repair?.repairable === true &&
-      finding.repair?.reason === 'deterministic-authored-css',
+    finding.repair?.repairable === true && finding.repair?.reason === 'deterministic-authored-css',
     `before: finding is not canonically repairable: ${JSON.stringify(finding.repair)}`,
   );
   assert(
