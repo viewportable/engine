@@ -362,7 +362,10 @@ try {
   );
   assert(broken.outcome === 'findings', `before: expected findings, got ${broken.outcome}`);
   assert(broken.exitCode === 1, `before: expected exit 1, got ${broken.exitCode}`);
-  assert(broken.findings?.length === 1, `before: expected 1 finding, got ${broken.findings?.length}`);
+  assert(
+    broken.findings?.length === 1,
+    `before: expected 1 finding, got ${broken.findings?.length}`,
+  );
 
   const finding = broken.findings[0];
   assert(finding.type === 'protrusion', `before: unexpected finding ${finding.type}`);
@@ -389,10 +392,16 @@ try {
 
   async function readSourceRange({ source, startLine, endLine }) {
     assert(source === targetSource, `read: source must be ${targetSource}`);
-    assert(Number.isInteger(startLine) && Number.isInteger(endLine), 'read: lines must be integers');
+    assert(
+      Number.isInteger(startLine) && Number.isInteger(endLine),
+      'read: lines must be integers',
+    );
     assert(startLine >= 1 && endLine >= startLine, 'read: invalid line range');
     assert(endLine - startLine + 1 <= 5, 'read: at most five lines are allowed');
-    assert(startLine <= targetLine && endLine >= targetLine, 'read: range must include attributed line');
+    assert(
+      startLine <= targetLine && endLine >= targetLine,
+      'read: range must include attributed line',
+    );
 
     const content = await readFile(targetPath, 'utf8');
     const lines = content.split('\n');
@@ -431,7 +440,10 @@ try {
     const content = await readFile(targetPath, 'utf8');
     const lines = content.split('\n');
     const current = lines[line - 1];
-    assert(current === expected, `replace: expected line mismatch; current=${JSON.stringify(current)}`);
+    assert(
+      current === expected,
+      `replace: expected line mismatch; current=${JSON.stringify(current)}`,
+    );
     assert(replacement !== current, 'replace: replacement must change the line');
 
     lines[line - 1] = replacement;
@@ -594,7 +606,11 @@ try {
   const finalSource = await readFile(targetPath, 'utf8');
   const changedLines = originalSource
     .split('\n')
-    .map((line, index) => ({ line: index + 1, before: line, after: finalSource.split('\n')[index] }))
+    .map((line, index) => ({
+      line: index + 1,
+      before: line,
+      after: finalSource.split('\n')[index],
+    }))
     .filter((item) => item.before !== item.after);
 
   assert(changedLines.length === 1, `expected one changed line, got ${changedLines.length}`);
