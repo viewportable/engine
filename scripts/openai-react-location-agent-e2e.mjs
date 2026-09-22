@@ -300,6 +300,7 @@ const instructions = [
   'Use read_attributed_range to inspect only a few lines around the browser-proven declaration range.',
   'You may modify only text inside that attributed range context through replace_in_attributed_range.',
   'Make the smallest exact source replacement that fixes the regression. Never rewrite or reformat the whole file.',
+  'Do not leave empty CSS rules or empty media blocks. If the attributed declaration is the only declaration in an introduced rule, remove the complete redundant rule/media block.',
   'After every replace_in_attributed_range call, call viewportable_compare again.',
   'Do not stop based on code inspection alone. Stop only after Viewportable returns outcome clean.',
   'Do not rewrite unrelated styling.',
@@ -479,11 +480,26 @@ async function runTool(name, args) {
     );
 
     const next = current.replace(args.oldText, args.newText);
+    const emptyAttributedRule = finding.source.selector + ' {\n  }';
+    if (next.includes(emptyAttributedRule)) {
+      toolHistory.push({
+        name,
+        accepted: false,
+        reason: 'replacement would leave an empty attributed CSS rule',
+      });
+      return {
+        ok: false,
+        error:
+          'This patch would leave the attributed CSS rule empty. Remove the complete redundant rule/media block instead.',
+      };
+    }
+
     const normalized = `${next.trimEnd()}\n`;
     await writeFile(stylesPath, normalized, 'utf8');
     await new Promise((resolveWait) => setTimeout(resolveWait, 500));
     toolHistory.push({
       name,
+      accepted: true,
       removedBytes: Buffer.byteLength(args.oldText),
       addedBytes: Buffer.byteLength(args.newText),
     });
