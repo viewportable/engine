@@ -152,11 +152,13 @@ export async function upsertCheckRun({
   };
 
   if (existing) {
+    const updateBody =
+      (existing.output?.annotations_count ?? 0) > 0 ? { ...body, output: rendered } : body;
     const check = await request(`/repos/${repository}/check-runs/${existing.id}`, {
       token,
       apiUrl,
       method: 'PATCH',
-      body,
+      body: updateBody,
     });
 
     return {
