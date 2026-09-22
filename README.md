@@ -152,9 +152,11 @@ rebuild_and_compare      # Sass + Vite + viewportable_compare
 0 findings
 ```
 
-There is no shell tool and no full-file read tool. The harness asserts that only one source line changed, exactly one write occurred, and the final V4 comparison is clean.
+There is no shell tool and no full-file read tool. The harness asserts that only one source line changed, exactly one write occurred, and the final V4 comparison is clean. Source-map identifiers may arrive as the raw `../../src/...` path, the normalized `src/...` form, or the resolved URL; all accepted aliases map to the same fixed authored target and never enable arbitrary path access.
 
-A repeatable real-model proof is available through the **Real Build-Tool Agent Repair** workflow. It uses the repository `OPEN_API_TOKEN` secret, GPT-5.6 through the OpenAI Responses API, strict JSON-schema function tools, and the same three tool handlers as scripted CI. Evidence is retained under `.slice/build-tool-agent-repair/`.
+A repeatable real-model proof is available through the **Real Build-Tool Agent Repair** workflow. It accepts any one of the repository secrets `OPENAI_API_KEY`, `OPENAI_API_TOKEN`, or `OPEN_API_TOKEN`, then uses GPT-5.6 through the OpenAI Responses API with strict JSON-schema function tools and the same three tool handlers as scripted CI. Evidence is retained under `.slice/build-tool-agent-repair/`.
+
+The accepted GPT-5.6 proof on 2026-09-22 read 121 of 258 source bytes, performed exactly one write, used exactly three tool calls (`read_source_range -> replace_source_line -> rebuild_and_compare`), and finished with zero findings. The API run consumed 5,170 total tokens.
 
 ### MCP golden agent flow
 
