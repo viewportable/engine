@@ -112,7 +112,7 @@ describe('Viewportable MCP runner', () => {
     const result = canonicalMcpResult(run);
 
     expect(result).toMatchObject({
-      schemaVersion: 'viewportable.agent-evidence.v1',
+      schemaVersion: 'viewportable.agent-evidence.v2',
       mode: 'compare',
       outcome: 'findings',
       exitCode: 1,
@@ -128,6 +128,7 @@ describe('Viewportable MCP runner', () => {
           id: 'introduced',
           direction: 'introduced',
           type: 'disappearance',
+          source: null,
         },
       ],
       evidence: {
@@ -163,7 +164,7 @@ describe('Viewportable MCP runner', () => {
     const result = canonicalMcpResult(run);
 
     expect(result).toMatchObject({
-      schemaVersion: 'viewportable.agent-evidence.v1',
+      schemaVersion: 'viewportable.agent-evidence.v2',
       mode: 'scan',
       outcome: 'findings',
       summary: {
@@ -194,7 +195,7 @@ describe('Viewportable MCP runner', () => {
     });
 
     expect(result).toMatchObject({
-      schemaVersion: 'viewportable.agent-evidence.v1',
+      schemaVersion: 'viewportable.agent-evidence.v2',
       outcome: 'infra_failure',
       exitCode: 2,
       findings: [],
