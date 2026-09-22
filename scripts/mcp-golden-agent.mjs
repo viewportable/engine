@@ -91,7 +91,11 @@ function structured(result, phase) {
 }
 
 function exactRange(finding) {
-  return finding?.exactRange?.minWidth === 350 && finding?.exactRange?.maxWidth === 499;
+  return (
+    finding?.range?.kind === 'exact' &&
+    finding?.range?.minWidth === 350 &&
+    finding?.range?.maxWidth === 499
+  );
 }
 
 const baselineHtml = await readFile('examples/golden-pr/app/index.html', 'utf8');
@@ -141,6 +145,10 @@ try {
   );
   const broken = structured(brokenCall, 'broken');
 
+  assert(
+    broken.schemaVersion === 'viewportable.agent-evidence.v1',
+    `broken: unexpected schema version ${broken.schemaVersion}`,
+  );
   assert(broken.outcome === 'findings', `broken: expected findings, got ${broken.outcome}`);
   assert(broken.exitCode === 1, `broken: expected exit 1, got ${broken.exitCode}`);
   assert(Array.isArray(broken.findings), 'broken: findings is not an array');
@@ -179,6 +187,10 @@ try {
   );
   const fixed = structured(fixedCall, 'fixed');
 
+  assert(
+    fixed.schemaVersion === 'viewportable.agent-evidence.v1',
+    `fixed: unexpected schema version ${fixed.schemaVersion}`,
+  );
   assert(fixed.outcome === 'clean', `fixed: expected clean, got ${fixed.outcome}`);
   assert(fixed.exitCode === 0, `fixed: expected exit 0, got ${fixed.exitCode}`);
   assert(Array.isArray(fixed.findings), 'fixed: findings is not an array');
