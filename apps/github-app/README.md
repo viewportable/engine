@@ -120,9 +120,22 @@ Content-Type: application/json
   "detailsUrl": "https://app.viewportable.dev/reviews/...",
   "report": {
     "findings": []
-  }
+  },
+  "annotations": [
+    {
+      "path": "src/renderer/styles.css",
+      "start_line": 575,
+      "end_line": 575,
+      "start_column": 5,
+      "end_column": 22,
+      "annotation_level": "failure",
+      "message": "850-949px exact - responsive protrusion"
+    }
+  ]
 }
 ```
+
+Source annotations are optional. The authenticated executor is responsible for building them only after deterministic stylesheet-to-checkout verification. The control plane normalizes them again, rejects absolute or escaping paths, caps the request at 50 annotations, and forces regression annotations to `failure` level before the App-owned Check Run is updated.
 
 Conclusion mapping stays aligned with Engine semantics:
 
