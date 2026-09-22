@@ -72,6 +72,9 @@ for (const required of [
   'scripts/github-pr-comment.mjs',
   'scripts/github-check-run.mjs',
   'scripts/github-annotations.mjs',
+  'scripts/build-tool-source-map-acceptance.mjs',
+  'test/fixtures/build-tool-source-map/vite.config.mjs',
+  'test/fixtures/build-tool-source-map/src/Card.module.scss',
   'examples/github/compare.yml',
 ]) {
   await requireFile(required);
