@@ -137,6 +137,21 @@ const cssSourceLocationSchema = z.object({
   end: cssSourceLocationPointSchema,
 });
 
+const cssAuthoredSourceLocationSchema = z.object({
+  kind: z.literal('source-map-property'),
+  confidence: z.literal('deterministic'),
+  coordinateSpace: z.literal('authored-source'),
+  source: z.string().min(1),
+  resolvedSource: z.string().min(1),
+  start: cssSourceLocationPointSchema,
+  sourceContentSha256: z.string().regex(/^[0-9a-f]{64}$/),
+  sourceMap: z.object({
+    version: z.literal(3),
+    kind: z.enum(['inline', 'external']),
+    url: z.string().url().nullable(),
+  }),
+});
+
 const cssSourceReferenceSchema = z.object({
   stylesheet: z.string().nullable(),
   selector: z.string().min(1),
@@ -144,6 +159,7 @@ const cssSourceReferenceSchema = z.object({
   value: z.string().min(1),
   media: z.string().nullable(),
   location: cssSourceLocationSchema.nullable().optional(),
+  authoredLocation: cssAuthoredSourceLocationSchema.nullable().optional(),
 });
 
 const rootCauseDiagnosisSchema = z.discriminatedUnion('kind', [
