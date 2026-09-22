@@ -115,9 +115,12 @@ The repository also keeps a production-build acceptance path for authored source
 npm run acceptance:build-tool-source-map
 ```
 
-The harness builds a temporary React application with pinned Vite 8.3.0 and Dart Sass 1.104.1, CSS Modules, and a PostCSS declaration transform. It then serves the built `dist/`, runs the production Viewportable CLI against baseline and candidate pages, requires an exact 350-499px protrusion, and proves that the generated CSS declaration maps back to the checked-in `test/fixtures/build-tool-source-map/src/Card.module.scss`.
+The harness builds a temporary React application with pinned Vite 8.3.0 and Dart Sass 1.104.1, CSS Modules, and a PostCSS declaration transform. The acceptance deliberately covers two production CSS paths:
 
-Because real bundlers often emit source paths such as `../../src/Card.module.scss`, GitHub source resolution may use a checkout search only when the path suffix and SHA-256 `sourcesContent` proof identify exactly one file. Zero or multiple verified files fail closed.
+- Vite-native CSS Module output: Vite 8.3.0 currently emits the CSS asset but no CSS `.map` even with `build.sourcemap: true`; the harness records that limitation instead of inventing authored coordinates.
+- Sass precompile -> Vite public asset copy: Dart Sass emits an external Source Map v3 with embedded sources, Vite copies the CSS/map unchanged into `dist/`, and Viewportable must map the exact 350-499px protrusion back to the checked-in `test/fixtures/build-tool-source-map/src/Candidate.source.scss`.
+
+Because real build tools often emit source paths such as `../../src/Candidate.source.scss`, GitHub source resolution may use a checkout search only when the path suffix and SHA-256 `sourcesContent` proof identify exactly one file. Zero or multiple verified files fail closed.
 
 Retained acceptance evidence is written under:
 
