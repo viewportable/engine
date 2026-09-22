@@ -1,0 +1,9 @@
+$card-width: 400px;
+
+#parent { width: 300px; border: 1px solid #ccc; }
+#subject { width: 120px; height: 80px; }
+@media (min-width: 350px) and (max-width: 499px) {
+  #subject {
+    min-width: $card-width;
+  }
+}
