@@ -135,25 +135,68 @@ try {
     { cwd: appRoot },
   );
 
+  const precompiledRoot = path.join(appRoot, 'public/precompiled');
+  await mkdir(precompiledRoot, { recursive: true });
+
+  for (const [sourceName, outputName] of [
+    ['Baseline.source.scss', 'baseline.css'],
+    ['Candidate.source.scss', 'candidate.css'],
+  ]) {
+    await run(
+      'npm',
+      [
+        'exec',
+        '--',
+        'sass',
+        '--source-map',
+        '--embed-sources',
+        '--style=expanded',
+        `src/${sourceName}`,
+        `public/precompiled/${outputName}`,
+      ],
+      { cwd: appRoot },
+    );
+  }
+
   await run('npm', ['exec', '--', 'vite', 'build'], { cwd: appRoot });
 
   const distRoot = path.join(appRoot, 'dist');
   const builtFiles = await walk(distRoot);
   const cssFiles = builtFiles.filter((file) => file.endsWith('.css'));
   const cssMaps = builtFiles.filter((file) => file.endsWith('.css.map'));
+  const nativeCssFiles = cssFiles.filter((file) =>
+    file.includes(`${path.sep}assets${path.sep}`),
+  );
+  const nativeCssMaps = cssMaps.filter((file) =>
+    file.includes(`${path.sep}assets${path.sep}`),
+  );
+  const precompiledCssMaps = cssMaps.filter((file) =>
+    file.includes(`${path.sep}precompiled${path.sep}`),
+  );
 
-  assert(cssFiles.length >= 1, 'Vite build emitted no CSS asset');
-  assert(cssMaps.length >= 1, 'Vite production build emitted no CSS source map');
+  assert(nativeCssFiles.length >= 1, 'Vite build emitted no CSS Module asset');
+  assert(
+    nativeCssMaps.length === 0,
+    `expected Vite 8.3.0 native CSS production maps to be absent, got ${nativeCssMaps.length}`,
+  );
+  assert(
+    precompiledCssMaps.length === 2,
+    `expected two Sass precompile maps copied by Vite, got ${precompiledCssMaps.length}`,
+  );
 
-  const candidateHtml = await readFile(path.join(distRoot, 'candidate.html'), 'utf8');
-  const candidateCssHref = candidateHtml.match(/<link[^>]+href="([^"]+\.css)"/)?.[1];
-  assert(candidateCssHref, 'candidate build does not reference a CSS asset');
+  const nativeCss = (
+    await Promise.all(nativeCssFiles.map((file) => readFile(file, 'utf8')))
+  ).join('\n');
+  assert(
+    nativeCss.includes('-webkit-user-select'),
+    'PostCSS transform did not run on the Vite CSS Module asset',
+  );
 
-  const candidateCssPath = path.join(distRoot, candidateCssHref.replace(/^\/+/, ''));
+  const candidateCssPath = path.join(distRoot, 'precompiled/candidate.css');
   const candidateCss = await readFile(candidateCssPath, 'utf8');
   assert(
     /sourceMappingURL=[^\s*]+\.css\.map/.test(candidateCss),
-    'candidate CSS does not expose its production source map',
+    'Sass precompiled candidate CSS does not expose its source map after Vite copy',
   );
 
   const fixtureServer = await startStaticServer(distRoot);
@@ -206,10 +249,10 @@ try {
       'expected authored-source coordinate space',
     );
     assert(
-      authored.source?.endsWith('Card.module.scss'),
+      authored.source?.endsWith('Candidate.source.scss'),
       `unexpected authored source: ${authored.source}`,
     );
-    assert(authored.start?.line === 21, `expected authored line 21, got ${authored.start?.line}`);
+    assert(authored.start?.line === 16, `expected authored line 16, got ${authored.start?.line}`);
     assert(
       authored.start?.column === 5,
       `expected authored column 5, got ${authored.start?.column}`,
@@ -217,7 +260,7 @@ try {
     assert(authored.sourceMap?.version === 3, 'expected Source Map v3');
     assert(authored.sourceMap?.kind === 'external', 'expected external production CSS source map');
 
-    const repositoryAuthoredPath = path.join(fixtureRoot, 'src/Card.module.scss');
+    const repositoryAuthoredPath = path.join(fixtureRoot, 'src/Candidate.source.scss');
     const repositoryAuthoredContent = await readFile(repositoryAuthoredPath, 'utf8');
     const repositoryHash = createHash('sha256').update(repositoryAuthoredContent).digest('hex');
     assert(
@@ -232,10 +275,10 @@ try {
     assert(annotations.annotations.length === 1, 'expected one verified authored annotation');
     const annotation = annotations.annotations[0];
     assert(
-      annotation.path === 'test/fixtures/build-tool-source-map/src/Card.module.scss',
+      annotation.path === 'test/fixtures/build-tool-source-map/src/Candidate.source.scss',
       `unexpected annotation path: ${annotation.path}`,
     );
-    assert(annotation.start_line === 21, `unexpected annotation line: ${annotation.start_line}`);
+    assert(annotation.start_line === 16, `unexpected annotation line: ${annotation.start_line}`);
     assert(
       annotation.start_column === 5 && annotation.end_column === 13,
       `unexpected annotation columns: ${annotation.start_column}-${annotation.end_column}`,
@@ -252,7 +295,9 @@ try {
       },
       build: {
         candidateCss: path.relative(appRoot, candidateCssPath),
-        cssSourceMapCount: cssMaps.length,
+        viteNativeCssAssetCount: nativeCssFiles.length,
+        viteNativeCssSourceMapCount: nativeCssMaps.length,
+        sassPrecompiledCssSourceMapCount: precompiledCssMaps.length,
       },
       finding: {
         type: finding.type,
