@@ -1,9 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
-import {
-  AgentEvidenceV1Schema,
-  type AgentEvidenceV1,
-} from './contracts/agent-evidence.js';
+import { AgentEvidenceV1Schema, type AgentEvidenceV1 } from './contracts/agent-evidence.js';
 import { canonicalMcpResult, mcpTextSummary, runEngineForMcp } from './mcp-runner.js';
 
 const widthsSchema = z
