@@ -2,8 +2,8 @@ import { spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AgentEvidenceV4 } from './contracts/agent-evidence-v4.js';
-import { buildCanonicalAgentEvidenceV4 } from './contracts/build-agent-evidence-v4.js';
+import type { AgentEvidenceV5 } from './contracts/agent-evidence-v5.js';
+import { buildCanonicalAgentEvidenceV5 } from './contracts/build-agent-evidence-v5.js';
 
 export interface EngineMcpOptions {
   widths?: number[];
@@ -125,11 +125,11 @@ export async function runEngineForMcp({
   };
 }
 
-export function canonicalMcpResult(run: EngineMcpRun): AgentEvidenceV4 {
-  return buildCanonicalAgentEvidenceV4(run);
+export function canonicalMcpResult(run: EngineMcpRun): AgentEvidenceV5 {
+  return buildCanonicalAgentEvidenceV5(run);
 }
 
-export function mcpTextSummary(result: AgentEvidenceV4): string {
+export function mcpTextSummary(result: AgentEvidenceV5): string {
   const evidencePath = result.evidence.reportPath;
 
   if (result.mode === 'compare') {
