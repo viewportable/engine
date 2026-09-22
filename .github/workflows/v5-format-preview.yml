@@ -1,0 +1,31 @@
+name: V5 Formatter Preview
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/v5-format-preview.yml'
+      - 'scripts/agent-repair-coverage-matrix.mjs'
+      - 'scripts/build-tool-agent-repair-e2e.mjs'
+      - 'scripts/build-tool-scan-agent-repair-e2e.mjs'
+      - 'scripts/mcp-golden-agent.mjs'
+      - 'test/agent-evidence-v5.test.ts'
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Render formatter diff
+        shell: bash
+        run: |
+          npm run fmt
+          git diff -- scripts/agent-repair-coverage-matrix.mjs scripts/build-tool-agent-repair-e2e.mjs scripts/build-tool-scan-agent-repair-e2e.mjs scripts/mcp-golden-agent.mjs test/agent-evidence-v5.test.ts
