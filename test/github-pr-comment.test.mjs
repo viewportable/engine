@@ -5,6 +5,28 @@ import {
   upsertPullRequestComment,
 } from '../scripts/github-pr-comment.mjs';
 
+function agentEvidence() {
+  return {
+    schemaVersion: 'viewportable.agent-evidence.v5',
+    findings: [
+      {
+        id: 'structural-a',
+        repair: {
+          repairable: false,
+          reason: 'unsupported-finding',
+        },
+      },
+      {
+        id: 'structural-b',
+        repair: {
+          repairable: false,
+          reason: 'unsupported-finding',
+        },
+      },
+    ],
+  };
+}
+
 function report() {
   return {
     summary: {
@@ -48,15 +70,21 @@ function report() {
 
 describe('GitHub pull request evidence', () => {
   it('renders canonical findings with revision and artifact evidence', () => {
-    const markdown = renderPullRequestComment(report(), {
-      artifactUrl: 'https://github.com/example/actions/runs/1/artifacts/2',
-      baselineSha: '111111111111aaaaaaaa',
-      candidateSha: '222222222222bbbbbbbb',
-      engineRef: 'v0.1.0-rc.1',
-    });
+    const markdown = renderPullRequestComment(
+      report(),
+      {
+        artifactUrl: 'https://github.com/example/actions/runs/1/artifacts/2',
+        baselineSha: '111111111111aaaaaaaa',
+        candidateSha: '222222222222bbbbbbbb',
+        engineRef: 'v0.1.0-rc.1',
+      },
+      agentEvidence(),
+    );
 
     expect(markdown).toContain(PR_COMMENT_MARKER);
     expect(markdown).toContain('2 structural regressions introduced');
+    expect(markdown).toContain('Repair policy:** 0 auto-repairable · 2 manual review');
+    expect(markdown).toContain('Manual review · unsupported-finding');
     expect(markdown).toContain('350-499px exact');
     expect(markdown).toContain('id:checkout-button disappeared');
     expect(markdown).toContain('visible');
