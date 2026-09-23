@@ -992,11 +992,7 @@ async function runCompare(
   return exitCode;
 }
 
-async function runSlice(
-  url: string,
-  options: RunOptions,
-  renderOutput = true,
-): Promise<number> {
+async function runSlice(url: string, options: RunOptions, renderOutput = true): Promise<number> {
   const widths = parseWidths(options.widths);
   const height = parsePositiveInteger(options.height, '--height');
   const timeout = parsePositiveInteger(options.timeout, '--timeout');
