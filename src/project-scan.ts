@@ -144,8 +144,7 @@ export async function runProjectScan({
       evidence = await readRouteEvidence(routeOut);
     }
 
-    const reportPath =
-      evidence.outcome === 'infra_failure' ? null : evidence.evidence.reportPath;
+    const reportPath = evidence.outcome === 'infra_failure' ? null : evidence.evidence.reportPath;
     const agentEvidencePath = path.join(routeOut, PROJECT_AGENT_EVIDENCE_FILENAME);
 
     routeEvidence.push({ route, url, evidence });
@@ -173,10 +172,7 @@ export async function runProjectScan({
     cleanRoutes: routeResults.filter((route) => route.status === 'pass').length,
     findingRoutes: routeResults.filter((route) => route.status === 'fail').length,
     infraFailureRoutes: routeResults.filter((route) => route.status === 'infra_failure').length,
-    viewportsChecked: routeResults.reduce(
-      (sum, route) => sum + route.summary.viewportsChecked,
-      0,
-    ),
+    viewportsChecked: routeResults.reduce((sum, route) => sum + route.summary.viewportsChecked, 0),
     findingCount: routeResults.reduce((sum, route) => sum + route.summary.findingCount, 0),
     durationMs,
   };
