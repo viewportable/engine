@@ -44,18 +44,14 @@ export function canonicalRepairPolicyForGroup(agentEvidence, groupId) {
     .map((finding) => finding?.repair)
     .filter(
       (repair) =>
-        repair &&
-        typeof repair.repairable === 'boolean' &&
-        typeof repair.reason === 'string',
+        repair && typeof repair.repairable === 'boolean' && typeof repair.reason === 'string',
     );
 
   if (repairs.length === 0) return null;
 
   const first = repairs[0];
   const consistent = repairs.every(
-    (repair) =>
-      repair.repairable === first.repairable &&
-      repair.reason === first.reason,
+    (repair) => repair.repairable === first.repairable && repair.reason === first.reason,
   );
 
   return consistent
