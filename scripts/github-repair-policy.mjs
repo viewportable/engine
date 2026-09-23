@@ -30,6 +30,42 @@ export function canonicalRepairPolicies(agentEvidence) {
   return policies;
 }
 
+export function canonicalRepairPolicyForGroup(agentEvidence, groupId) {
+  if (
+    agentEvidence?.schemaVersion !== AGENT_EVIDENCE_SCHEMA_VERSION_V5 ||
+    !Array.isArray(agentEvidence.findings) ||
+    typeof groupId !== 'string'
+  ) {
+    return null;
+  }
+
+  const repairs = agentEvidence.findings
+    .filter((finding) => finding?.id === groupId || finding?.groupId === groupId)
+    .map((finding) => finding?.repair)
+    .filter(
+      (repair) =>
+        repair &&
+        typeof repair.repairable === 'boolean' &&
+        typeof repair.reason === 'string',
+    );
+
+  if (repairs.length === 0) return null;
+
+  const first = repairs[0];
+  const consistent = repairs.every(
+    (repair) =>
+      repair.repairable === first.repairable &&
+      repair.reason === first.reason,
+  );
+
+  return consistent
+    ? {
+        repairable: first.repairable,
+        reason: first.reason,
+      }
+    : null;
+}
+
 export function repairPolicyText(repair) {
   if (!repair) return 'Repair policy unavailable';
   if (repair.repairable) return 'Auto-repairable';
