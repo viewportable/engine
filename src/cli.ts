@@ -28,6 +28,7 @@ import { diagnoseHorizontalOverflowRoot } from './diagnose.js';
 import { groupHorizontalOverflow } from './grouping.js';
 import { writeResults } from './report.js';
 import { writeCanonicalAgentEvidenceV5 } from './contracts/write-agent-evidence-v5.js';
+import { runProjectScan } from './project-scan.js';
 import { writeElementProtrusionResearch } from './research/element-protrusion-output.js';
 import { writeSmallRangeOverlapResearch } from './research/small-range-output.js';
 import { buildStableSelector, makePageUniquenessCheck } from './selector.js';
@@ -991,7 +992,11 @@ async function runCompare(
   return exitCode;
 }
 
-async function runSlice(url: string, options: RunOptions): Promise<number> {
+async function runSlice(
+  url: string,
+  options: RunOptions,
+  renderOutput = true,
+): Promise<number> {
   const widths = parseWidths(options.widths);
   const height = parsePositiveInteger(options.height, '--height');
   const timeout = parsePositiveInteger(options.timeout, '--timeout');
@@ -1233,10 +1238,12 @@ async function runSlice(url: string, options: RunOptions): Promise<number> {
       stderr: '',
     });
 
-    if (options.json) {
-      process.stdout.write(`${JSON.stringify(results, null, 2)}\n`);
-    } else {
-      renderTable(url, viewports, rootCauses, boundaryDisplays, outputPath, durationMs);
+    if (renderOutput) {
+      if (options.json) {
+        process.stdout.write(`${JSON.stringify(results, null, 2)}\n`);
+      } else {
+        renderTable(url, viewports, rootCauses, boundaryDisplays, outputPath, durationMs);
+      }
     }
 
     return exitCode;
@@ -1276,9 +1283,54 @@ program
     const loaded = await loadSliceConfig(options.config);
     const resolved = resolveRunOptions(command, options, loaded.config);
 
-    process.exitCode = resolved.baselineUrl
-      ? await runCompare(url, resolved.baselineUrl, resolved)
-      : await runSlice(url, resolved);
+    if (resolved.baselineUrl) {
+      process.exitCode = await runCompare(url, resolved.baselineUrl, resolved);
+      return;
+    }
+
+    if (loaded.config.routes?.length) {
+      const execution = await runProjectScan({
+        baseUrl: url,
+        routes: loaded.config.routes,
+        outDir: resolved.out,
+        runRoute: (routeUrl, routeOut) =>
+          runSlice(
+            routeUrl,
+            {
+              ...resolved,
+              out: routeOut,
+            },
+            false,
+          ),
+      });
+
+      if (resolved.json) {
+        process.stdout.write(`${JSON.stringify(execution.report, null, 2)}\n`);
+      } else {
+        process.stdout.write(`\n  Viewportable Engine project scan | ${url}\n\n`);
+        for (const route of execution.report.routes) {
+          const status =
+            route.status === 'pass' ? 'PASS' : route.status === 'fail' ? 'FAIL' : 'INFRA';
+          process.stdout.write(
+            `  ${status.padEnd(5, ' ')} ${route.route} | ` +
+              `${route.summary.findingCount} finding(s) | ` +
+              `${route.summary.viewportsChecked} viewport(s)\n`,
+          );
+        }
+        const summary = execution.report.summary;
+        process.stdout.write(
+          `\n  ${summary.cleanRoutes} clean / ${summary.findingRoutes} findings / ` +
+            `${summary.infraFailureRoutes} infra | ${summary.routesChecked} routes | ` +
+            `${summary.viewportsChecked} viewports\n`,
+        );
+        process.stdout.write(`  ${execution.reportPath}\n\n`);
+      }
+
+      process.exitCode = execution.exitCode;
+      return;
+    }
+
+    process.exitCode = await runSlice(url, resolved);
   });
 
 try {
