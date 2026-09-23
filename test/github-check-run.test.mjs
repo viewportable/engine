@@ -11,6 +11,28 @@ import {
   upsertCheckRun,
 } from '../scripts/github-check-run.mjs';
 
+function agentEvidence() {
+  return {
+    schemaVersion: 'viewportable.agent-evidence.v5',
+    findings: [
+      {
+        id: 'structural-a',
+        repair: {
+          repairable: false,
+          reason: 'unsupported-finding',
+        },
+      },
+      {
+        id: 'structural-b',
+        repair: {
+          repairable: false,
+          reason: 'unsupported-finding',
+        },
+      },
+    ],
+  };
+}
+
 function report() {
   return {
     summary: {
@@ -304,10 +326,12 @@ describe('GitHub Check Run', () => {
   });
 
   it('renders compact failing evidence from canonical findings', () => {
-    const output = renderCheckOutput(report(), 1);
+    const output = renderCheckOutput(report(), 1, agentEvidence());
 
     expect(output.title).toBe('2 structural regressions introduced');
     expect(output.summary).toContain('2 structural regressions introduced');
+    expect(output.summary).toContain('Repair policy:** 0 auto-repairable · 2 manual review');
+    expect(output.summary).toContain('Manual review · unsupported-finding');
     expect(output.summary).toContain('350-499px exact');
     expect(output.summary).toContain('id:checkout-button disappeared');
     expect(output.summary).toContain('id:cta reparented');
@@ -366,6 +390,7 @@ describe('GitHub Check Run', () => {
       headSha: 'abc123',
       exitCode: 1,
       report: report(),
+      agentEvidence: agentEvidence(),
       detailsUrl: 'https://github.com/example/repo/actions/runs/1',
       token: 'token',
       request,
