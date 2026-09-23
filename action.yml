@@ -44,10 +44,10 @@ outputs:
     description: Engine CLI exit code (0 clean, 1 findings, 2 scanner/setup failure)
     value: ${{ steps.scan.outputs.exit_code }}
   result_path:
-    description: Path to results.json or structural-diff.json
+    description: Path to results.json, structural-diff.json, or project-results.json
     value: ${{ steps.scan.outputs.result_path }}
   agent_evidence_path:
-    description: Path to strict Canonical Agent Evidence V5 sidecar
+    description: Path to canonical agent evidence (V5 for single-route runs or project envelope for project scans)
     value: ${{ steps.scan.outputs.agent_evidence_path }}
   artifact_url:
     description: URL of the uploaded Viewportable Engine artifact when available
@@ -113,6 +113,10 @@ runs:
         code=$?
         set -e
 
+        if [[ -f "$SLICE_OUT/project-results.json" ]]; then
+          result_name="project-results.json"
+        fi
+
         echo "exit_code=$code" >> "$GITHUB_OUTPUT"
         echo "result_path=$SLICE_OUT/$result_name" >> "$GITHUB_OUTPUT"
         echo "agent_evidence_path=$SLICE_OUT/agent-evidence.json" >> "$GITHUB_OUTPUT"
@@ -134,6 +138,7 @@ runs:
         path: |
           ${{ steps.scan.outputs.result_path }}
           ${{ steps.scan.outputs.agent_evidence_path }}
+          ${{ inputs.out }}/routes
         if-no-files-found: ignore
         include-hidden-files: true
 
