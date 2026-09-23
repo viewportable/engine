@@ -54,6 +54,9 @@ jobs:
       - name: Validate release layout
         run: npm run validate:release:current
 
+      - name: GitHub App V5 result acceptance
+        run: npm run acceptance:github-app-v5-result
+
       # Browser-dependent checks are intentionally last because Chromium setup is expensive.
       - name: Install Chromium
         run: npx playwright install --with-deps chromium

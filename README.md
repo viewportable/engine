@@ -689,7 +689,17 @@ installation_id
   -> completed App-owned Check Run
 ```
 
-The first runnable control-plane slice lives in `apps/github-app/`. It verifies signed GitHub webhooks, consumes installation/repository lifecycle events, creates deterministic project/review identities, authenticates with installation access tokens, and completes Checks from returned Engine evidence. Executor result submission accepts canonical `agentEvidence` alongside the rich report so App-owned Checks use the same V5 repair decision as standalone Action mode. App credentials never enter candidate execution. See [ADR-0002](docs/adr/0002-github-app-check-ownership.md).
+The first runnable control-plane slice lives in `apps/github-app/`. It verifies signed GitHub webhooks, consumes installation/repository lifecycle events, creates deterministic project/review identities, authenticates with installation access tokens, and completes Checks from returned Engine evidence. Executor result submission accepts canonical `agentEvidence` alongside the rich report so App-owned Checks use the same V5 repair decision as standalone Action mode. App credentials never enter candidate execution.
+
+The HTTP result path has a permanent acceptance:
+
+```bash
+npm run acceptance:github-app-v5-result
+```
+
+It starts the real App server on an ephemeral local port, queues an App-owned review, rejects an invalid bearer token, submits a real `POST /api/reviews/:id/result` containing the rich report plus Canonical Agent Evidence V5, verifies the resulting `Manual review · unsupported-finding` Check output and `block` decision, and then proves duplicate result delivery is idempotent.
+
+See [ADR-0002](docs/adr/0002-github-app-check-ownership.md).
 
 The copy-ready single-render workflow lives at `examples/github/slice.yml`. A full pull-request example that checks out `base.sha` and `head.sha`, starts both versions, and compares them lives at `examples/github/compare.yml`. The repository CI exercises both Action modes end to end.
 
