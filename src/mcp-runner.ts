@@ -2,8 +2,12 @@ import { spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AgentEvidenceV5 } from './contracts/agent-evidence-v5.js';
+import { AgentEvidenceV5Schema, type AgentEvidenceV5 } from './contracts/agent-evidence-v5.js';
 import { buildCanonicalAgentEvidenceV5 } from './contracts/build-agent-evidence-v5.js';
+import {
+  ProjectAgentEvidenceV1Schema,
+  type ProjectAgentEvidenceV1,
+} from './contracts/project-agent-evidence-v1.js';
 
 export interface EngineMcpOptions {
   widths?: number[];
@@ -23,7 +27,10 @@ export interface EngineMcpRun {
   reportPath: string;
   report: Record<string, unknown> | null;
   stderr: string;
+  agentEvidence?: unknown;
 }
+
+export type CanonicalMcpResult = AgentEvidenceV5 | ProjectAgentEvidenceV1;
 
 function cliPath(): string {
   return fileURLToPath(new URL('./cli.mjs', import.meta.url));
@@ -84,8 +91,7 @@ export async function runEngineForMcp({
 }): Promise<EngineMcpRun> {
   const mode = baselineUrl ? 'compare' : 'scan';
   const outDir = await createOutDir(options.outBase ?? '.slice/mcp', mode);
-  const resultName = baselineUrl ? 'structural-diff.json' : 'results.json';
-  const reportPath = join(outDir, resultName);
+  const defaultResultName = baselineUrl ? 'structural-diff.json' : 'results.json';
   const args = buildEngineArgs({ candidateUrl, baselineUrl, outDir, options });
 
   const child = spawnImpl(process.execPath, args, {
@@ -108,11 +114,28 @@ export async function runEngineForMcp({
     child.once('close', (code) => resolveExit(code ?? 2));
   });
 
+  let reportPath = join(outDir, defaultResultName);
+  if (!baselineUrl) {
+    try {
+      await readFile(join(outDir, 'project-results.json'), 'utf8');
+      reportPath = join(outDir, 'project-results.json');
+    } catch {
+      // Single-page scan keeps the ordinary results.json path.
+    }
+  }
+
   let report: Record<string, unknown> | null = null;
   try {
     report = JSON.parse(await readFile(reportPath, 'utf8')) as Record<string, unknown>;
   } catch {
     report = null;
+  }
+
+  let agentEvidence: unknown;
+  try {
+    agentEvidence = JSON.parse(await readFile(join(outDir, 'agent-evidence.json'), 'utf8'));
+  } catch {
+    agentEvidence = undefined;
   }
 
   return {
@@ -122,15 +145,30 @@ export async function runEngineForMcp({
     reportPath,
     report,
     stderr: stderr.trim(),
+    agentEvidence,
   };
 }
 
-export function canonicalMcpResult(run: EngineMcpRun): AgentEvidenceV5 {
+export function canonicalMcpResult(run: EngineMcpRun): CanonicalMcpResult {
+  const project = ProjectAgentEvidenceV1Schema.safeParse(run.agentEvidence);
+  if (project.success) return project.data;
+
+  const v5 = AgentEvidenceV5Schema.safeParse(run.agentEvidence);
+  if (v5.success) return v5.data;
+
   return buildCanonicalAgentEvidenceV5(run);
 }
 
-export function mcpTextSummary(result: AgentEvidenceV5): string {
+export function mcpTextSummary(result: CanonicalMcpResult): string {
   const evidencePath = result.evidence.reportPath;
+
+  if (result.mode === 'project-scan') {
+    return (
+      `Viewportable project scan: ${result.outcome}; ${result.summary.findingCount} finding(s); ` +
+      `${result.summary.routesChecked} route(s); ${result.summary.viewportsChecked} viewport(s); ` +
+      `evidence: ${evidencePath}`
+    );
+  }
 
   if (result.mode === 'compare') {
     return (
