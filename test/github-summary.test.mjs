@@ -31,6 +31,7 @@ describe('GitHub summary', () => {
       ],
       rootCauses: [
         {
+          id: 'root-1',
           type: 'horizontal-overflow',
           selector: 'section.grid',
           boundaries: [{ boundary: 742 }],
@@ -47,12 +48,24 @@ describe('GitHub summary', () => {
           boundary: 768,
         },
       ],
+    }, {
+      schemaVersion: 'viewportable.agent-evidence.v5',
+      findings: [
+        {
+          id: 'scan-finding-1',
+          groupId: 'root-1',
+          repair: {
+            repairable: true,
+            reason: 'deterministic-authored-css',
+          },
+        },
+      ],
     });
 
     expect(markdown).toContain('**1 failing viewports / 2 checked** · 1 suppressed');
     expect(markdown).toContain('button.help covers button.apply (63%)');
     expect(markdown).toContain('| 768px | PASS | 1 suppressed |');
-    expect(markdown).toContain('| section.grid | 742px | width: 720px |');
+    expect(markdown).toContain('| section.grid | 742px | width: 720px | Auto-repairable |');
     expect(markdown).toContain('| issue-2 | fixed-content-occlusion | 768px |');
   });
 
@@ -202,6 +215,18 @@ describe('GitHub summary', () => {
         },
       ],
       boundaries: [],
+    }, {
+      schemaVersion: 'viewportable.agent-evidence.v5',
+      findings: [
+        {
+          id: 'wrapping-finding',
+          groupId: 'root-1',
+          repair: {
+            repairable: false,
+            reason: 'unsupported-finding',
+          },
+        },
+      ],
     });
 
     expect(markdown).toContain(
@@ -210,7 +235,7 @@ describe('GitHub summary', () => {
     expect(markdown).not.toContain('wrapping: #terms wraps below siblings');
     expect(markdown).not.toContain('wrapping: #privacy wraps below siblings');
     expect(markdown).toContain(
-      '| #footer-links | - | Grouped sibling wrapping · review: authored reflow candidate · 2 transitions |',
+      '| #footer-links | - | Grouped sibling wrapping · review: authored reflow candidate · 2 transitions | Manual review · unsupported-finding |',
     );
     expect(markdown).not.toContain('undefined');
   });
