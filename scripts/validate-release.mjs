@@ -77,6 +77,7 @@ for (const required of [
   'scripts/github-check-run.mjs',
   'scripts/github-annotations.mjs',
   'scripts/github-repair-policy.mjs',
+  'scripts/github-app-v5-result-acceptance.mjs',
   'scripts/build-tool-source-map-acceptance.mjs',
   'scripts/build-tool-agent-repair-e2e.mjs',
   'scripts/agent-repair-coverage-matrix.mjs',
