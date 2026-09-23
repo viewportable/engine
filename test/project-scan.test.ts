@@ -103,9 +103,7 @@ describe('multi-page project scan', () => {
       const persisted = JSON.parse(await readFile(execution.agentEvidencePath, 'utf8'));
       expect(persisted.schemaVersion).toBe('viewportable.project-agent-evidence.v1');
       expect(execution.report.routes[0]?.reportPath).toContain('routes/001-root/results.json');
-      expect(execution.report.routes[1]?.reportPath).toContain(
-        'routes/002-dashboard/results.json',
-      );
+      expect(execution.report.routes[1]?.reportPath).toContain('routes/002-dashboard/results.json');
     } finally {
       await rm(outDir, { recursive: true, force: true });
     }
