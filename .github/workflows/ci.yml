@@ -106,6 +106,73 @@ jobs:
           artifact-name: slice-action-smoke
           install-browser: 'false'
 
+      - name: GitHub Action project scan
+        id: project-action
+        continue-on-error: true
+        uses: ./
+        with:
+          url: http://127.0.0.1:4173
+          config: examples/github/action-project.config.json
+          out: .slice/action-project-smoke
+          artifact-name: slice-action-project-smoke
+          install-browser: 'false'
+
+      - name: Verify GitHub Action project scan
+        env:
+          SLICE_PROJECT_OUTCOME: ${{ steps.project-action.outcome }}
+          SLICE_PROJECT_EXIT_CODE: ${{ steps.project-action.outputs.exit_code }}
+          SLICE_PROJECT_RESULT_PATH: ${{ steps.project-action.outputs.result_path }}
+          SLICE_PROJECT_AGENT_EVIDENCE_PATH: ${{ steps.project-action.outputs.agent_evidence_path }}
+        run: |
+          test "$SLICE_PROJECT_OUTCOME" = "failure"
+          test "$SLICE_PROJECT_EXIT_CODE" = "1"
+          test "$SLICE_PROJECT_RESULT_PATH" = ".slice/action-project-smoke/project-results.json"
+          test "$SLICE_PROJECT_AGENT_EVIDENCE_PATH" = ".slice/action-project-smoke/agent-evidence.json"
+          test -f "$SLICE_PROJECT_RESULT_PATH"
+          test -f "$SLICE_PROJECT_AGENT_EVIDENCE_PATH"
+          test -f ".slice/action-project-smoke/routes/001-fixed.html/results.json"
+          test -f ".slice/action-project-smoke/routes/002-broken.html/results.json"
+          node <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(
+            fs.readFileSync('.slice/action-project-smoke/project-results.json', 'utf8'),
+          );
+          const evidence = JSON.parse(
+            fs.readFileSync('.slice/action-project-smoke/agent-evidence.json', 'utf8'),
+          );
+
+          if (report.mode !== 'project-scan') {
+            throw new Error(`unexpected project mode: ${report.mode}`);
+          }
+          if (
+            report.summary.routesChecked !== 2 ||
+            report.summary.cleanRoutes !== 1 ||
+            report.summary.findingRoutes !== 1 ||
+            report.summary.infraFailureRoutes !== 0
+          ) {
+            throw new Error(`unexpected project summary: ${JSON.stringify(report.summary)}`);
+          }
+
+          const statuses = Object.fromEntries(report.routes.map((route) => [route.route, route.status]));
+          if (statuses['/fixed.html'] !== 'pass' || statuses['/broken.html'] !== 'fail') {
+            throw new Error(`unexpected route statuses: ${JSON.stringify(statuses)}`);
+          }
+
+          if (evidence.schemaVersion !== 'viewportable.project-agent-evidence.v1') {
+            throw new Error(`unexpected project evidence schema: ${evidence.schemaVersion}`);
+          }
+          if (evidence.routes?.length !== 2) {
+            throw new Error(`expected 2 route evidence entries, got ${evidence.routes?.length}`);
+          }
+          for (const route of evidence.routes) {
+            if (route.evidence?.schemaVersion !== 'viewportable.agent-evidence.v5') {
+              throw new Error(
+                `unexpected nested evidence schema: ${route.evidence?.schemaVersion}`,
+              );
+            }
+          }
+          NODE
+
       - name: GitHub Action compare smoke
         id: compare-action
         continue-on-error: true
