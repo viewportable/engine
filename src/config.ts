@@ -35,6 +35,20 @@ export const suppressionRuleSchema = z.discriminatedUnion('type', [
   wrappingSuppressionSchema,
 ]);
 
+const projectRouteSchema = z
+  .string()
+  .min(1)
+  .refine((route) => /^\/(?!\/)/.test(route), {
+    message: 'route must be an origin-relative path beginning with one /',
+  });
+
+const projectRoutesSchema = z
+  .array(projectRouteSchema)
+  .min(1)
+  .refine((routes) => new Set(routes).size === routes.length, {
+    message: 'routes must not contain duplicates',
+  });
+
 const sliceConfigSchema = z
   .object({
     widths: z.array(z.number().int().positive()).min(1).optional(),
@@ -44,6 +58,7 @@ const sliceConfigSchema = z
     timeout: z.number().int().positive().optional(),
     wait: z.number().int().nonnegative().optional(),
     readySelector: z.string().min(1).optional(),
+    routes: projectRoutesSchema.optional(),
     ignore: z.array(suppressionRuleSchema).default([]),
   })
   .strict();
