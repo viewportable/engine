@@ -245,4 +245,67 @@ describe('GitHub summary', () => {
     );
     expect(markdown).not.toContain('undefined');
   });
+  it('renders route-level project scan status and canonical repair counts', () => {
+    const markdown = renderGitHubSummary(
+      {
+        mode: 'project-scan',
+        summary: {
+          routesChecked: 2,
+          cleanRoutes: 1,
+          findingRoutes: 1,
+          infraFailureRoutes: 0,
+          viewportsChecked: 2,
+          findingCount: 1,
+        },
+        routes: [
+          {
+            route: '/',
+            status: 'pass',
+            summary: { viewportsChecked: 1, findingCount: 0 },
+            error: null,
+          },
+          {
+            route: '/dashboard',
+            status: 'fail',
+            summary: { viewportsChecked: 1, findingCount: 1 },
+            error: null,
+          },
+        ],
+      },
+      {
+        schemaVersion: 'viewportable.project-agent-evidence.v1',
+        routes: [
+          {
+            route: '/',
+            evidence: {
+              schemaVersion: 'viewportable.agent-evidence.v5',
+              findings: [],
+            },
+          },
+          {
+            route: '/dashboard',
+            evidence: {
+              schemaVersion: 'viewportable.agent-evidence.v5',
+              findings: [
+                {
+                  repair: {
+                    repairable: true,
+                    reason: 'deterministic-authored-css',
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    );
+
+    expect(markdown).toContain('## Viewportable Engine project scan');
+    expect(markdown).toContain('**1 clean / 1 findings / 0 infra · 2 routes · 2 viewports checked**');
+    expect(markdown).toContain('| `/` | PASS | 1 | 0 | - |');
+    expect(markdown).toContain(
+      '| `/dashboard` | FAIL | 1 | 1 | 1 auto-repairable · 0 manual review |',
+    );
+  });
+
 });
