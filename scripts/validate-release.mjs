@@ -108,6 +108,9 @@ for (const requiredFragment of [
   'check-run',
   'scripts/github-check-run.mjs',
   'source-root',
+  'agent_evidence_path',
+  'agent-evidence.json',
+  'SLICE_AGENT_EVIDENCE_PATH',
 ]) {
   if (!action.includes(requiredFragment)) {
     throw new Error(`action.yml is missing required release fragment: ${requiredFragment}`);
