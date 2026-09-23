@@ -31,6 +31,7 @@ All notable changes to Viewportable Engine are documented here.
 - Agent Repair Policy V1 plus Canonical Agent Evidence V5 (`viewportable.agent-evidence.v5`): every finding now carries an authoritative `repair` decision. Deterministic authored compare protrusions and scan horizontal-overflow findings are repairable; unsupported finding semantics and missing proof layers fail closed with explicit reasons. MCP clients are instructed not to infer repairability independently from source fields.
 - Scan Repair Coverage Matrix V1: production Sass/Vite/MCP acceptance now proves both scan-mode direct CSS constraints authorized by V5, pixel `min-width` and uniquely attributed fixed pixel `width`, each through authored SCSS, one-line repair, rebuild, and clean rescan.
 - V5 Repair Policy Consumption V1: the CLI now emits `agent-evidence.json` beside rich reports. The composite Action uploads and exposes that sidecar, and GitHub summaries, managed PR comments, standalone Check Runs, and App-owned Checks render `Auto-repairable` versus `Manual review` only from Canonical Agent Evidence V5. Missing or non-V5 evidence fails closed as unavailable instead of re-deriving policy from raw source fields.
+- GitHub App V5 Result Acceptance V1: a fast deterministic HTTP acceptance now starts the real App server, rejects an invalid executor bearer token, accepts a V5 result submission, completes the App-owned Check with canonical manual-review policy, persists the block decision, and proves duplicate result delivery is idempotent.
 
 
 
