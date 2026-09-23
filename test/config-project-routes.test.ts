@@ -30,7 +30,9 @@ describe('project routes config', () => {
     try {
       const duplicatePath = path.join(root, 'duplicate.json');
       await writeFile(duplicatePath, JSON.stringify({ routes: ['/dashboard', '/dashboard'] }));
-      await expect(loadSliceConfig(duplicatePath)).rejects.toThrow('routes must not contain duplicates');
+      await expect(loadSliceConfig(duplicatePath)).rejects.toThrow(
+        'routes must not contain duplicates',
+      );
 
       const crossOriginPath = path.join(root, 'cross-origin.json');
       await writeFile(crossOriginPath, JSON.stringify({ routes: ['//example.com/escape'] }));
