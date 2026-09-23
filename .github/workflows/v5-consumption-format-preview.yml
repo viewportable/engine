@@ -22,8 +22,12 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Render formatter diff
+      - name: Render formatted files
         shell: bash
         run: |
           npm run fmt
-          git diff -- scripts/github-repair-policy.mjs scripts/github-summary.mjs test/github-summary.test.mjs
+          for file in scripts/github-repair-policy.mjs scripts/github-summary.mjs test/github-summary.test.mjs; do
+            echo "<<<BEGIN:$file>>>"
+            cat "$file"
+            echo "<<<END:$file>>>"
+          done
