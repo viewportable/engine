@@ -111,8 +111,8 @@ export async function runProjectScan({
   runRoute: ProjectRouteRunner;
 }): Promise<ProjectScanExecution> {
   const startedAt = Date.now();
-  const absoluteOut = path.resolve(outDir);
-  const routesOut = path.join(absoluteOut, 'routes');
+  const projectOut = outDir;
+  const routesOut = path.join(projectOut, 'routes');
   await mkdir(routesOut, { recursive: true });
 
   const routeResults: ProjectScanRouteResult[] = [];
@@ -145,7 +145,7 @@ export async function runProjectScan({
     }
 
     const reportPath =
-      evidence.outcome === 'infra_failure' ? null : path.resolve(evidence.evidence.reportPath);
+      evidence.outcome === 'infra_failure' ? null : evidence.evidence.reportPath;
     const agentEvidencePath = path.join(routeOut, PROJECT_AGENT_EVIDENCE_FILENAME);
 
     routeEvidence.push({ route, url, evidence });
@@ -181,8 +181,8 @@ export async function runProjectScan({
     durationMs,
   };
 
-  const reportPath = path.join(absoluteOut, PROJECT_RESULTS_FILENAME);
-  const agentEvidencePath = path.join(absoluteOut, PROJECT_AGENT_EVIDENCE_FILENAME);
+  const reportPath = path.join(projectOut, PROJECT_RESULTS_FILENAME);
+  const agentEvidencePath = path.join(projectOut, PROJECT_AGENT_EVIDENCE_FILENAME);
 
   const report: ProjectScanResults = {
     version: 1,
