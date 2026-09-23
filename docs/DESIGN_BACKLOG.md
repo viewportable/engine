@@ -106,6 +106,8 @@ The benchmark-driven ReDeCheck sequence is tracked in `ROADMAP.md` and `docs/res
 
 ### Multi-page / changed-scope scanning
 
-- Status: candidate
-- Exact URLs, route lists, sitemap, constrained crawl, and changed-route impact mapping.
+- Status: explicit-route V1 complete; changed-scope mapping is the next roadmap slice.
+- V1 accepts a unique origin-relative route list and preserves isolated per-route reports plus V5 evidence under one project envelope.
+- Changed-source -> affected-route mapping must be conservative: unknown impact broadens scope rather than skipping verification.
+- Sitemap, framework manifests, explicit URL files, and constrained crawl remain later discovery inputs.
 - Efficiency is part of product value, not only CI optimization.
