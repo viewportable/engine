@@ -229,8 +229,7 @@ export function renderStructuralGitHubSummary(results, agentEvidence = null) {
 
     for (const finding of introducedFindings) {
       const range =
-        finding.exactRange?.minWidth !== undefined &&
-        finding.exactRange?.maxWidth !== undefined
+        finding.exactRange?.minWidth !== undefined && finding.exactRange?.maxWidth !== undefined
           ? `${finding.exactRange.minWidth}-${finding.exactRange.maxWidth}px exact`
           : `${finding.sampledRange?.minWidth ?? '?'}-${finding.sampledRange?.maxWidth ?? '?'}px sampled`;
 
