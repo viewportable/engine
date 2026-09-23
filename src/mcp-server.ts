@@ -1,6 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
-import { AgentEvidenceV5Schema, type AgentEvidenceV5 } from './contracts/agent-evidence-v5.js';
+import { AgentEvidenceV5Schema } from './contracts/agent-evidence-v5.js';
+import { ProjectAgentEvidenceV1Schema } from './contracts/project-agent-evidence-v1.js';
+import type { CanonicalMcpResult } from './mcp-runner.js';
 import { canonicalMcpResult, mcpTextSummary, runEngineForMcp } from './mcp-runner.js';
 
 const widthsSchema = z
@@ -31,9 +33,9 @@ const commonShape = {
     .describe('Directory under which MCP evidence directories are retained'),
 };
 
-const outputSchema = AgentEvidenceV5Schema;
+const outputSchema = z.union([AgentEvidenceV5Schema, ProjectAgentEvidenceV1Schema]);
 
-function toolResult(result: AgentEvidenceV5) {
+function toolResult(result: CanonicalMcpResult) {
   return {
     content: [{ type: 'text' as const, text: mcpTextSummary(result) }],
     structuredContent: result,
@@ -53,7 +55,7 @@ export function createViewportableMcpServer({
     },
     {
       instructions:
-        'Use viewportable_scan for one rendered application state and viewportable_compare to compare baseline and candidate versions. Treat exitCode 1 as product evidence, not a tool failure; exitCode 2 is scanner/setup failure. Treat finding.repair as the canonical auto-repair eligibility decision; do not infer repairability from source fields independently.',
+        'Use viewportable_scan for one rendered application state or an explicit project route set from slice.config.json, and viewportable_compare to compare baseline and candidate versions. Treat exitCode 1 as product evidence, not a tool failure; exitCode 2 is scanner/setup failure. Per-route finding.repair remains the canonical auto-repair eligibility decision; do not infer repairability from source fields independently.',
     },
   );
 
@@ -62,7 +64,7 @@ export function createViewportableMcpServer({
     {
       title: 'Scan responsive UI',
       description:
-        'Run deterministic Viewportable Engine responsive QA against one URL and return compact evidence plus the retained full report path.',
+        'Run deterministic Viewportable Engine responsive QA against one URL or the explicit routes configured in slice.config.json, returning canonical evidence plus retained report paths.',
       inputSchema: z.object({
         url: z.string().url().describe('Application URL to inspect'),
         ...commonShape,

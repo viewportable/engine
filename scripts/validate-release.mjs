@@ -64,6 +64,8 @@ for (const required of [
   'src/contracts/agent-evidence-v5.ts',
   'src/contracts/build-agent-evidence-v5.ts',
   'src/contracts/write-agent-evidence-v5.ts',
+  'src/contracts/project-agent-evidence-v1.ts',
+  'src/project-scan.ts',
   'src/css-source-location.ts',
   'src/css-source-map.ts',
   'src/compare/source-attribution.ts',
@@ -72,6 +74,7 @@ for (const required of [
   'docs/contracts/agent-evidence-v3.md',
   'docs/contracts/agent-evidence-v4.md',
   'docs/contracts/agent-evidence-v5.md',
+  'docs/contracts/project-agent-evidence-v1.md',
   'scripts/github-summary.mjs',
   'scripts/github-pr-comment.mjs',
   'scripts/github-check-run.mjs',
@@ -91,6 +94,7 @@ for (const required of [
   'test/fixtures/build-tool-source-map/src/Scan.source.scss',
   'test/fixtures/build-tool-source-map/src/Scan.width.source.scss',
   'examples/github/compare.yml',
+  'examples/github/action-project.config.json',
 ]) {
   await requireFile(required);
 }
@@ -112,6 +116,8 @@ for (const requiredFragment of [
   'agent_evidence_path',
   'agent-evidence.json',
   'SLICE_AGENT_EVIDENCE_PATH',
+  'project-results.json',
+  '${{ inputs.out }}/routes',
 ]) {
   if (!action.includes(requiredFragment)) {
     throw new Error(`action.yml is missing required release fragment: ${requiredFragment}`);

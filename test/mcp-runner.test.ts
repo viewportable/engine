@@ -188,6 +188,84 @@ describe('Viewportable MCP runner', () => {
     expect(mcpTextSummary(result)).toContain('0 current finding(s)');
   });
 
+  it('returns the project evidence envelope without flattening per-route V5 semantics', () => {
+    const routeEvidence = {
+      schemaVersion: 'viewportable.agent-evidence.v5',
+      mode: 'scan',
+      outcome: 'clean',
+      exitCode: 0,
+      summary: {
+        viewportsChecked: 1,
+        findingCount: 0,
+        introducedCount: 0,
+        resolvedCount: 0,
+        durationMs: 5,
+      },
+      findings: [],
+      evidence: {
+        reportPath: '.slice/mcp/scan-123/routes/001-root/results.json',
+        format: 'results.v1',
+      },
+      error: null,
+    } as const;
+
+    const result = canonicalMcpResult({
+      mode: 'scan',
+      exitCode: 0,
+      outcome: 'clean',
+      reportPath: '.slice/mcp/scan-123/project-results.json',
+      report: {
+        mode: 'project-scan',
+      },
+      stderr: '',
+      agentEvidence: {
+        schemaVersion: 'viewportable.project-agent-evidence.v1',
+        mode: 'project-scan',
+        outcome: 'clean',
+        exitCode: 0,
+        summary: {
+          routesChecked: 1,
+          cleanRoutes: 1,
+          findingRoutes: 0,
+          infraFailureRoutes: 0,
+          viewportsChecked: 1,
+          findingCount: 0,
+          durationMs: 7,
+        },
+        routes: [
+          {
+            route: '/',
+            url: 'http://127.0.0.1:3000/',
+            evidence: routeEvidence,
+          },
+        ],
+        evidence: {
+          reportPath: '.slice/mcp/scan-123/project-results.json',
+          format: 'project-results.v1',
+        },
+        error: null,
+      },
+    });
+
+    expect(result).toMatchObject({
+      schemaVersion: 'viewportable.project-agent-evidence.v1',
+      mode: 'project-scan',
+      summary: {
+        routesChecked: 1,
+        cleanRoutes: 1,
+      },
+      routes: [
+        {
+          route: '/',
+          evidence: {
+            schemaVersion: 'viewportable.agent-evidence.v5',
+          },
+        },
+      ],
+    });
+    expect(mcpTextSummary(result)).toContain('1 route(s)');
+  });
+
   it('marks scanner/setup failures as MCP errors while retaining stderr evidence', () => {
     const result = canonicalMcpResult({
       mode: 'scan',

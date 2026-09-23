@@ -10,6 +10,45 @@ After package publication, the intended one-shot form is:
 npx @viewportable/slice http://localhost:3000
 ```
 
+## Scan an explicit project route set
+
+Add a unique origin-relative `routes` list to `slice.config.json` when one application-level run
+should verify several rendered pages through the same deterministic scanner:
+
+```json
+{
+  "routes": ["/", "/dashboard", "/settings"],
+  "widths": [320, 390, 768]
+}
+```
+
+Then run the ordinary command against the application origin:
+
+```bash
+slice http://localhost:3000
+```
+
+Project Scan V1 deliberately does not crawl or infer routes. Each configured route gets its own
+`results.json` and strict Canonical Agent Evidence V5 sidecar, while the project root receives:
+
+```text
+.slice/
+  project-results.json
+  agent-evidence.json
+  routes/
+    001-root/
+      results.json
+      agent-evidence.json
+    002-dashboard/
+      results.json
+      agent-evidence.json
+```
+
+The root evidence uses `viewportable.project-agent-evidence.v1` and embeds each route's unchanged
+V5 payload. Aggregate exit precedence is deterministic: any infrastructure failure returns `2`;
+otherwise any route with findings returns `1`; otherwise the project returns `0`.
+
+
 ## See it catch a real PR
 
 [PR #44 - Viewportable catches and verifies a responsive regression](https://github.com/viewportable/engine/pull/44) is the public golden lifecycle proof.
@@ -116,7 +155,7 @@ Agents must treat `finding.repair` as authoritative and must not recreate the el
 
 See [Canonical Agent Evidence Contract V5](docs/contracts/agent-evidence-v5.md). The [V4](docs/contracts/agent-evidence-v4.md), [V3](docs/contracts/agent-evidence-v3.md), [V2](docs/contracts/agent-evidence-v2.md), and [V1](docs/contracts/agent-evidence-v1.md) contracts remain available as compatibility boundaries.
 
-`viewportable_compare` returns introduced canonical `findings[]` directly to the agent; resolved evidence remains in the retained full structural report. `viewportable_scan` returns failing viewports and canonical root causes while retaining the complete scan report.
+`viewportable_compare` returns introduced canonical `findings[]` directly to the agent; resolved evidence remains in the retained full structural report. `viewportable_scan` returns failing viewports and canonical root causes for a single page. When its config contains `routes`, it returns the project evidence envelope with one strict V5 payload per route while retaining every route report.
 
 ### Real build-tool source-map acceptance
 
@@ -627,7 +666,7 @@ jobs:
           config: slice.config.json
 ```
 
-The action uploads the rich Engine report plus `.slice/agent-evidence.json` as `slice-results` by default. The sidecar is strict Canonical Agent Evidence V5 and is also exposed through the `agent_evidence_path` Action output. Use the `out` and `artifact-name` inputs to change those values. Set `install-browser: 'false'` only when Playwright Chromium and its OS dependencies are already installed earlier in the job.
+The action uploads the rich Engine report plus `.slice/agent-evidence.json` as `slice-results` by default. Single-page and compare runs expose strict Canonical Agent Evidence V5. Project scans expose `project-results.json`, the project evidence envelope at `agent_evidence_path`, and the retained `routes/` evidence tree. Use the `out` and `artifact-name` inputs to change those values. Set `install-browser: 'false'` only when Playwright Chromium and its OS dependencies are already installed earlier in the job.
 
 For structural PR comparison, pass the candidate URL as `url` and the reference render as `baseline-url`:
 

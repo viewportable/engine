@@ -146,6 +146,57 @@ function structuralRangeWidth(range) {
   return `${sampled} sampled`;
 }
 
+function isProjectScanReport(results) {
+  return results?.mode === 'project-scan' && Array.isArray(results?.routes);
+}
+
+function projectRouteEvidence(agentEvidence, route) {
+  if (agentEvidence?.schemaVersion !== 'viewportable.project-agent-evidence.v1') return null;
+  return agentEvidence.routes?.find((entry) => entry.route === route)?.evidence ?? null;
+}
+
+function renderProjectGitHubSummary(results, agentEvidence = null) {
+  const summary = results.summary ?? {};
+  const lines = [
+    '## Viewportable Engine project scan',
+    '',
+    `**${summary.cleanRoutes ?? 0} clean / ${summary.findingRoutes ?? 0} findings / ` +
+      `${summary.infraFailureRoutes ?? 0} infra · ${summary.routesChecked ?? 0} routes · ` +
+      `${summary.viewportsChecked ?? 0} viewports checked**`,
+    '',
+    '| Route | Status | Viewports | Findings | Repair |',
+    '| --- | :---: | ---: | ---: | --- |',
+  ];
+
+  for (const route of results.routes ?? []) {
+    const evidence = projectRouteEvidence(agentEvidence, route.route);
+    const repair = repairPolicyCounts(evidence);
+    const repairText =
+      route.status === 'infra_failure'
+        ? 'Unavailable'
+        : repair.total > 0
+          ? `${repair.repairable} auto-repairable · ${repair.manual} manual review`
+          : '-';
+
+    lines.push(
+      `| \`${cell(route.route)}\` | ${cell(route.status.toUpperCase())} | ` +
+        `${route.summary?.viewportsChecked ?? 0} | ${route.summary?.findingCount ?? 0} | ` +
+        `${cell(repairText)} |`,
+    );
+  }
+
+  const failedRoutes = (results.routes ?? []).filter((route) => route.error);
+  if (failedRoutes.length > 0) {
+    lines.push('', '### Infrastructure failures', '');
+    for (const route of failedRoutes) {
+      lines.push(`- \`${cell(route.route)}\`: ${cell(route.error)}`);
+    }
+  }
+
+  lines.push('');
+  return `${lines.join('\n')}\n`;
+}
+
 function isStructuralCompareReport(results) {
   return (
     typeof results?.baselineUrl === 'string' &&
@@ -328,6 +379,10 @@ function renderScanGitHubSummary(results, agentEvidence = null) {
 }
 
 export function renderGitHubSummary(results, agentEvidence = null) {
+  if (isProjectScanReport(results)) {
+    return renderProjectGitHubSummary(results, agentEvidence);
+  }
+
   return isStructuralCompareReport(results)
     ? renderStructuralGitHubSummary(results, agentEvidence)
     : renderScanGitHubSummary(results, agentEvidence);

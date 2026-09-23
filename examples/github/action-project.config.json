@@ -1,0 +1,7 @@
+{
+  "routes": ["/fixed.html", "/broken.html"],
+  "widths": [390],
+  "height": 900,
+  "boundary": false,
+  "wait": 0
+}
