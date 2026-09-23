@@ -1,5 +1,10 @@
 import { appendFile, readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import {
+  canonicalRepairPolicies,
+  repairPolicyCounts,
+  repairPolicyText,
+} from './github-repair-policy.mjs';
 
 export const PR_COMMENT_MARKER = '<!-- viewportable-engine-pr-evidence-v1 -->';
 
@@ -71,8 +76,10 @@ export function stateText(state) {
   return state.state ?? '?';
 }
 
-export function renderPullRequestComment(report, metadata = {}) {
+export function renderPullRequestComment(report, metadata = {}, agentEvidence = null) {
   const findings = Array.isArray(report.findings) ? report.findings : [];
+  const repairPolicies = canonicalRepairPolicies(agentEvidence);
+  const repairCounts = repairPolicyCounts(agentEvidence);
   const introduced = findings.filter((finding) => finding.direction === 'introduced');
   const resolved = findings.filter((finding) => finding.direction === 'resolved');
   const lines = [PR_COMMENT_MARKER, '## Viewportable Engine', ''];
@@ -82,12 +89,24 @@ export function renderPullRequestComment(report, metadata = {}) {
   } else {
     const suffix = introduced.length === 1 ? 'regression' : 'regressions';
     lines.push(`❌ **${introduced.length} structural ${suffix} introduced.**`, '');
-    lines.push('| Range | Finding | Baseline | Candidate |', '| --- | --- | --- | --- |');
+
+    if (repairCounts.total > 0) {
+      lines.push(
+        `**Repair policy:** ${repairCounts.repairable} auto-repairable · ${repairCounts.manual} manual review`,
+        '',
+      );
+    }
+
+    lines.push(
+      '| Range | Finding | Baseline | Candidate | Repair |',
+      '| --- | --- | --- | --- | --- |',
+    );
 
     for (const finding of introduced) {
       lines.push(
         `| ${markdownCell(findingRangeText(finding))} | ${markdownCell(findingLabel(finding))} | ` +
-          `${markdownCell(stateText(finding.baseline))} | ${markdownCell(stateText(finding.candidate))} |`,
+          `${markdownCell(stateText(finding.baseline))} | ${markdownCell(stateText(finding.candidate))} | ` +
+          `${markdownCell(repairPolicyText(repairPolicies.get(finding.id)))} |`,
       );
     }
 
@@ -207,8 +226,19 @@ async function writeOutput(name, value) {
   await appendFile(outputPath, `${name}=${value ?? ''}\n`);
 }
 
+async function readJsonOrNull(path) {
+  if (!path) return null;
+
+  try {
+    return JSON.parse(await readFile(path, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 async function main() {
   const reportPath = process.argv[2];
+  const agentEvidencePath = process.argv[3] || process.env.SLICE_AGENT_EVIDENCE_PATH;
   const eventPath = process.env.GITHUB_EVENT_PATH;
   const repository = process.env.GITHUB_REPOSITORY;
   const token = process.env.GITHUB_TOKEN;
@@ -218,8 +248,9 @@ async function main() {
   if (!repository) throw new Error('GITHUB_REPOSITORY is required');
   if (!token) throw new Error('GITHUB_TOKEN is required');
 
-  const [report, event] = await Promise.all([
+  const [report, agentEvidence, event] = await Promise.all([
     readFile(reportPath, 'utf8').then(JSON.parse),
+    readJsonOrNull(agentEvidencePath),
     readFile(eventPath, 'utf8').then(JSON.parse),
   ]);
   const pullRequest = event.pull_request;
@@ -231,12 +262,16 @@ async function main() {
     return;
   }
 
-  const body = renderPullRequestComment(report, {
-    artifactUrl: process.env.SLICE_ARTIFACT_URL,
-    baselineSha: pullRequest.base?.sha,
-    candidateSha: pullRequest.head?.sha,
-    engineRef: process.env.SLICE_ENGINE_REF || process.env.SLICE_ENGINE_REPOSITORY,
-  });
+  const body = renderPullRequestComment(
+    report,
+    {
+      artifactUrl: process.env.SLICE_ARTIFACT_URL,
+      baselineSha: pullRequest.base?.sha,
+      candidateSha: pullRequest.head?.sha,
+      engineRef: process.env.SLICE_ENGINE_REF || process.env.SLICE_ENGINE_REPOSITORY,
+    },
+    agentEvidence,
+  );
 
   const result = await upsertPullRequestComment({
     repository,

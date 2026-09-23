@@ -2,6 +2,11 @@ import { appendFile, readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { buildSourceAnnotations } from './github-annotations.mjs';
 import { findingLabel, findingRangeText, stateText } from './github-pr-comment.mjs';
+import {
+  canonicalRepairPolicies,
+  repairPolicyCounts,
+  repairPolicyText,
+} from './github-repair-policy.mjs';
 
 export const CHECK_RUN_NAME = 'Viewportable Engine';
 
@@ -22,8 +27,10 @@ export function checkConclusion(exitCode) {
   return 'action_required';
 }
 
-export function renderCheckOutput(report, exitCode) {
+export function renderCheckOutput(report, exitCode, agentEvidence = null) {
   const findings = Array.isArray(report?.findings) ? report.findings : [];
+  const repairPolicies = canonicalRepairPolicies(agentEvidence);
+  const repairCounts = repairPolicyCounts(agentEvidence);
   const introduced = findings.filter((finding) => finding.direction === 'introduced');
   const resolved = findings.filter((finding) => finding.direction === 'resolved');
   const code = String(exitCode ?? '2');
@@ -44,14 +51,25 @@ export function renderCheckOutput(report, exitCode) {
     lines.push(
       `❌ ${introduced.length} structural ${plural(introduced.length, 'regression')} introduced.`,
       '',
-      '| Range | Finding | Baseline | Candidate |',
-      '| --- | --- | --- | --- |',
+    );
+
+    if (repairCounts.total > 0) {
+      lines.push(
+        `**Repair policy:** ${repairCounts.repairable} auto-repairable · ${repairCounts.manual} manual review`,
+        '',
+      );
+    }
+
+    lines.push(
+      '| Range | Finding | Baseline | Candidate | Repair |',
+      '| --- | --- | --- | --- | --- |',
     );
 
     for (const finding of introduced) {
       lines.push(
         `| ${markdownCell(findingRangeText(finding))} | ${markdownCell(findingLabel(finding))} | ` +
-          `${markdownCell(stateText(finding.baseline))} | ${markdownCell(stateText(finding.candidate))} |`,
+          `${markdownCell(stateText(finding.baseline))} | ${markdownCell(stateText(finding.candidate))} | ` +
+          `${markdownCell(repairPolicyText(repairPolicies.get(finding.id)))} |`,
       );
     }
   }
@@ -119,6 +137,7 @@ export async function upsertCheckRun({
   headSha,
   exitCode,
   report,
+  agentEvidence,
   detailsUrl,
   repositoryRoot,
   token,
@@ -134,7 +153,7 @@ export async function upsertCheckRun({
   const existing = (list?.check_runs ?? []).find(
     (check) => check.name === CHECK_RUN_NAME && check.external_id === id,
   );
-  const rendered = renderCheckOutput(report, exitCode);
+  const rendered = renderCheckOutput(report, exitCode, agentEvidence);
   const sourceAnnotations = await buildSourceAnnotations(report, { repositoryRoot });
   const output = {
     ...rendered,
@@ -205,6 +224,7 @@ async function readJsonOrNull(path) {
 
 async function main() {
   const reportPath = process.argv[2];
+  const agentEvidencePath = process.argv[3] || process.env.SLICE_AGENT_EVIDENCE_PATH;
   const eventPath = process.env.GITHUB_EVENT_PATH;
   const repository = process.env.GITHUB_REPOSITORY;
   const token = process.env.GITHUB_TOKEN;
@@ -214,8 +234,9 @@ async function main() {
   if (!repository) throw new Error('GITHUB_REPOSITORY is required');
   if (!token) throw new Error('GITHUB_TOKEN is required');
 
-  const [report, event] = await Promise.all([
+  const [report, agentEvidence, event] = await Promise.all([
     readJsonOrNull(reportPath),
+    readJsonOrNull(agentEvidencePath),
     readFile(eventPath, 'utf8').then(JSON.parse),
   ]);
   const pullRequest = event.pull_request;
@@ -239,6 +260,7 @@ async function main() {
     headSha: pullRequest.head.sha,
     exitCode,
     report,
+    agentEvidence,
     detailsUrl,
     repositoryRoot: process.env.SLICE_SOURCE_ROOT?.trim() || process.env.GITHUB_WORKSPACE,
     token,

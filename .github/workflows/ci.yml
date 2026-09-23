@@ -120,15 +120,38 @@ jobs:
           SLICE_COMPARE_OUTCOME: ${{ steps.compare-action.outcome }}
           SLICE_COMPARE_EXIT_CODE: ${{ steps.compare-action.outputs.exit_code }}
           SLICE_COMPARE_RESULT_PATH: ${{ steps.compare-action.outputs.result_path }}
+          SLICE_COMPARE_AGENT_EVIDENCE_PATH: ${{ steps.compare-action.outputs.agent_evidence_path }}
         run: |
           test "$SLICE_COMPARE_OUTCOME" = "failure"
           test "$SLICE_COMPARE_EXIT_CODE" = "1"
           test "$SLICE_COMPARE_RESULT_PATH" = ".slice/action-compare-smoke/structural-diff.json"
+          test "$SLICE_COMPARE_AGENT_EVIDENCE_PATH" = ".slice/action-compare-smoke/agent-evidence.json"
+          test -f "$SLICE_COMPARE_AGENT_EVIDENCE_PATH"
           node <<'NODE'
           const fs = require('node:fs');
           const report = JSON.parse(
             fs.readFileSync('.slice/action-compare-smoke/structural-diff.json', 'utf8'),
           );
+          const agentEvidence = JSON.parse(
+            fs.readFileSync('.slice/action-compare-smoke/agent-evidence.json', 'utf8'),
+          );
+
+          if (agentEvidence.schemaVersion !== 'viewportable.agent-evidence.v5') {
+            throw new Error(`unexpected agent evidence schema: ${agentEvidence.schemaVersion}`);
+          }
+          if (agentEvidence.findings?.length !== 2) {
+            throw new Error(
+              `expected 2 agent evidence findings, got ${agentEvidence.findings?.length}`,
+            );
+          }
+          for (const finding of agentEvidence.findings) {
+            if (
+              finding.repair?.repairable !== false ||
+              finding.repair?.reason !== 'unsupported-finding'
+            ) {
+              throw new Error(`unexpected repair policy: ${JSON.stringify(finding.repair)}`);
+            }
+          }
 
           if (report.summary.introducedRanges !== 2) {
             throw new Error(`expected 2 introduced ranges, got ${report.summary.introducedRanges}`);

@@ -5,6 +5,7 @@ export async function acceptReviewResult({
   reviewId,
   exitCode,
   report,
+  agentEvidence = null,
   detailsUrl = null,
   annotations = [],
   store,
@@ -32,7 +33,7 @@ export async function acceptReviewResult({
     };
   }
 
-  const rendered = renderResult(report, exitCode);
+  const rendered = renderResult(report, exitCode, agentEvidence);
   const sourceAnnotations = normalizeSubmittedAnnotations(annotations);
   const check = await github.completeCheckRun({
     installationId: review.installationId,

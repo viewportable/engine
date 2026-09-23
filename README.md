@@ -627,7 +627,7 @@ jobs:
           config: slice.config.json
 ```
 
-The action uploads `.slice/results.json` as `slice-results` by default. Use the `out` and `artifact-name` inputs to change those values. Set `install-browser: 'false'` only when Playwright Chromium and its OS dependencies are already installed earlier in the job.
+The action uploads the rich Engine report plus `.slice/agent-evidence.json` as `slice-results` by default. The sidecar is strict Canonical Agent Evidence V5 and is also exposed through the `agent_evidence_path` Action output. Use the `out` and `artifact-name` inputs to change those values. Set `install-browser: 'false'` only when Playwright Chromium and its OS dependencies are already installed earlier in the job.
 
 For structural PR comparison, pass the candidate URL as `url` and the reference render as `baseline-url`:
 
@@ -641,9 +641,9 @@ For structural PR comparison, pass the candidate URL as `url` and the reference 
     artifact-name: slice-structural-diff
 ```
 
-When `baseline-url` is set, the Action switches to structural compare mode, writes `structural-diff.json`, renders introduced/resolved structural ranges in the GitHub job summary, uploads that report, and preserves the same exit contract: `0` no introduced changes, `1` introduced changes, `2` scanner/setup failure. The `result_path` output automatically points to either `results.json` or `structural-diff.json` depending on the mode.
+When `baseline-url` is set, the Action switches to structural compare mode, writes `structural-diff.json` plus `agent-evidence.json`, renders introduced/resolved structural ranges and canonical V5 repair status in the GitHub job summary, uploads both artifacts, and preserves the same exit contract: `0` no introduced changes, `1` introduced changes, `2` scanner/setup failure. The `result_path` output automatically points to either `results.json` or `structural-diff.json`; `agent_evidence_path` points to the V5 sidecar.
 
-Set `pr-comment: 'true'` to create one managed PR evidence comment. The Action finds its previous marker comment and updates it on subsequent runs instead of creating duplicates. The comment is rendered from canonical `findings[]`, includes exact ranges, baseline/candidate states, base/head SHAs, Engine ref, duration, and a link to the uploaded artifact. Grant both `issues: write` and `pull-requests: write` for PR evidence, plus `checks: write` for the managed Check Run:
+Set `pr-comment: 'true'` to create one managed PR evidence comment. The Action finds its previous marker comment and updates it on subsequent runs instead of creating duplicates. The comment includes exact ranges, baseline/candidate states, base/head SHAs, Engine ref, duration, artifact evidence, and canonical V5 repair status. `Auto-repairable` and `Manual review` labels come only from `agent-evidence.json`; GitHub renderers do not reconstruct repair policy from raw source fields. Grant both `issues: write` and `pull-requests: write` for PR evidence, plus `checks: write` for the managed Check Run:
 
 ```yaml
 permissions:
@@ -689,7 +689,7 @@ installation_id
   -> completed App-owned Check Run
 ```
 
-The first runnable control-plane slice lives in `apps/github-app/`. It verifies signed GitHub webhooks, consumes installation/repository lifecycle events, creates deterministic project/review identities, authenticates with installation access tokens, and completes Checks from returned Engine evidence. App credentials never enter candidate execution. See [ADR-0002](docs/adr/0002-github-app-check-ownership.md).
+The first runnable control-plane slice lives in `apps/github-app/`. It verifies signed GitHub webhooks, consumes installation/repository lifecycle events, creates deterministic project/review identities, authenticates with installation access tokens, and completes Checks from returned Engine evidence. Executor result submission accepts canonical `agentEvidence` alongside the rich report so App-owned Checks use the same V5 repair decision as standalone Action mode. App credentials never enter candidate execution. See [ADR-0002](docs/adr/0002-github-app-check-ownership.md).
 
 The copy-ready single-render workflow lives at `examples/github/slice.yml`. A full pull-request example that checks out `base.sha` and `head.sha`, starts both versions, and compares them lives at `examples/github/compare.yml`. The repository CI exercises both Action modes end to end.
 

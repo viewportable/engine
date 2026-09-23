@@ -63,6 +63,7 @@ for (const required of [
   'src/contracts/build-agent-evidence-v4.ts',
   'src/contracts/agent-evidence-v5.ts',
   'src/contracts/build-agent-evidence-v5.ts',
+  'src/contracts/write-agent-evidence-v5.ts',
   'src/css-source-location.ts',
   'src/css-source-map.ts',
   'src/compare/source-attribution.ts',
@@ -75,6 +76,7 @@ for (const required of [
   'scripts/github-pr-comment.mjs',
   'scripts/github-check-run.mjs',
   'scripts/github-annotations.mjs',
+  'scripts/github-repair-policy.mjs',
   'scripts/build-tool-source-map-acceptance.mjs',
   'scripts/build-tool-agent-repair-e2e.mjs',
   'scripts/agent-repair-coverage-matrix.mjs',
@@ -106,6 +108,9 @@ for (const requiredFragment of [
   'check-run',
   'scripts/github-check-run.mjs',
   'source-root',
+  'agent_evidence_path',
+  'agent-evidence.json',
+  'SLICE_AGENT_EVIDENCE_PATH',
 ]) {
   if (!action.includes(requiredFragment)) {
     throw new Error(`action.yml is missing required release fragment: ${requiredFragment}`);

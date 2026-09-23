@@ -46,6 +46,9 @@ outputs:
   result_path:
     description: Path to results.json or structural-diff.json
     value: ${{ steps.scan.outputs.result_path }}
+  agent_evidence_path:
+    description: Path to strict Canonical Agent Evidence V5 sidecar
+    value: ${{ steps.scan.outputs.agent_evidence_path }}
   artifact_url:
     description: URL of the uploaded Viewportable Engine artifact when available
     value: ${{ steps.artifact.outputs.artifact-url }}
@@ -112,12 +115,14 @@ runs:
 
         echo "exit_code=$code" >> "$GITHUB_OUTPUT"
         echo "result_path=$SLICE_OUT/$result_name" >> "$GITHUB_OUTPUT"
+        echo "agent_evidence_path=$SLICE_OUT/agent-evidence.json" >> "$GITHUB_OUTPUT"
 
     - name: Write job summary
       if: ${{ always() }}
       shell: bash
       env:
         SLICE_RESULT_PATH: ${{ steps.scan.outputs.result_path }}
+        SLICE_AGENT_EVIDENCE_PATH: ${{ steps.scan.outputs.agent_evidence_path }}
       run: node "$GITHUB_ACTION_PATH/scripts/github-summary.mjs" "$SLICE_RESULT_PATH"
 
     - name: Upload Viewportable Engine results
@@ -126,7 +131,9 @@ runs:
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}
-        path: ${{ steps.scan.outputs.result_path }}
+        path: |
+          ${{ steps.scan.outputs.result_path }}
+          ${{ steps.scan.outputs.agent_evidence_path }}
         if-no-files-found: ignore
         include-hidden-files: true
 
@@ -139,6 +146,7 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         SLICE_ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
         SLICE_EXIT_CODE: ${{ steps.scan.outputs.exit_code }}
+        SLICE_AGENT_EVIDENCE_PATH: ${{ steps.scan.outputs.agent_evidence_path }}
         SLICE_SOURCE_ROOT: ${{ inputs.source-root }}
       run: node "$GITHUB_ACTION_PATH/scripts/github-check-run.mjs" "${{ steps.scan.outputs.result_path }}"
 
@@ -152,6 +160,7 @@ runs:
         SLICE_ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
         SLICE_ENGINE_REF: ${{ github.action_ref }}
         SLICE_ENGINE_REPOSITORY: ${{ github.action_repository }}
+        SLICE_AGENT_EVIDENCE_PATH: ${{ steps.scan.outputs.agent_evidence_path }}
       run: node "$GITHUB_ACTION_PATH/scripts/github-pr-comment.mjs" "${{ steps.scan.outputs.result_path }}"
 
     - name: Enforce Viewportable Engine result

@@ -97,6 +97,7 @@ export async function createGitHubAppServer({
           reviewId,
           exitCode: payload.exitCode,
           report: payload.report,
+          agentEvidence: payload.agentEvidence ?? null,
           detailsUrl: payload.detailsUrl ?? null,
           annotations: payload.annotations ?? [],
           store,
