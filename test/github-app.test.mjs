@@ -162,11 +162,24 @@ describe('Viewportable GitHub App Installation V1', () => {
       report: {
         findings: [
           {
+            id: 'structural-disappearance',
             type: 'disappearance',
             direction: 'introduced',
             subject: { key: 'id:checkout-button' },
             sampledRange: { minWidth: 375, maxWidth: 430 },
             exactRange: { minWidth: 350, maxWidth: 499 },
+          },
+        ],
+      },
+      agentEvidence: {
+        schemaVersion: 'viewportable.agent-evidence.v5',
+        findings: [
+          {
+            id: 'structural-disappearance',
+            repair: {
+              repairable: false,
+              reason: 'unsupported-finding',
+            },
           },
         ],
       },
@@ -219,6 +232,10 @@ describe('Viewportable GitHub App Installation V1', () => {
     });
     expect(github.completed[0].summary).toContain('350-499px exact');
     expect(github.completed[0].summary).toContain('id:checkout-button disappeared');
+    expect(github.completed[0].summary).toContain(
+      'Repair policy:** 0 auto-repairable · 1 manual review',
+    );
+    expect(github.completed[0].summary).toContain('Manual review · unsupported-finding');
 
     const duplicate = await acceptReviewResult({
       reviewId: 'github:8801:pr:42:head:head456',
