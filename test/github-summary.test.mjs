@@ -301,11 +301,12 @@ describe('GitHub summary', () => {
     );
 
     expect(markdown).toContain('## Viewportable Engine project scan');
-    expect(markdown).toContain('**1 clean / 1 findings / 0 infra · 2 routes · 2 viewports checked**');
+    expect(markdown).toContain(
+      '**1 clean / 1 findings / 0 infra · 2 routes · 2 viewports checked**',
+    );
     expect(markdown).toContain('| `/` | PASS | 1 | 0 | - |');
     expect(markdown).toContain(
       '| `/dashboard` | FAIL | 1 | 1 | 1 auto-repairable · 0 manual review |',
     );
   });
-
 });
