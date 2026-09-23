@@ -1,5 +1,11 @@
 import { appendFile, readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import {
+  canonicalRepairPolicies,
+  canonicalRepairPolicyForGroup,
+  repairPolicyCounts,
+  repairPolicyText,
+} from './github-repair-policy.mjs';
 
 function cell(value) {
   return String(value ?? '')
@@ -148,7 +154,9 @@ function isStructuralCompareReport(results) {
   );
 }
 
-export function renderStructuralGitHubSummary(results) {
+export function renderStructuralGitHubSummary(results, agentEvidence = null) {
+  const repairPolicies = canonicalRepairPolicies(agentEvidence);
+  const repairCounts = repairPolicyCounts(agentEvidence);
   const lines = [
     '## Viewportable Engine compare',
     '',
@@ -203,11 +211,42 @@ export function renderStructuralGitHubSummary(results) {
     }
   }
 
+  const introducedFindings = (results.findings ?? []).filter(
+    (finding) => finding.direction === 'introduced',
+  );
+
+  if (introducedFindings.length > 0) {
+    lines.push('', '### Repair policy', '');
+
+    if (repairCounts.total > 0) {
+      lines.push(
+        `**${repairCounts.repairable} auto-repairable · ${repairCounts.manual} manual review**`,
+        '',
+      );
+    }
+
+    lines.push('| Finding | Range | Repair |', '| --- | --- | --- |');
+
+    for (const finding of introducedFindings) {
+      const range =
+        finding.exactRange?.minWidth !== undefined &&
+        finding.exactRange?.maxWidth !== undefined
+          ? `${finding.exactRange.minWidth}-${finding.exactRange.maxWidth}px exact`
+          : `${finding.sampledRange?.minWidth ?? '?'}-${finding.sampledRange?.maxWidth ?? '?'}px sampled`;
+
+      lines.push(
+        `| ${cell(finding.type)} | ${cell(range)} | ${cell(
+          repairPolicyText(repairPolicies.get(finding.id)),
+        )} |`,
+      );
+    }
+  }
+
   lines.push('');
   return `${lines.join('\n')}\n`;
 }
 
-function renderScanGitHubSummary(results) {
+function renderScanGitHubSummary(results, agentEvidence = null) {
   const lines = ['## Viewportable Engine', ''];
   const summary = results.summary ?? {};
   const failing = results.viewports?.filter((viewport) => viewport.status === 'fail') ?? [];
@@ -233,7 +272,13 @@ function renderScanGitHubSummary(results) {
   }
 
   if ((results.rootCauses?.length ?? 0) > 0) {
-    lines.push('', '### Root causes', '', '| Root | Boundary | Reason |', '| --- | ---: | --- |');
+    lines.push(
+      '',
+      '### Root causes',
+      '',
+      '| Root | Boundary | Reason | Repair |',
+      '| --- | ---: | --- | --- |',
+    );
 
     for (const rootCause of results.rootCauses) {
       const boundaries = rootCause.boundaries?.map((boundary) => `${boundary.boundary}px`) ?? [];
@@ -254,8 +299,11 @@ function renderScanGitHubSummary(results) {
             ? `${rootCause.diagnosis.property}: ${rootCause.diagnosis.value}`
             : 'Grouped layout overflow';
 
+      const repair = canonicalRepairPolicyForGroup(agentEvidence, rootCause.id);
+
       lines.push(
-        `| ${cell(rootCause.selector)} | ${cell(boundaries.join(', ') || '-')} | ${cell(reason)} |`,
+        `| ${cell(rootCause.selector)} | ${cell(boundaries.join(', ') || '-')} | ${cell(reason)} | ` +
+          `${cell(repairPolicyText(repair))} |`,
       );
     }
   }
@@ -280,14 +328,15 @@ function renderScanGitHubSummary(results) {
   return `${lines.join('\n')}\n`;
 }
 
-export function renderGitHubSummary(results) {
+export function renderGitHubSummary(results, agentEvidence = null) {
   return isStructuralCompareReport(results)
-    ? renderStructuralGitHubSummary(results)
-    : renderScanGitHubSummary(results);
+    ? renderStructuralGitHubSummary(results, agentEvidence)
+    : renderScanGitHubSummary(results, agentEvidence);
 }
 
 async function main() {
   const reportPath = process.argv[2];
+  const agentEvidencePath = process.argv[3] || process.env.SLICE_AGENT_EVIDENCE_PATH;
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 
   if (!summaryPath) return;
@@ -298,8 +347,15 @@ async function main() {
   }
 
   try {
-    const results = JSON.parse(await readFile(reportPath, 'utf8'));
-    await appendFile(summaryPath, renderGitHubSummary(results));
+    const [results, agentEvidence] = await Promise.all([
+      readFile(reportPath, 'utf8').then(JSON.parse),
+      agentEvidencePath
+        ? readFile(agentEvidencePath, 'utf8')
+            .then(JSON.parse)
+            .catch(() => null)
+        : null,
+    ]);
+    await appendFile(summaryPath, renderGitHubSummary(results, agentEvidence));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     await appendFile(
