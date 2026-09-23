@@ -1,3 +1,9 @@
+import {
+  canonicalRepairPolicies,
+  repairPolicyCounts,
+  repairPolicyText,
+} from '../../../scripts/github-repair-policy.mjs';
+
 function findingRange(finding) {
   const exact = finding.exactRange;
   if (exact?.minWidth !== undefined && exact?.maxWidth !== undefined) {
@@ -36,9 +42,11 @@ export function resultConclusion(exitCode) {
   return 'action_required';
 }
 
-export function renderResult(report, exitCode) {
+export function renderResult(report, exitCode, agentEvidence = null) {
   const conclusion = resultConclusion(exitCode);
   const findings = Array.isArray(report?.findings) ? report.findings : [];
+  const repairPolicies = canonicalRepairPolicies(agentEvidence);
+  const repairCounts = repairPolicyCounts(agentEvidence);
   const introduced = findings.filter((finding) => finding.direction === 'introduced');
 
   if (conclusion === 'action_required') {
@@ -63,8 +71,19 @@ export function renderResult(report, exitCode) {
     '',
   ];
 
+  if (repairCounts.total > 0) {
+    lines.push(
+      `**Repair policy:** ${repairCounts.repairable} auto-repairable · ${repairCounts.manual} manual review`,
+      '',
+    );
+  }
+
   for (const finding of introduced) {
-    lines.push(`- **${findingRange(finding)}** - ${findingText(finding)}`);
+    lines.push(
+      `- **${findingRange(finding)}** - ${findingText(finding)} - ${repairPolicyText(
+        repairPolicies.get(finding.id),
+      )}`,
+    );
   }
 
   return {
