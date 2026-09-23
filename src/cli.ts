@@ -27,6 +27,7 @@ import { runDetector } from './detector.js';
 import { diagnoseHorizontalOverflowRoot } from './diagnose.js';
 import { groupHorizontalOverflow } from './grouping.js';
 import { writeResults } from './report.js';
+import { writeCanonicalAgentEvidenceV5 } from './contracts/write-agent-evidence-v5.js';
 import { writeElementProtrusionResearch } from './research/element-protrusion-output.js';
 import { writeSmallRangeOverlapResearch } from './research/small-range-output.js';
 import { buildStableSelector, makePageUniquenessCheck } from './selector.js';
@@ -970,6 +971,16 @@ async function runCompare(
     ...(options.readySelector ? { readySelector: options.readySelector } : {}),
   });
   const outputPath = await writeStructuralCompareReport(options.out, report);
+  const exitCode = report.summary.introducedChanges > 0 ? 1 : 0;
+
+  await writeCanonicalAgentEvidenceV5(options.out, {
+    mode: 'compare',
+    exitCode,
+    outcome: exitCode === 0 ? 'clean' : 'findings',
+    reportPath: outputPath,
+    report: report as unknown as Record<string, unknown>,
+    stderr: '',
+  });
 
   if (options.json) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
@@ -977,7 +988,7 @@ async function runCompare(
     renderStructuralCompareReport(report, outputPath);
   }
 
-  return report.summary.introducedChanges > 0 ? 1 : 0;
+  return exitCode;
 }
 
 async function runSlice(url: string, options: RunOptions): Promise<number> {
@@ -1211,6 +1222,16 @@ async function runSlice(url: string, options: RunOptions): Promise<number> {
     };
 
     const outputPath = await writeResults(options.out, results);
+    const exitCode = failed > 0 ? 1 : 0;
+
+    await writeCanonicalAgentEvidenceV5(options.out, {
+      mode: 'scan',
+      exitCode,
+      outcome: exitCode === 0 ? 'clean' : 'findings',
+      reportPath: outputPath,
+      report: results as unknown as Record<string, unknown>,
+      stderr: '',
+    });
 
     if (options.json) {
       process.stdout.write(`${JSON.stringify(results, null, 2)}\n`);
@@ -1218,7 +1239,7 @@ async function runSlice(url: string, options: RunOptions): Promise<number> {
       renderTable(url, viewports, rootCauses, boundaryDisplays, outputPath, durationMs);
     }
 
-    return failed > 0 ? 1 : 0;
+    return exitCode;
   } finally {
     await runtime.browser.close();
   }
