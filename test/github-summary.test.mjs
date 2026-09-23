@@ -288,6 +288,7 @@ describe('GitHub summary', () => {
               schemaVersion: 'viewportable.agent-evidence.v5',
               findings: [
                 {
+                  id: 'dashboard-overflow',
                   repair: {
                     repairable: true,
                     reason: 'deterministic-authored-css',
