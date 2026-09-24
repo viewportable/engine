@@ -173,6 +173,28 @@ jobs:
             throw new Error(`unexpected discovery: ${JSON.stringify(report.discovery)}`);
           }
 
+          const fixedDiscovery = report.discovery.entries?.find(
+            (entry) => entry.route === '/fixed.html',
+          );
+          if (
+            fixedDiscovery?.sources?.length !== 2 ||
+            fixedDiscovery.sources[0]?.kind !== 'config' ||
+            fixedDiscovery.sources[1]?.kind !== 'nextjs-manifest' ||
+            fixedDiscovery.sources[1]?.manifest !== 'app-path-routes-manifest'
+          ) {
+            throw new Error(
+              `unexpected Next.js dedupe provenance: ${JSON.stringify(fixedDiscovery)}`,
+            );
+          }
+
+          const nextSource = report.discovery.sources.find((source) => source.kind === 'nextjs');
+          if (
+            nextSource?.source !== 'examples/github/nextjs-fixture/.next' ||
+            nextSource?.discoveredRoutes !== 2
+          ) {
+            throw new Error(`unexpected Next.js source summary: ${JSON.stringify(nextSource)}`);
+          }
+
           if (evidence.schemaVersion !== 'viewportable.project-agent-evidence.v1') {
             throw new Error(`unexpected project evidence schema: ${evidence.schemaVersion}`);
           }
