@@ -46,6 +46,7 @@ Current:
 - [ReDeCheck research](research/REDECHECK.md)
 - [Protocol and interchange survey](research/PROTOCOLS_AND_INTERCHANGE.md)
 - [SARIF and runtime UI findings](research/SARIF_RUNTIME_UI.md)
+- [Source-aware real React agent acceptance](research/SOURCE_AWARE_AGENT_ACCEPTANCE.md)
 
 ### RFCs - `docs/rfcs/`
 
