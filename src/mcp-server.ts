@@ -31,6 +31,11 @@ const commonShape = {
     .min(1)
     .optional()
     .describe('Directory under which MCP evidence directories are retained'),
+  changedFiles: z
+    .array(z.string().min(1))
+    .min(1)
+    .optional()
+    .describe('Repo-relative changed files used for conservative project route selection'),
 };
 
 const outputSchema = z.union([AgentEvidenceV5Schema, ProjectAgentEvidenceV1Schema]);
