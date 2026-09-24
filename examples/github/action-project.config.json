@@ -1,5 +1,9 @@
 {
-  "routes": ["/fixed.html", "/broken.html"],
+  "routes": ["/fixed.html"],
+  "routeDiscovery": {
+    "files": ["examples/github/action-project.routes.txt"],
+    "sitemaps": ["/project-sitemap.xml"]
+  },
   "routeImpact": [
     {
       "paths": ["src/home/"],
