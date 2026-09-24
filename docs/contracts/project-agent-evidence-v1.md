@@ -59,16 +59,19 @@ remain strict V5.
 
 ## Route semantics
 
-V1 routes are explicit origin-relative paths configured in `slice.config.json`:
+Project scan routes are origin-relative paths. They may be configured explicitly or assembled by bounded Route Discovery V2:
 
 ```json
 {
-  "routes": ["/", "/dashboard", "/settings?tab=profile"]
+  "routes": ["/"],
+  "routeDiscovery": {
+    "files": ["config/viewportable.routes.txt"],
+    "sitemaps": ["/sitemap.xml"]
+  }
 }
 ```
 
-Routes must begin with exactly one `/`, must be unique, and must remain on the base URL origin.
-V1 intentionally does not crawl, infer routes, or expand dynamic route parameters.
+All resulting routes must begin with exactly one `/`, are deduplicated deterministically, and must remain on the base URL origin. Route files are normalized repo-relative inputs. Sitemaps are same-origin `urlset` documents only. Discovery is bounded to 1 MB per source and 1000 unique routes. Sitemap indexes, recursive traversal, framework manifests, and crawling remain outside this slice.
 
 ## MCP and GitHub
 
