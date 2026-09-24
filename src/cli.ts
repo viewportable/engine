@@ -17,6 +17,7 @@ import { writeStructuralCompareReport } from './compare/report.js';
 import { runStructuralCompare } from './compare/run.js';
 import { captureBrowserSurface } from './capture.js';
 import { loadSliceConfig, type SliceConfig, type SuppressionRule } from './config.js';
+import { planProjectScope } from './changed-scope.js';
 import { findUniqueCssSource } from './css-source.js';
 import { findCssSourceLocation } from './css-source-location.js';
 import { findAuthoredCssSourceLocation } from './css-source-map.js';
@@ -71,6 +72,7 @@ interface CliOptions {
   baselineUrl?: string;
   readySelector?: string;
   config?: string;
+  changedFile: string[];
 }
 
 interface RunOptions extends CliOptions {
@@ -120,6 +122,10 @@ function parsePositiveInteger(value: string, name: string, allowZero = false): n
   }
 
   return parsed;
+}
+
+function collectChangedFile(value: string, previous: string[]): string[] {
+  return [...previous, value];
 }
 
 function parseWidths(value: string): number[] {
@@ -1274,20 +1280,35 @@ program
   .option('--baseline-url <url>', 'compare candidate URL against a baseline URL')
   .option('--ready-selector <selector>', 'require a visible selector before scanning')
   .option('--config <path>', 'project config path; defaults to slice.config.json when present')
+  .option(
+    '--changed-file <path>',
+    'repo-relative changed file used for conservative project route selection; repeatable',
+    collectChangedFile,
+    [],
+  )
   .exitOverride()
   .action(async (url: string, options: CliOptions, command: Command) => {
     const loaded = await loadSliceConfig(options.config);
     const resolved = resolveRunOptions(command, options, loaded.config);
 
     if (resolved.baselineUrl) {
+      if (resolved.changedFile.length > 0) {
+        throw new SliceCliError('--changed-file is supported only for project scans');
+      }
+
       process.exitCode = await runCompare(url, resolved.baselineUrl, resolved);
       return;
     }
 
     if (loaded.config.routes?.length) {
+      const scope = planProjectScope({
+        routes: loaded.config.routes,
+        routeImpact: loaded.config.routeImpact,
+        changedFiles: resolved.changedFile,
+      });
       const execution = await runProjectScan({
         baseUrl: url,
-        routes: loaded.config.routes,
+        scope,
         outDir: resolved.out,
         runRoute: (routeUrl, routeOut) =>
           runSlice(
@@ -1303,7 +1324,14 @@ program
       if (resolved.json) {
         process.stdout.write(`${JSON.stringify(execution.report, null, 2)}\n`);
       } else {
-        process.stdout.write(`\n  Viewportable Engine project scan | ${url}\n\n`);
+        process.stdout.write(`\n  Viewportable Engine project scan | ${url}\n`);
+        const scope = execution.report.scope;
+        const scopeText =
+          scope.mode === 'full'
+            ? `full scope | ${scope.selectedRoutes}/${scope.configuredRoutes} routes`
+            : `changed scope | ${scope.selectedRoutes}/${scope.configuredRoutes} routes` +
+              (scope.broadened ? ' | broadened by unknown impact' : '');
+        process.stdout.write(`  ${scopeText}\n\n`);
         for (const route of execution.report.routes) {
           const status =
             route.status === 'pass' ? 'PASS' : route.status === 'fail' ? 'FAIL' : 'INFRA';
@@ -1324,6 +1352,10 @@ program
 
       process.exitCode = execution.exitCode;
       return;
+    }
+
+    if (resolved.changedFile.length > 0) {
+      throw new SliceCliError('--changed-file requires routes in slice.config.json');
     }
 
     process.exitCode = await runSlice(url, resolved);
