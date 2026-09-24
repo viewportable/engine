@@ -161,5 +161,4 @@ describe('changed-scope planner', () => {
       }),
     ).toThrow('routeImpact references undiscovered route: /settings');
   });
-
 });
