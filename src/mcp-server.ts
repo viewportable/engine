@@ -60,7 +60,7 @@ export function createViewportableMcpServer({
     },
     {
       instructions:
-        'Use viewportable_scan for one rendered application state or a bounded project route set from slice.config.json, including explicit routes, repo route files, and same-origin sitemaps; use viewportable_compare to compare baseline and candidate versions. Treat exitCode 1 as product evidence, not a tool failure; exitCode 2 is scanner/setup failure. Per-route finding.repair remains the canonical auto-repair eligibility decision; do not infer repairability from source fields independently.',
+        'Use viewportable_scan for one rendered application state or a bounded project route set from slice.config.json, including explicit routes, repo route files, same-origin sitemaps, and explicit Next.js production manifests; use viewportable_compare to compare baseline and candidate versions. Treat exitCode 1 as product evidence, not a tool failure; exitCode 2 is scanner/setup failure. Per-route finding.repair remains the canonical auto-repair eligibility decision; do not infer repairability from source fields independently.',
     },
   );
 
