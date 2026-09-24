@@ -55,7 +55,7 @@ const routeDiscoveryFileSchema = z
       !value.startsWith('/') &&
       !value.startsWith('./') &&
       !value.endsWith('/') &&
-      !value.includes('\\\\') &&
+      !value.includes('\\') &&
       !value.includes('//') &&
       !value.split('/').includes('..'),
     {
