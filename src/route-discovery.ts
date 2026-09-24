@@ -351,7 +351,7 @@ export async function discoverProjectRoutes({
       throw new Error(`Could not find Next.js route manifests under: ${distDir}`);
     }
 
-    const nextRoutes = [];
+    const nextRoutes: ReturnType<typeof parseNextJsPagesManifest> = [];
 
     if (pagesContent !== null) {
       nextRoutes.push(...parseNextJsPagesManifest(pagesContent, pagesPath));
