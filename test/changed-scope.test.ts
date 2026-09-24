@@ -147,4 +147,19 @@ describe('changed-scope planner', () => {
       }),
     ).toThrow('Changed file must be a normalized repo-relative path');
   });
+  it('rejects route impact references that were not produced by discovery', () => {
+    expect(() =>
+      planProjectScope({
+        routes: ['/', '/dashboard'],
+        routeImpact: [
+          {
+            paths: ['src/settings/'],
+            routes: ['/settings'],
+          },
+        ],
+        changedFiles: ['src/settings/Form.tsx'],
+      }),
+    ).toThrow('routeImpact references undiscovered route: /settings');
+  });
+
 });
