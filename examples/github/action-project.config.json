@@ -1,20 +1,41 @@
 {
-  "routes": ["/fixed.html"],
+  "routes": [
+    "/fixed.html"
+  ],
   "routeDiscovery": {
-    "files": ["examples/github/action-project.routes.txt"],
-    "sitemaps": ["/project-sitemap.xml"]
+    "files": [
+      "examples/github/action-project.routes.txt"
+    ],
+    "sitemaps": [
+      "/project-sitemap.xml"
+    ],
+    "nextjs": [
+      {
+        "distDir": "examples/github/nextjs-fixture/.next"
+      }
+    ]
   },
   "routeImpact": [
     {
-      "paths": ["src/home/"],
-      "routes": ["/fixed.html"]
+      "paths": [
+        "src/home/"
+      ],
+      "routes": [
+        "/fixed.html"
+      ]
     },
     {
-      "paths": ["src/dashboard/"],
-      "routes": ["/broken.html"]
+      "paths": [
+        "src/dashboard/"
+      ],
+      "routes": [
+        "/broken.html"
+      ]
     }
   ],
-  "widths": [390],
+  "widths": [
+    390
+  ],
   "height": 900,
   "boundary": false,
   "wait": 0
