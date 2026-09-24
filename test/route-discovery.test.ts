@@ -66,13 +66,10 @@ describe('static route discovery', () => {
 
   it('rejects cross-origin sitemap locations and sitemap indexes', () => {
     expect(() =>
-      parseSitemapRoutes(
-        '<urlset><url><loc>https://evil.example/path</loc></url></urlset>',
-        {
-          baseUrl: 'https://example.com',
-          sitemapPath: '/sitemap.xml',
-        },
-      ),
+      parseSitemapRoutes('<urlset><url><loc>https://evil.example/path</loc></url></urlset>', {
+        baseUrl: 'https://example.com',
+        sitemapPath: '/sitemap.xml',
+      }),
     ).toThrow('must stay on the base URL origin');
 
     expect(() =>
