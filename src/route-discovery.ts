@@ -116,7 +116,10 @@ async function readRouteFile(rootDir: string, filePath: string): Promise<string>
   return content;
 }
 
-export function parseRouteFile(content: string, filePath: string): Array<{
+export function parseRouteFile(
+  content: string,
+  filePath: string,
+): Array<{
   route: string;
   line: number;
 }> {
@@ -207,10 +210,7 @@ async function defaultFetchSitemap(url: string, timeoutMs: number): Promise<stri
   }
 
   const declaredLength = Number(response.headers.get('content-length'));
-  if (
-    Number.isFinite(declaredLength) &&
-    declaredLength > MAX_ROUTE_DISCOVERY_SOURCE_BYTES
-  ) {
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_ROUTE_DISCOVERY_SOURCE_BYTES) {
     throw new Error(
       `Route discovery source exceeds ${MAX_ROUTE_DISCOVERY_SOURCE_BYTES} bytes: ${url}`,
     );
@@ -306,7 +306,9 @@ export async function discoverProjectRoutes({
     sources: routeSources,
   }));
   const hasExplicit = explicitRoutes.length > 0;
-  const hasDiscovery = Boolean((discovery?.files?.length ?? 0) + (discovery?.sitemaps?.length ?? 0));
+  const hasDiscovery = Boolean(
+    (discovery?.files?.length ?? 0) + (discovery?.sitemaps?.length ?? 0),
+  );
 
   return {
     mode: hasExplicit && hasDiscovery ? 'mixed' : hasExplicit ? 'explicit' : 'discovered',
