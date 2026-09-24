@@ -10,17 +10,29 @@ After package publication, the intended one-shot form is:
 npx @viewportable/slice http://localhost:3000
 ```
 
-## Scan an explicit project route set
+## Scan a bounded project route set
 
-Add a unique origin-relative `routes` list to `slice.config.json` when one application-level run
+Use explicit origin-relative `routes`, bounded route discovery, or both when one application-level run
 should verify several rendered pages through the same deterministic scanner:
 
 ```json
 {
-  "routes": ["/", "/dashboard", "/settings"],
+  "routes": ["/"],
+  "routeDiscovery": {
+    "files": ["config/viewportable.routes.txt"],
+    "sitemaps": ["/sitemap.xml"]
+  },
   "widths": [320, 390, 768]
 }
 ```
+
+A route file contains one origin-relative route per line; blank lines and lines beginning with `#`
+are ignored. Sitemap discovery accepts same-origin `urlset` documents. Routes from all sources are
+deduplicated in stable source order, while `project-results.json` retains per-route provenance.
+
+Route Discovery V2 is deliberately bounded: each discovery source is capped at 1 MB, the merged
+project set is capped at 1000 unique routes, cross-origin sitemap entries fail closed, and sitemap
+indexes/recursive crawling are not followed.
 
 Then run the ordinary command against the application origin:
 
@@ -28,7 +40,7 @@ Then run the ordinary command against the application origin:
 slice http://localhost:3000
 ```
 
-Project Scan V1 deliberately does not crawl or infer routes. Each configured route gets its own
+Project scans still do not perform an unconstrained crawl. Each configured or discovered route gets its own
 `results.json` and strict Canonical Agent Evidence V5 sidecar, while the project root receives:
 
 ```text
@@ -200,7 +212,7 @@ Agents must treat `finding.repair` as authoritative and must not recreate the el
 
 See [Canonical Agent Evidence Contract V5](docs/contracts/agent-evidence-v5.md). The [V4](docs/contracts/agent-evidence-v4.md), [V3](docs/contracts/agent-evidence-v3.md), [V2](docs/contracts/agent-evidence-v2.md), and [V1](docs/contracts/agent-evidence-v1.md) contracts remain available as compatibility boundaries.
 
-`viewportable_compare` returns introduced canonical `findings[]` directly to the agent; resolved evidence remains in the retained full structural report. `viewportable_scan` returns failing viewports and canonical root causes for a single page. When its config contains `routes`, it returns the project evidence envelope with one strict V5 payload per route while retaining every route report.
+`viewportable_compare` returns introduced canonical `findings[]` directly to the agent; resolved evidence remains in the retained full structural report. `viewportable_scan` returns failing viewports and canonical root causes for a single page. When its config contains `routes` or `routeDiscovery`, it returns the project evidence envelope with one strict V5 payload per selected route while retaining every route report.
 
 ### Real build-tool source-map acceptance
 
