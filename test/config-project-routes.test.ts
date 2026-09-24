@@ -148,5 +148,4 @@ describe('project routes config', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
-
 });
