@@ -1,0 +1,6 @@
+{
+  "/fixed.html/page": "app/fixed.html/page.js",
+  "/account/[id]/page": "app/account/[id]/page.js",
+  "/api/app/route": "app/api/app/route.js",
+  "/_not-found/page": "app/_not-found/page.js"
+}

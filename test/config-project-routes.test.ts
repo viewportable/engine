@@ -148,4 +148,42 @@ describe('project routes config', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+  it('accepts explicit Next.js build directories and rejects unsafe distDir paths', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'viewportable-nextjs-discovery-config-'));
+
+    try {
+      const validPath = path.join(root, 'valid-next.json');
+      await writeFile(
+        validPath,
+        JSON.stringify({
+          routeDiscovery: {
+            nextjs: [{ distDir: '.next' }, { distDir: 'apps/web/.next' }],
+          },
+        }),
+      );
+
+      const valid = await loadSliceConfig(validPath);
+      expect(valid.config.routeDiscovery?.nextjs).toEqual([
+        { distDir: '.next' },
+        { distDir: 'apps/web/.next' },
+      ]);
+
+      const invalidPath = path.join(root, 'invalid-next.json');
+      await writeFile(
+        invalidPath,
+        JSON.stringify({
+          routeDiscovery: {
+            nextjs: [{ distDir: '../outside/.next' }],
+          },
+        }),
+      );
+
+      await expect(loadSliceConfig(invalidPath)).rejects.toThrow(
+        'Next.js distDir must be a normalized repo-relative directory',
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
 });

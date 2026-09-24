@@ -20,15 +20,21 @@ should verify several rendered pages through the same deterministic scanner:
   "routes": ["/"],
   "routeDiscovery": {
     "files": ["config/viewportable.routes.txt"],
-    "sitemaps": ["/sitemap.xml"]
+    "sitemaps": ["/sitemap.xml"],
+    "nextjs": [{ "distDir": ".next" }]
   },
   "widths": [320, 390, 768]
 }
 ```
 
 A route file contains one origin-relative route per line; blank lines and lines beginning with `#`
-are ignored. Sitemap discovery accepts same-origin `urlset` documents. Routes from all sources are
-deduplicated in stable source order, while `project-results.json` retains per-route provenance.
+are ignored. Sitemap discovery accepts same-origin `urlset` documents. Next.js discovery reads
+production build manifests from the explicitly configured `distDir`: Pages Router paths come from
+`server/pages-manifest.json`, while App Router paths are resolved through
+`server/app-paths-manifest.json` plus `app-path-routes-manifest.json`. Dynamic parameter paths,
+Pages/API endpoints, App Route Handlers, and framework infrastructure entries are not guessed into
+browser URLs; provide concrete routes explicitly when they should be scanned. Routes from all sources
+are deduplicated in stable source order, while `project-results.json` retains per-route provenance.
 
 Route Discovery V2 is deliberately bounded: each discovery source is capped at 1 MB, the merged
 project set is capped at 1000 unique routes, cross-origin sitemap entries fail closed, and sitemap

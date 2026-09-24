@@ -1,0 +1,26 @@
+name: Next.js Route Format Preview
+
+on:
+  push:
+    branches:
+      - feat/nextjs-route-manifest-adapter-v1
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Apply formatter
+        run: npm run fmt
+      - name: Show formatter diff
+        run: |
+          git diff --             src/config.ts             src/nextjs-route-manifest.ts             src/route-discovery.ts             test/config-project-routes.test.ts             test/nextjs-route-manifest.test.ts             test/route-discovery.test.ts

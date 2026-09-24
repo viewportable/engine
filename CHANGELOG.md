@@ -36,6 +36,7 @@ All notable changes to Viewportable Engine are documented here.
 - Changed-Scope Mapping V1: project config can map normalized repo-relative exact files or directory prefixes to explicit routes, including an explicit `all` route target. CLI, MCP, and the composite Action accept runtime changed-file sets; fully mapped changes scan only the union of impacted routes, while any unknown-impact file broadens back to the full configured route set. `project-results.json` retains scope metadata and machine-readable per-route selection reasons.
 
 - Static Route Discovery V1 / Route Discovery V2 foundation: project scans can merge explicit routes with normalized repo route files and same-origin sitemap `urlset` entries. Discovery preserves per-route provenance, deduplicates in deterministic source order, caps each source at 1 MB and the merged set at 1000 routes, rejects cross-origin entries and sitemap indexes, feeds the discovered set into Changed-Scope Mapping, and is exercised end to end through the composite GitHub Action.
+- Next.js Route Manifest Adapter V1: bounded project discovery can read an explicitly configured Next.js production `distDir`. Pages Router browser paths come from `server/pages-manifest.json`; App Router internal entries are mapped through `server/app-paths-manifest.json` and `app-path-routes-manifest.json`. Dynamic parameter paths, API routes, App Route Handlers, and framework infrastructure entries are excluded rather than guessed, while manifest provenance participates in the same deterministic dedupe and Changed-Scope pipeline.
 
 
 

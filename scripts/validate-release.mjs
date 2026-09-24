@@ -69,6 +69,7 @@ for (const required of [
   'src/changed-scope.ts',
   'src/project-route.ts',
   'src/route-discovery.ts',
+  'src/nextjs-route-manifest.ts',
   'src/css-source-location.ts',
   'src/css-source-map.ts',
   'src/compare/source-attribution.ts',
@@ -99,6 +100,9 @@ for (const required of [
   'examples/github/compare.yml',
   'examples/github/action-project.config.json',
   'examples/github/action-project.routes.txt',
+  'examples/github/nextjs-fixture/.next/server/pages-manifest.json',
+  'examples/github/nextjs-fixture/.next/server/app-paths-manifest.json',
+  'examples/github/nextjs-fixture/.next/app-path-routes-manifest.json',
   'examples/demo-site/project-sitemap.xml',
 ]) {
   await requireFile(required);

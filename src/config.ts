@@ -64,15 +64,46 @@ const routeDiscoveryFileSchema = z
     },
   );
 
+const nextJsDistDirSchema = z
+  .string()
+  .min(1)
+  .refine(
+    (value) =>
+      !value.startsWith('/') &&
+      !value.startsWith('./') &&
+      !value.endsWith('/') &&
+      !value.includes('\\') &&
+      !value.includes('//') &&
+      !value.split('/').includes('..'),
+    {
+      message:
+        'Next.js distDir must be a normalized repo-relative directory without ./, .., //, trailing /, or backslashes',
+    },
+  );
+
+const nextJsRouteDiscoverySchema = z
+  .object({
+    distDir: nextJsDistDirSchema,
+  })
+  .strict();
+
 const routeDiscoverySchema = z
   .object({
     files: z.array(routeDiscoveryFileSchema).min(1).optional(),
     sitemaps: z.array(projectRouteSchema).min(1).optional(),
+    nextjs: z.array(nextJsRouteDiscoverySchema).min(1).optional(),
   })
   .strict()
-  .refine((value) => (value.files?.length ?? 0) + (value.sitemaps?.length ?? 0) > 0, {
-    message: 'routeDiscovery requires at least one file or sitemap',
-  });
+  .refine(
+    (value) =>
+      (value.files?.length ?? 0) +
+        (value.sitemaps?.length ?? 0) +
+        (value.nextjs?.length ?? 0) >
+      0,
+    {
+      message: 'routeDiscovery requires at least one file, sitemap, or Next.js manifest source',
+    },
+  );
 
 const routeImpactPathSchema = z
   .string()

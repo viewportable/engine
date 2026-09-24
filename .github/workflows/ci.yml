@@ -133,6 +133,7 @@ jobs:
           test -f ".slice/action-project-smoke/routes/001-fixed.html/results.json"
           test -f ".slice/action-project-smoke/routes/002-broken.html/results.json"
           test -f ".slice/action-project-smoke/routes/003-fixed.html-source-sitemap/results.json"
+          test -f ".slice/action-project-smoke/routes/004-index.html/results.json"
           node <<'NODE'
           const fs = require('node:fs');
           const report = JSON.parse(
@@ -146,8 +147,8 @@ jobs:
             throw new Error(`unexpected project mode: ${report.mode}`);
           }
           if (
-            report.summary.routesChecked !== 3 ||
-            report.summary.cleanRoutes !== 2 ||
+            report.summary.routesChecked !== 4 ||
+            report.summary.cleanRoutes !== 3 ||
             report.summary.findingRoutes !== 1 ||
             report.summary.infraFailureRoutes !== 0
           ) {
@@ -158,24 +159,47 @@ jobs:
           if (
             statuses['/fixed.html'] !== 'pass' ||
             statuses['/broken.html'] !== 'fail' ||
-            statuses['/fixed.html?source=sitemap'] !== 'pass'
+            statuses['/fixed.html?source=sitemap'] !== 'pass' ||
+            statuses['/index.html'] !== 'pass'
           ) {
             throw new Error(`unexpected route statuses: ${JSON.stringify(statuses)}`);
           }
 
           if (
             report.discovery?.mode !== 'mixed' ||
-            report.discovery?.routeCount !== 3 ||
-            report.discovery?.sources?.length !== 3
+            report.discovery?.routeCount !== 4 ||
+            report.discovery?.sources?.length !== 4
           ) {
             throw new Error(`unexpected discovery: ${JSON.stringify(report.discovery)}`);
+          }
+
+          const fixedDiscovery = report.discovery.entries?.find(
+            (entry) => entry.route === '/fixed.html',
+          );
+          if (
+            fixedDiscovery?.sources?.length !== 2 ||
+            fixedDiscovery.sources[0]?.kind !== 'config' ||
+            fixedDiscovery.sources[1]?.kind !== 'nextjs-manifest' ||
+            fixedDiscovery.sources[1]?.manifest !== 'app-path-routes-manifest'
+          ) {
+            throw new Error(
+              `unexpected Next.js dedupe provenance: ${JSON.stringify(fixedDiscovery)}`,
+            );
+          }
+
+          const nextSource = report.discovery.sources.find((source) => source.kind === 'nextjs');
+          if (
+            nextSource?.source !== 'examples/github/nextjs-fixture/.next' ||
+            nextSource?.discoveredRoutes !== 2
+          ) {
+            throw new Error(`unexpected Next.js source summary: ${JSON.stringify(nextSource)}`);
           }
 
           if (evidence.schemaVersion !== 'viewportable.project-agent-evidence.v1') {
             throw new Error(`unexpected project evidence schema: ${evidence.schemaVersion}`);
           }
-          if (evidence.routes?.length !== 3) {
-            throw new Error(`expected 3 route evidence entries, got ${evidence.routes?.length}`);
+          if (evidence.routes?.length !== 4) {
+            throw new Error(`expected 4 route evidence entries, got ${evidence.routes?.length}`);
           }
           for (const route of evidence.routes) {
             if (route.evidence?.schemaVersion !== 'viewportable.agent-evidence.v5') {
@@ -215,7 +239,7 @@ jobs:
 
           if (
             report.scope?.mode !== 'changed' ||
-            report.scope?.configuredRoutes !== 3 ||
+            report.scope?.configuredRoutes !== 4 ||
             report.scope?.selectedRoutes !== 1 ||
             report.scope?.broadened !== false
           ) {
