@@ -117,4 +117,115 @@ describe('static route discovery', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+  it('merges static Next.js Pages and App Router manifests with provenance', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'viewportable-nextjs-route-discovery-'));
+
+    try {
+      await mkdir(path.join(root, '.next/server'), { recursive: true });
+      await writeFile(
+        path.join(root, '.next/server/pages-manifest.json'),
+        JSON.stringify({
+          '/legacy': 'pages/legacy.js',
+          '/blog/[slug]': 'pages/blog/[slug].js',
+          '/api/health': 'pages/api/health.js',
+        }),
+      );
+      await writeFile(
+        path.join(root, '.next/server/app-paths-manifest.json'),
+        JSON.stringify({
+          '/pricing/(marketing)/page': 'app/pricing/(marketing)/page.js',
+          '/account/[id]/page': 'app/account/[id]/page.js',
+          '/api/app/route': 'app/api/app/route.js',
+        }),
+      );
+      await writeFile(
+        path.join(root, '.next/app-path-routes-manifest.json'),
+        JSON.stringify({
+          '/pricing/(marketing)/page': '/pricing',
+          '/account/[id]/page': '/account/[id]',
+          '/api/app/route': '/api/app',
+        }),
+      );
+
+      const result = await discoverProjectRoutes({
+        baseUrl: 'https://example.com',
+        explicitRoutes: ['/'],
+        discovery: {
+          nextjs: [{ distDir: '.next' }],
+        },
+        rootDir: root,
+      });
+
+      expect(result).toMatchObject({
+        mode: 'mixed',
+        routeCount: 3,
+        routes: ['/', '/legacy', '/pricing'],
+        sources: [
+          {
+            kind: 'config',
+            source: 'slice.config.json#routes',
+            discoveredRoutes: 1,
+          },
+          {
+            kind: 'nextjs',
+            source: '.next',
+            discoveredRoutes: 2,
+          },
+        ],
+      });
+      expect(result.entries[1]).toEqual({
+        route: '/legacy',
+        sources: [
+          {
+            kind: 'nextjs-manifest',
+            distDir: '.next',
+            manifest: 'pages-manifest',
+            internalKey: '/legacy',
+          },
+        ],
+      });
+      expect(result.entries[2]).toEqual({
+        route: '/pricing',
+        sources: [
+          {
+            kind: 'nextjs-manifest',
+            distDir: '.next',
+            manifest: 'app-path-routes-manifest',
+            internalKey: '/pricing/(marketing)/page',
+          },
+        ],
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('requires canonical App Router mapping when app-paths-manifest exists', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'viewportable-nextjs-route-discovery-missing-'));
+
+    try {
+      await mkdir(path.join(root, '.next/server'), { recursive: true });
+      await writeFile(
+        path.join(root, '.next/server/app-paths-manifest.json'),
+        JSON.stringify({
+          '/page': 'app/page.js',
+        }),
+      );
+
+      await expect(
+        discoverProjectRoutes({
+          baseUrl: 'https://example.com',
+          discovery: {
+            nextjs: [{ distDir: '.next' }],
+          },
+          rootDir: root,
+        }),
+      ).rejects.toThrow(
+        'Next.js App Router discovery requires .next/app-path-routes-manifest.json',
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
 });
