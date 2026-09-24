@@ -1,6 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { RouteDiscoveryConfig } from './config.js';
+import {
+  parseNextJsAppManifests,
+  parseNextJsPagesManifest,
+} from './nextjs-route-manifest.js';
 import { normalizeProjectRoute } from './project-route.js';
 
 export const MAX_ROUTE_DISCOVERY_SOURCE_BYTES = 1_000_000;
@@ -19,6 +23,12 @@ export type RouteDiscoverySource =
       kind: 'sitemap';
       path: string;
       location: string;
+    }
+  | {
+      kind: 'nextjs-manifest';
+      distDir: string;
+      manifest: 'pages-manifest' | 'app-path-routes-manifest';
+      internalKey: string;
     };
 
 export interface RouteDiscoveryEntry {
@@ -32,7 +42,7 @@ export interface RouteDiscoveryResult {
   routes: string[];
   entries: RouteDiscoveryEntry[];
   sources: Array<{
-    kind: 'config' | 'file' | 'sitemap';
+    kind: 'config' | 'file' | 'sitemap' | 'nextjs';
     source: string;
     discoveredRoutes: number;
   }>;
@@ -94,6 +104,34 @@ function repoRelativeFilePath(value: string): string {
   }
 
   return value;
+}
+
+function isEnoent(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === 'ENOENT'
+  );
+}
+
+async function readOptionalDiscoveryFile(rootDir: string, filePath: string): Promise<string | null> {
+  const normalized = repoRelativeFilePath(filePath);
+  const absoluteRoot = path.resolve(rootDir);
+  const absolutePath = path.resolve(absoluteRoot, normalized);
+
+  if (absolutePath !== absoluteRoot && !absolutePath.startsWith(`${absoluteRoot}${path.sep}`)) {
+    throw new Error(`Route discovery file escapes project root: ${filePath}`);
+  }
+
+  try {
+    const content = await readFile(absolutePath, 'utf8');
+    assertSourceSize(content, filePath);
+    return content;
+  } catch (error) {
+    if (isEnoent(error)) return null;
+    throw error;
+  }
 }
 
 async function readRouteFile(rootDir: string, filePath: string): Promise<string> {
@@ -297,6 +335,61 @@ export async function discoverProjectRoutes({
     });
   }
 
+  for (const nextSource of discovery?.nextjs ?? []) {
+    const distDir = nextSource.distDir;
+    const pagesPath = `${distDir}/server/pages-manifest.json`;
+    const appPathsPath = `${distDir}/server/app-paths-manifest.json`;
+    const appRoutesPath = `${distDir}/app-path-routes-manifest.json`;
+
+    const [pagesContent, appPathsContent, appRoutesContent] = await Promise.all([
+      readOptionalDiscoveryFile(rootDir, pagesPath),
+      readOptionalDiscoveryFile(rootDir, appPathsPath),
+      readOptionalDiscoveryFile(rootDir, appRoutesPath),
+    ]);
+
+    if (pagesContent === null && appPathsContent === null) {
+      throw new Error(`Could not find Next.js route manifests under: ${distDir}`);
+    }
+
+    const nextRoutes = [];
+
+    if (pagesContent !== null) {
+      nextRoutes.push(...parseNextJsPagesManifest(pagesContent, pagesPath));
+    }
+
+    if (appPathsContent !== null) {
+      if (appRoutesContent === null) {
+        throw new Error(
+          `Next.js App Router discovery requires ${appRoutesPath} when ${appPathsPath} exists`,
+        );
+      }
+
+      nextRoutes.push(
+        ...parseNextJsAppManifests({
+          appPathsContent,
+          appPathRoutesContent: appRoutesContent,
+          appPathsSource: appPathsPath,
+          appPathRoutesSource: appRoutesPath,
+        }),
+      );
+    }
+
+    for (const item of nextRoutes) {
+      appendRoute(byRoute, item.route, {
+        kind: 'nextjs-manifest',
+        distDir,
+        manifest: item.manifest,
+        internalKey: item.internalKey,
+      });
+    }
+
+    sources.push({
+      kind: 'nextjs',
+      source: distDir,
+      discoveredRoutes: nextRoutes.length,
+    });
+  }
+
   if (byRoute.size === 0) {
     throw new Error('Project route discovery produced zero routes');
   }
@@ -307,7 +400,9 @@ export async function discoverProjectRoutes({
   }));
   const hasExplicit = explicitRoutes.length > 0;
   const hasDiscovery = Boolean(
-    (discovery?.files?.length ?? 0) + (discovery?.sitemaps?.length ?? 0),
+    (discovery?.files?.length ?? 0) +
+      (discovery?.sitemaps?.length ?? 0) +
+      (discovery?.nextjs?.length ?? 0),
   );
 
   return {
