@@ -155,17 +155,37 @@ function projectRouteEvidence(agentEvidence, route) {
   return agentEvidence.routes?.find((entry) => entry.route === route)?.evidence ?? null;
 }
 
+function projectScopeReasonText(reason) {
+  if (reason?.kind === 'full-project-scan') return 'Full project scan';
+  if (reason?.kind === 'path-match') {
+    return `${reason.changedFile} -> ${reason.impactPath}`;
+  }
+  if (reason?.kind === 'unknown-impact') {
+    return `Unknown impact: ${reason.changedFile}`;
+  }
+  return 'Unknown';
+}
+
 function renderProjectGitHubSummary(results, agentEvidence = null) {
   const summary = results.summary ?? {};
+  const scope = results.scope ?? null;
+  const scopeText =
+    scope?.mode === 'changed'
+      ? `Changed scope: ${scope.selectedRoutes ?? 0}/${scope.configuredRoutes ?? 0} routes` +
+        (scope.broadened ? ' · broadened by unknown impact' : '')
+      : scope
+        ? `Full scope: ${scope.selectedRoutes ?? 0}/${scope.configuredRoutes ?? 0} routes`
+        : null;
   const lines = [
     '## Viewportable Engine project scan',
     '',
     `**${summary.cleanRoutes ?? 0} clean / ${summary.findingRoutes ?? 0} findings / ` +
       `${summary.infraFailureRoutes ?? 0} infra · ${summary.routesChecked ?? 0} routes · ` +
       `${summary.viewportsChecked ?? 0} viewports checked**`,
+    ...(scopeText ? ['', `**Scope:** ${scopeText}`] : []),
     '',
-    '| Route | Status | Viewports | Findings | Repair |',
-    '| --- | :---: | ---: | ---: | --- |',
+    '| Route | Status | Viewports | Findings | Repair | Selection reason |',
+    '| --- | :---: | ---: | ---: | --- | --- |',
   ];
 
   for (const route of results.routes ?? []) {
@@ -178,10 +198,15 @@ function renderProjectGitHubSummary(results, agentEvidence = null) {
           ? `${repair.repairable} auto-repairable · ${repair.manual} manual review`
           : '-';
 
+    const selectionReason = (route.selectionReasons ?? [])
+      .map(projectScopeReasonText)
+      .map(cell)
+      .join('<br>');
+
     lines.push(
       `| \`${cell(route.route)}\` | ${cell(route.status.toUpperCase())} | ` +
         `${route.summary?.viewportsChecked ?? 0} | ${route.summary?.findingCount ?? 0} | ` +
-        `${cell(repairText)} |`,
+        `${cell(repairText)} | ${selectionReason || '-'} |`,
     );
   }
 
