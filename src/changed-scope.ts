@@ -49,9 +49,7 @@ function normalizeChangedFile(value: string): string {
 }
 
 function pathMatches(changedFile: string, impactPath: string): boolean {
-  return impactPath.endsWith('/')
-    ? changedFile.startsWith(impactPath)
-    : changedFile === impactPath;
+  return impactPath.endsWith('/') ? changedFile.startsWith(impactPath) : changedFile === impactPath;
 }
 
 function appendReason(
