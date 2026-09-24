@@ -249,6 +249,12 @@ describe('GitHub summary', () => {
     const markdown = renderGitHubSummary(
       {
         mode: 'project-scan',
+        scope: {
+          mode: 'changed',
+          configuredRoutes: 3,
+          selectedRoutes: 2,
+          broadened: false,
+        },
         summary: {
           routesChecked: 2,
           cleanRoutes: 1,
@@ -263,12 +269,26 @@ describe('GitHub summary', () => {
             status: 'pass',
             summary: { viewportsChecked: 1, findingCount: 0 },
             error: null,
+            selectionReasons: [
+              {
+                kind: 'path-match',
+                changedFile: 'src/home/Hero.tsx',
+                impactPath: 'src/home/',
+              },
+            ],
           },
           {
             route: '/dashboard',
             status: 'fail',
             summary: { viewportsChecked: 1, findingCount: 1 },
             error: null,
+            selectionReasons: [
+              {
+                kind: 'path-match',
+                changedFile: 'src/dashboard/Card.tsx',
+                impactPath: 'src/dashboard/',
+              },
+            ],
           },
         ],
       },
@@ -305,9 +325,10 @@ describe('GitHub summary', () => {
     expect(markdown).toContain(
       '**1 clean / 1 findings / 0 infra · 2 routes · 2 viewports checked**',
     );
-    expect(markdown).toContain('| `/` | PASS | 1 | 0 | - |');
+    expect(markdown).toContain('**Scope:** Changed scope: 2/3 routes');
+    expect(markdown).toContain('| `/` | PASS | 1 | 0 | - | src/home/Hero.tsx -> src/home/ |');
     expect(markdown).toContain(
-      '| `/dashboard` | FAIL | 1 | 1 | 1 auto-repairable · 0 manual review |',
+      '| `/dashboard` | FAIL | 1 | 1 | 1 auto-repairable · 0 manual review | src/dashboard/Card.tsx -> src/dashboard/ |',
     );
   });
 });
