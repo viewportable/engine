@@ -85,17 +85,19 @@ describe('changed-scope planner', () => {
     expect(scope.unknownFiles).toEqual(['package.json']);
     expect(scope.selections.map((selection) => selection.route)).toEqual(routes);
 
-    expect(scope.selections.find((selection) => selection.route === '/dashboard')?.reasons).toEqual([
-      {
-        kind: 'path-match',
-        changedFile: 'src/dashboard/Card.tsx',
-        impactPath: 'src/dashboard/',
-      },
-      {
-        kind: 'unknown-impact',
-        changedFile: 'package.json',
-      },
-    ]);
+    expect(scope.selections.find((selection) => selection.route === '/dashboard')?.reasons).toEqual(
+      [
+        {
+          kind: 'path-match',
+          changedFile: 'src/dashboard/Card.tsx',
+          impactPath: 'src/dashboard/',
+        },
+        {
+          kind: 'unknown-impact',
+          changedFile: 'package.json',
+        },
+      ],
+    );
     expect(scope.selections.find((selection) => selection.route === '/')?.reasons).toEqual([
       {
         kind: 'unknown-impact',
