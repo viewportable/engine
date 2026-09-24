@@ -38,6 +38,10 @@ inputs:
     description: Repository checkout root used to verify and map deterministic stylesheet locations into GitHub annotations
     required: false
     default: ''
+  changed-files:
+    description: Newline-separated repo-relative changed files used for conservative project route selection
+    required: false
+    default: ''
 
 outputs:
   exit_code:
@@ -95,6 +99,7 @@ runs:
         SLICE_BASELINE_URL: ${{ inputs.baseline-url }}
         SLICE_CONFIG: ${{ inputs.config }}
         SLICE_OUT: ${{ inputs.out }}
+        SLICE_CHANGED_FILES: ${{ inputs.changed-files }}
       run: |
         args=("$SLICE_URL" "--out" "$SLICE_OUT")
         result_name="results.json"
@@ -106,6 +111,13 @@ runs:
 
         if [[ -n "$SLICE_CONFIG" ]]; then
           args+=("--config" "$SLICE_CONFIG")
+        fi
+
+        if [[ -n "$SLICE_CHANGED_FILES" ]]; then
+          while IFS= read -r changed_file; do
+            [[ -z "$changed_file" ]] && continue
+            args+=("--changed-file" "$changed_file")
+          done <<< "$SLICE_CHANGED_FILES"
         fi
 
         set +e

@@ -173,6 +173,57 @@ jobs:
           }
           NODE
 
+      - name: GitHub Action changed-scope project scan
+        id: changed-scope-action
+        uses: ./
+        with:
+          url: http://127.0.0.1:4173
+          config: examples/github/action-project.config.json
+          changed-files: |
+            src/home/Hero.tsx
+          out: .slice/action-changed-scope-smoke
+          artifact-name: slice-action-changed-scope-smoke
+          install-browser: 'false'
+
+      - name: Verify GitHub Action changed-scope project scan
+        env:
+          SLICE_SCOPE_EXIT_CODE: ${{ steps.changed-scope-action.outputs.exit_code }}
+          SLICE_SCOPE_RESULT_PATH: ${{ steps.changed-scope-action.outputs.result_path }}
+        run: |
+          test "$SLICE_SCOPE_EXIT_CODE" = "0"
+          test "$SLICE_SCOPE_RESULT_PATH" = ".slice/action-changed-scope-smoke/project-results.json"
+          test -f ".slice/action-changed-scope-smoke/routes/001-fixed.html/results.json"
+          test ! -e ".slice/action-changed-scope-smoke/routes/002-broken.html"
+          node <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(
+            fs.readFileSync('.slice/action-changed-scope-smoke/project-results.json', 'utf8'),
+          );
+
+          if (
+            report.scope?.mode !== 'changed' ||
+            report.scope?.configuredRoutes !== 2 ||
+            report.scope?.selectedRoutes !== 1 ||
+            report.scope?.broadened !== false
+          ) {
+            throw new Error(`unexpected changed scope: ${JSON.stringify(report.scope)}`);
+          }
+
+          if (report.routes?.length !== 1 || report.routes[0]?.route !== '/fixed.html') {
+            throw new Error(`unexpected scoped routes: ${JSON.stringify(report.routes)}`);
+          }
+
+          const reasons = report.routes[0]?.selectionReasons;
+          if (
+            reasons?.length !== 1 ||
+            reasons[0]?.kind !== 'path-match' ||
+            reasons[0]?.changedFile !== 'src/home/Hero.tsx' ||
+            reasons[0]?.impactPath !== 'src/home/'
+          ) {
+            throw new Error(`unexpected selection reasons: ${JSON.stringify(reasons)}`);
+          }
+          NODE
+
       - name: GitHub Action compare smoke
         id: compare-action
         continue-on-error: true

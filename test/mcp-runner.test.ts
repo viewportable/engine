@@ -40,6 +40,7 @@ describe('Viewportable MCP runner', () => {
         boundary: false,
         readySelector: '#app',
         config: 'slice.config.json',
+        changedFiles: ['src/home/Hero.tsx', 'src/shared/theme.ts'],
       },
     });
 
@@ -60,6 +61,10 @@ describe('Viewportable MCP runner', () => {
       '#app',
       '--config',
       'slice.config.json',
+      '--changed-file',
+      'src/home/Hero.tsx',
+      '--changed-file',
+      'src/shared/theme.ts',
     ]);
   });
 

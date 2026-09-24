@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { writeCanonicalAgentEvidenceV5 } from '../src/contracts/write-agent-evidence-v5.js';
+import { planProjectScope } from '../src/changed-scope.js';
 import { resolveProjectRoute, runProjectScan } from '../src/project-scan.js';
 
 async function writeRouteResult(
@@ -60,7 +61,7 @@ describe('multi-page project scan', () => {
     try {
       const execution = await runProjectScan({
         baseUrl: 'http://127.0.0.1:4173/app',
-        routes: ['/', '/dashboard'],
+        scope: planProjectScope({ routes: ['/', '/dashboard'] }),
         outDir,
         runRoute: async (url, routeOut) => {
           const finding = url.endsWith('/dashboard');
@@ -102,6 +103,8 @@ describe('multi-page project scan', () => {
 
       const persisted = JSON.parse(await readFile(execution.agentEvidencePath, 'utf8'));
       expect(persisted.schemaVersion).toBe('viewportable.project-agent-evidence.v1');
+      expect(execution.report.scope.mode).toBe('full');
+      expect(execution.report.routes[0]?.selectionReasons).toEqual([{ kind: 'full-project-scan' }]);
       expect(execution.report.routes[0]?.reportPath).toContain('routes/001-root/results.json');
       expect(execution.report.routes[1]?.reportPath).toContain('routes/002-dashboard/results.json');
     } finally {
@@ -115,7 +118,7 @@ describe('multi-page project scan', () => {
     try {
       const execution = await runProjectScan({
         baseUrl: 'http://127.0.0.1:4173',
-        routes: ['/missing', '/fixed'],
+        scope: planProjectScope({ routes: ['/missing', '/fixed'] }),
         outDir,
         runRoute: async (url, routeOut) => {
           if (url.endsWith('/missing')) throw new Error('page did not become ready');

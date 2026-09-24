@@ -18,6 +18,7 @@ export interface EngineMcpOptions {
   readySelector?: string;
   config?: string;
   outBase?: string;
+  changedFiles?: string[];
 }
 
 export interface EngineMcpRun {
@@ -46,6 +47,9 @@ function appendCommonArgs(args: string[], options: EngineMcpOptions): void {
   if (options.boundary === false) args.push('--no-boundary');
   if (options.readySelector) args.push('--ready-selector', options.readySelector);
   if (options.config) args.push('--config', options.config);
+  for (const changedFile of options.changedFiles ?? []) {
+    args.push('--changed-file', changedFile);
+  }
 }
 
 export function buildEngineArgs({

@@ -7,6 +7,7 @@ import {
 } from './contracts/project-agent-evidence-v1.js';
 import { AgentEvidenceV5Schema, type AgentEvidenceV5 } from './contracts/agent-evidence-v5.js';
 import { writeCanonicalAgentEvidenceV5 } from './contracts/write-agent-evidence-v5.js';
+import type { ProjectScopePlan, ProjectScopeReason } from './changed-scope.js';
 
 export const PROJECT_RESULTS_FILENAME = 'project-results.json';
 export const PROJECT_AGENT_EVIDENCE_FILENAME = 'agent-evidence.json';
@@ -24,6 +25,7 @@ export interface ProjectScanRouteResult {
     durationMs: number | null;
   };
   error: string | null;
+  selectionReasons: ProjectScopeReason[];
 }
 
 export interface ProjectScanResults {
@@ -31,6 +33,7 @@ export interface ProjectScanResults {
   mode: 'project-scan';
   baseUrl: string;
   timestamp: string;
+  scope: ProjectScopePlan;
   summary: {
     routesChecked: number;
     cleanRoutes: number;
@@ -101,12 +104,12 @@ async function readRouteEvidence(outDir: string): Promise<AgentEvidenceV5> {
 
 export async function runProjectScan({
   baseUrl,
-  routes,
+  scope,
   outDir,
   runRoute,
 }: {
   baseUrl: string;
-  routes: string[];
+  scope: ProjectScopePlan;
   outDir: string;
   runRoute: ProjectRouteRunner;
 }): Promise<ProjectScanExecution> {
@@ -118,7 +121,8 @@ export async function runProjectScan({
   const routeResults: ProjectScanRouteResult[] = [];
   const routeEvidence: Array<{ route: string; url: string; evidence: AgentEvidenceV5 }> = [];
 
-  for (const [index, route] of routes.entries()) {
+  for (const [index, selection] of scope.selections.entries()) {
+    const route = selection.route;
     const url = resolveProjectRoute(baseUrl, route);
     const routeOut = path.join(routesOut, routeArtifactSlug(route, index));
     await mkdir(routeOut, { recursive: true });
@@ -161,6 +165,7 @@ export async function runProjectScan({
         durationMs: evidence.summary.durationMs,
       },
       error: evidence.error,
+      selectionReasons: selection.reasons,
     });
   }
 
@@ -185,6 +190,7 @@ export async function runProjectScan({
     mode: 'project-scan',
     baseUrl,
     timestamp: new Date().toISOString(),
+    scope,
     summary,
     routes: routeResults,
   };

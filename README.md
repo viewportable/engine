@@ -48,6 +48,51 @@ The root evidence uses `viewportable.project-agent-evidence.v1` and embeds each 
 V5 payload. Aggregate exit precedence is deterministic: any infrastructure failure returns `2`;
 otherwise any route with findings returns `1`; otherwise the project returns `0`.
 
+### Verify only routes affected by changed files
+
+Changed-Scope Mapping V1 keeps scope reduction explicit and conservative. Add deterministic repo-path mappings next to the route set:
+
+```json
+{
+  "routes": ["/", "/dashboard", "/settings"],
+  "routeImpact": [
+    {
+      "paths": ["src/dashboard/"],
+      "routes": ["/dashboard"]
+    },
+    {
+      "paths": ["src/styles/"],
+      "routes": "all"
+    }
+  ]
+}
+```
+
+Then pass each repo-relative changed file at runtime:
+
+```bash
+slice http://localhost:3000 \
+  --changed-file src/dashboard/Card.tsx \
+  --changed-file src/dashboard/Chart.tsx
+```
+
+A mapping path ending in `/` is a directory prefix; otherwise it is an exact repo-relative file.
+If every changed file is mapped, only the union of mapped routes is scanned. If even one changed file
+has unknown impact, Viewportable broadens back to every configured route instead of risking a missed
+regression. `project-results.json` records the selected route count, whether scope was broadened,
+unknown files, and a machine-readable selection reason for every executed route.
+
+For the composite Action, provide the same runtime input as newline-separated `changed-files`:
+
+```yaml
+with:
+  url: http://127.0.0.1:3000
+  config: slice.config.json
+  changed-files: |
+    src/dashboard/Card.tsx
+    src/dashboard/Chart.tsx
+```
+
 
 ## See it catch a real PR
 

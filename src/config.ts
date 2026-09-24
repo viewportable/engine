@@ -49,6 +49,29 @@ const projectRoutesSchema = z
     message: 'routes must not contain duplicates',
   });
 
+const routeImpactPathSchema = z
+  .string()
+  .min(1)
+  .refine(
+    (value) =>
+      !value.startsWith('/') &&
+      !value.startsWith('./') &&
+      !value.includes('\\') &&
+      !value.includes('//') &&
+      !value.split('/').includes('..'),
+    {
+      message:
+        'impact path must be a normalized repo-relative file or directory prefix without ./, .., //, or backslashes',
+    },
+  );
+
+const routeImpactRuleSchema = z
+  .object({
+    paths: z.array(routeImpactPathSchema).min(1),
+    routes: z.union([z.literal('all'), z.array(projectRouteSchema).min(1)]),
+  })
+  .strict();
+
 const sliceConfigSchema = z
   .object({
     widths: z.array(z.number().int().positive()).min(1).optional(),
@@ -59,11 +82,40 @@ const sliceConfigSchema = z
     wait: z.number().int().nonnegative().optional(),
     readySelector: z.string().min(1).optional(),
     routes: projectRoutesSchema.optional(),
+    routeImpact: z.array(routeImpactRuleSchema).min(1).optional(),
     ignore: z.array(suppressionRuleSchema).default([]),
   })
-  .strict();
+  .strict()
+  .superRefine((config, context) => {
+    if (!config.routeImpact) return;
+
+    if (!config.routes) {
+      context.addIssue({
+        code: 'custom',
+        path: ['routeImpact'],
+        message: 'routeImpact requires routes',
+      });
+      return;
+    }
+
+    const configuredRoutes = new Set(config.routes);
+    for (const [ruleIndex, rule] of config.routeImpact.entries()) {
+      if (rule.routes === 'all') continue;
+
+      for (const route of rule.routes) {
+        if (configuredRoutes.has(route)) continue;
+
+        context.addIssue({
+          code: 'custom',
+          path: ['routeImpact', ruleIndex, 'routes'],
+          message: `routeImpact references unconfigured route: ${route}`,
+        });
+      }
+    }
+  });
 
 export type SuppressionRule = z.infer<typeof suppressionRuleSchema>;
+export type RouteImpactRule = z.infer<typeof routeImpactRuleSchema>;
 export type SliceConfig = z.infer<typeof sliceConfigSchema>;
 
 export interface LoadedSliceConfig {

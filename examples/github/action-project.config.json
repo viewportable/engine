@@ -1,5 +1,15 @@
 {
   "routes": ["/fixed.html", "/broken.html"],
+  "routeImpact": [
+    {
+      "paths": ["src/home/"],
+      "routes": ["/fixed.html"]
+    },
+    {
+      "paths": ["src/dashboard/"],
+      "routes": ["/broken.html"]
+    }
+  ],
   "widths": [390],
   "height": 900,
   "boundary": false,

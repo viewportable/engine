@@ -43,4 +43,65 @@ describe('project routes config', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+
+  it('validates conservative route impact mappings against configured routes', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'viewportable-route-impact-config-'));
+
+    try {
+      const validPath = path.join(root, 'valid.json');
+      await writeFile(
+        validPath,
+        JSON.stringify({
+          routes: ['/', '/dashboard'],
+          routeImpact: [
+            {
+              paths: ['src/dashboard/', 'src/components/Nav.tsx'],
+              routes: ['/dashboard'],
+            },
+            {
+              paths: ['src/styles/'],
+              routes: 'all',
+            },
+          ],
+        }),
+      );
+
+      const valid = await loadSliceConfig(validPath);
+      expect(valid.config.routeImpact).toEqual([
+        {
+          paths: ['src/dashboard/', 'src/components/Nav.tsx'],
+          routes: ['/dashboard'],
+        },
+        {
+          paths: ['src/styles/'],
+          routes: 'all',
+        },
+      ]);
+
+      const missingRoutesPath = path.join(root, 'missing-routes.json');
+      await writeFile(
+        missingRoutesPath,
+        JSON.stringify({
+          routeImpact: [{ paths: ['src/'], routes: 'all' }],
+        }),
+      );
+      await expect(loadSliceConfig(missingRoutesPath)).rejects.toThrow(
+        'routeImpact requires routes',
+      );
+
+      const unknownRoutePath = path.join(root, 'unknown-route.json');
+      await writeFile(
+        unknownRoutePath,
+        JSON.stringify({
+          routes: ['/'],
+          routeImpact: [{ paths: ['src/dashboard/'], routes: ['/dashboard'] }],
+        }),
+      );
+      await expect(loadSliceConfig(unknownRoutePath)).rejects.toThrow(
+        'routeImpact references unconfigured route: /dashboard',
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });

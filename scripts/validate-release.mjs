@@ -66,6 +66,7 @@ for (const required of [
   'src/contracts/write-agent-evidence-v5.ts',
   'src/contracts/project-agent-evidence-v1.ts',
   'src/project-scan.ts',
+  'src/changed-scope.ts',
   'src/css-source-location.ts',
   'src/css-source-map.ts',
   'src/compare/source-attribution.ts',
@@ -117,6 +118,8 @@ for (const requiredFragment of [
   'agent-evidence.json',
   'SLICE_AGENT_EVIDENCE_PATH',
   'project-results.json',
+  'changed-files',
+  'SLICE_CHANGED_FILES',
   '${{ inputs.out }}/routes',
 ]) {
   if (!action.includes(requiredFragment)) {
