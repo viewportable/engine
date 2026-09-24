@@ -188,25 +188,6 @@ runs:
       run: |
         code="${SLICE_EXIT_CODE:-2}"
         exit "$code"
-\r'}"
-            [[ -z "$changed_file" ]] && continue
-            args+=("--changed-file" "$changed_file")
-          done <<< "$SLICE_CHANGED_FILES"
-        fi
-
-        set +e
-        node "$GITHUB_ACTION_PATH/dist/cli.mjs" "${args[@]}"
-        code=$?
-        set -e
-
-        if [[ -f "$SLICE_OUT/project-results.json" ]]; then
-          result_name="project-results.json"
-        fi
-
-        echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-        echo "result_path=$SLICE_OUT/$result_name" >> "$GITHUB_OUTPUT"
-        echo "agent_evidence_path=$SLICE_OUT/agent-evidence.json" >> "$GITHUB_OUTPUT"
-
     - name: Write job summary
       if: ${{ always() }}
       shell: bash
