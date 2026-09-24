@@ -66,12 +66,13 @@ Project scan routes are origin-relative paths. They may be configured explicitly
   "routes": ["/"],
   "routeDiscovery": {
     "files": ["config/viewportable.routes.txt"],
-    "sitemaps": ["/sitemap.xml"]
+    "sitemaps": ["/sitemap.xml"],
+    "nextjs": [{ "distDir": ".next" }]
   }
 }
 ```
 
-All resulting routes must begin with exactly one `/`, are deduplicated deterministically, and must remain on the base URL origin. Route files are normalized repo-relative inputs. Sitemaps are same-origin `urlset` documents only. Discovery is bounded to 1 MB per source and 1000 unique routes. Sitemap indexes, recursive traversal, framework manifests, and crawling remain outside this slice.
+All resulting routes must begin with exactly one `/`, are deduplicated deterministically, and must remain on the base URL origin. Route files are normalized repo-relative inputs. Sitemaps are same-origin `urlset` documents only. Next.js build discovery reads the current production Pages/App manifests from an explicit repo-relative `distDir` and only emits concrete static browser paths. Dynamic parameter routes and API/Route Handler entries remain excluded unless a concrete browser route is supplied by another source. Discovery is bounded to 1 MB per source and 1000 unique routes. Sitemap indexes, recursive traversal, other framework adapters, and crawling remain outside this slice.
 
 ## MCP and GitHub
 
