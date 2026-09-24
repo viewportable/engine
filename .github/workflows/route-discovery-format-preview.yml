@@ -1,0 +1,30 @@
+name: Route Discovery Format Preview
+
+on:
+  push:
+    branches:
+      - feat/static-route-discovery-v1
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci --ignore-scripts
+
+      - name: Apply formatter
+        run: npm run fmt
+
+      - name: Show formatter diff
+        run: |
+          git diff --             src/cli.ts             src/route-discovery.ts             test/changed-scope.test.ts             test/config-project-routes.test.ts             test/route-discovery.test.ts
