@@ -38,6 +38,10 @@ inputs:
     description: Repository checkout root used to verify and map deterministic stylesheet locations into GitHub annotations
     required: false
     default: ''
+  changed-files:
+    description: Newline-separated repo-relative changed files used for conservative project route selection
+    required: false
+    default: ''
 
 outputs:
   exit_code:
@@ -95,6 +99,7 @@ runs:
         SLICE_BASELINE_URL: ${{ inputs.baseline-url }}
         SLICE_CONFIG: ${{ inputs.config }}
         SLICE_OUT: ${{ inputs.out }}
+        SLICE_CHANGED_FILES: ${{ inputs.changed-files }}
       run: |
         args=("$SLICE_URL" "--out" "$SLICE_OUT")
         result_name="results.json"
@@ -106,6 +111,82 @@ runs:
 
         if [[ -n "$SLICE_CONFIG" ]]; then
           args+=("--config" "$SLICE_CONFIG")
+        fi
+
+        if [[ -n "$SLICE_CHANGED_FILES" ]]; then
+          while IFS= read -r changed_file; do
+            changed_file="${changed_file%
+        node "$GITHUB_ACTION_PATH/dist/cli.mjs" "${args[@]}"
+        code=$?
+        set -e
+
+        if [[ -f "$SLICE_OUT/project-results.json" ]]; then
+          result_name="project-results.json"
+        fi
+
+        echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+        echo "result_path=$SLICE_OUT/$result_name" >> "$GITHUB_OUTPUT"
+        echo "agent_evidence_path=$SLICE_OUT/agent-evidence.json" >> "$GITHUB_OUTPUT"
+
+    - name: Write job summary
+      if: ${{ always() }}
+      shell: bash
+      env:
+        SLICE_RESULT_PATH: ${{ steps.scan.outputs.result_path }}
+        SLICE_AGENT_EVIDENCE_PATH: ${{ steps.scan.outputs.agent_evidence_path }}
+      run: node "$GITHUB_ACTION_PATH/scripts/github-summary.mjs" "$SLICE_RESULT_PATH"
+
+    - name: Upload Viewportable Engine results
+      id: artifact
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: |
+          ${{ steps.scan.outputs.result_path }}
+          ${{ steps.scan.outputs.agent_evidence_path }}
+          ${{ inputs.out }}/routes
+        if-no-files-found: ignore
+        include-hidden-files: true
+
+    - name: Update GitHub Check Run
+      id: check-run
+      if: ${{ always() && inputs.check-run == 'true' && inputs.baseline-url != '' }}
+      continue-on-error: true
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        SLICE_ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+        SLICE_EXIT_CODE: ${{ steps.scan.outputs.exit_code }}
+        SLICE_AGENT_EVIDENCE_PATH: ${{ steps.scan.outputs.agent_evidence_path }}
+        SLICE_SOURCE_ROOT: ${{ inputs.source-root }}
+      run: node "$GITHUB_ACTION_PATH/scripts/github-check-run.mjs" "${{ steps.scan.outputs.result_path }}"
+
+    - name: Update pull request evidence comment
+      id: pr-comment
+      if: ${{ always() && inputs.pr-comment == 'true' && inputs.baseline-url != '' }}
+      continue-on-error: true
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        SLICE_ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+        SLICE_ENGINE_REF: ${{ github.action_ref }}
+        SLICE_ENGINE_REPOSITORY: ${{ github.action_repository }}
+        SLICE_AGENT_EVIDENCE_PATH: ${{ steps.scan.outputs.agent_evidence_path }}
+      run: node "$GITHUB_ACTION_PATH/scripts/github-pr-comment.mjs" "${{ steps.scan.outputs.result_path }}"
+
+    - name: Enforce Viewportable Engine result
+      if: ${{ always() }}
+      shell: bash
+      env:
+        SLICE_EXIT_CODE: ${{ steps.scan.outputs.exit_code }}
+      run: |
+        code="${SLICE_EXIT_CODE:-2}"
+        exit "$code"
+\r'}"
+            [[ -z "$changed_file" ]] && continue
+            args+=("--changed-file" "$changed_file")
+          done <<< "$SLICE_CHANGED_FILES"
         fi
 
         set +e
