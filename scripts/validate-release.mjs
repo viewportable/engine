@@ -67,6 +67,8 @@ for (const required of [
   'src/contracts/project-agent-evidence-v1.ts',
   'src/project-scan.ts',
   'src/changed-scope.ts',
+  'src/project-route.ts',
+  'src/route-discovery.ts',
   'src/css-source-location.ts',
   'src/css-source-map.ts',
   'src/compare/source-attribution.ts',
@@ -96,6 +98,8 @@ for (const required of [
   'test/fixtures/build-tool-source-map/src/Scan.width.source.scss',
   'examples/github/compare.yml',
   'examples/github/action-project.config.json',
+  'examples/github/action-project.routes.txt',
+  'examples/demo-site/project-sitemap.xml',
 ]) {
   await requireFile(required);
 }

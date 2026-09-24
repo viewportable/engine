@@ -109,5 +109,5 @@ The benchmark-driven ReDeCheck sequence is tracked in `ROADMAP.md` and `docs/res
 - Status: explicit-route V1 and Changed-Scope Mapping V1 complete; bounded route discovery is next.
 - V1 accepts a unique origin-relative route list and preserves isolated per-route reports plus V5 evidence under one project envelope.
 - Changed-Scope V1 accepts explicit repo-path -> route mappings. Unknown impact broadens to the full configured route set instead of skipping verification.
-- Sitemap, framework manifests, explicit URL files, and constrained crawl remain later discovery inputs.
+- Repo route files and same-origin sitemap urlsets are now implemented as bounded discovery inputs. Framework manifests and constrained crawl remain later discovery inputs.
 - Efficiency is part of product value, not only CI optimization.

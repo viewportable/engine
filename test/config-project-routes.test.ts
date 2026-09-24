@@ -86,7 +86,7 @@ describe('project routes config', () => {
         }),
       );
       await expect(loadSliceConfig(missingRoutesPath)).rejects.toThrow(
-        'routeImpact requires routes',
+        'routeImpact requires routes or routeDiscovery',
       );
 
       const unknownRoutePath = path.join(root, 'unknown-route.json');
@@ -99,6 +99,50 @@ describe('project routes config', () => {
       );
       await expect(loadSliceConfig(unknownRoutePath)).rejects.toThrow(
         'routeImpact references unconfigured route: /dashboard',
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+  it('accepts bounded file and sitemap discovery and defers discovered route impact validation', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'viewportable-route-discovery-config-'));
+
+    try {
+      const configPath = path.join(root, 'discovery.json');
+      await writeFile(
+        configPath,
+        JSON.stringify({
+          routeDiscovery: {
+            files: ['config/routes.txt'],
+            sitemaps: ['/sitemap.xml'],
+          },
+          routeImpact: [
+            {
+              paths: ['src/dashboard/'],
+              routes: ['/dashboard'],
+            },
+          ],
+        }),
+      );
+
+      const loaded = await loadSliceConfig(configPath);
+      expect(loaded.config.routeDiscovery).toEqual({
+        files: ['config/routes.txt'],
+        sitemaps: ['/sitemap.xml'],
+      });
+      expect(loaded.config.routeImpact?.[0]?.routes).toEqual(['/dashboard']);
+
+      const invalidFilePath = path.join(root, 'invalid-file.json');
+      await writeFile(
+        invalidFilePath,
+        JSON.stringify({
+          routeDiscovery: {
+            files: ['../outside.txt'],
+          },
+        }),
+      );
+      await expect(loadSliceConfig(invalidFilePath)).rejects.toThrow(
+        'route discovery file must be a normalized repo-relative file path',
       );
     } finally {
       await rm(root, { recursive: true, force: true });

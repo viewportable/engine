@@ -81,6 +81,17 @@ export function planProjectScope({
   const normalizedChangedFiles = [
     ...new Set(changedFiles.map((changedFile) => normalizeChangedFile(changedFile))),
   ];
+  const configuredRouteSet = new Set(routes);
+
+  for (const rule of routeImpact) {
+    if (rule.routes === 'all') continue;
+
+    for (const route of rule.routes) {
+      if (!configuredRouteSet.has(route)) {
+        throw new Error(`routeImpact references undiscovered route: ${route}`);
+      }
+    }
+  }
 
   if (normalizedChangedFiles.length === 0) {
     return {
@@ -97,7 +108,6 @@ export function planProjectScope({
     };
   }
 
-  const configuredRouteSet = new Set(routes);
   const reasonsByRoute = new Map<string, ProjectScopeReason[]>();
   const unknownFiles: string[] = [];
 

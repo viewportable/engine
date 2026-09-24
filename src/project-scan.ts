@@ -8,6 +8,7 @@ import {
 import { AgentEvidenceV5Schema, type AgentEvidenceV5 } from './contracts/agent-evidence-v5.js';
 import { writeCanonicalAgentEvidenceV5 } from './contracts/write-agent-evidence-v5.js';
 import type { ProjectScopePlan, ProjectScopeReason } from './changed-scope.js';
+import type { RouteDiscoveryResult } from './route-discovery.js';
 
 export const PROJECT_RESULTS_FILENAME = 'project-results.json';
 export const PROJECT_AGENT_EVIDENCE_FILENAME = 'agent-evidence.json';
@@ -33,6 +34,7 @@ export interface ProjectScanResults {
   mode: 'project-scan';
   baseUrl: string;
   timestamp: string;
+  discovery: RouteDiscoveryResult;
   scope: ProjectScopePlan;
   summary: {
     routesChecked: number;
@@ -104,11 +106,13 @@ async function readRouteEvidence(outDir: string): Promise<AgentEvidenceV5> {
 
 export async function runProjectScan({
   baseUrl,
+  discovery,
   scope,
   outDir,
   runRoute,
 }: {
   baseUrl: string;
+  discovery: RouteDiscoveryResult;
   scope: ProjectScopePlan;
   outDir: string;
   runRoute: ProjectRouteRunner;
@@ -190,6 +194,7 @@ export async function runProjectScan({
     mode: 'project-scan',
     baseUrl,
     timestamp: new Date().toISOString(),
+    discovery,
     scope,
     summary,
     routes: routeResults,

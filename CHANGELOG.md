@@ -35,6 +35,8 @@ All notable changes to Viewportable Engine are documented here.
 - Multi-page Project Scan V1: `slice.config.json` can declare a unique explicit origin-relative `routes` set. One CLI/MCP/Action run executes the existing scanner independently for each route, retains per-route rich reports and strict V5 evidence, emits `project-results.json` plus `viewportable.project-agent-evidence.v1`, continues across route-level infrastructure failures with exit-code precedence `2 > 1 > 0`, and renders route-level GitHub job evidence without changing V5 semantics.
 - Changed-Scope Mapping V1: project config can map normalized repo-relative exact files or directory prefixes to explicit routes, including an explicit `all` route target. CLI, MCP, and the composite Action accept runtime changed-file sets; fully mapped changes scan only the union of impacted routes, while any unknown-impact file broadens back to the full configured route set. `project-results.json` retains scope metadata and machine-readable per-route selection reasons.
 
+- Static Route Discovery V1 / Route Discovery V2 foundation: project scans can merge explicit routes with normalized repo route files and same-origin sitemap `urlset` entries. Discovery preserves per-route provenance, deduplicates in deterministic source order, caps each source at 1 MB and the merged set at 1000 routes, rejects cross-origin entries and sitemap indexes, feeds the discovered set into Changed-Scope Mapping, and is exercised end to end through the composite GitHub Action.
+
 
 
 ## 0.1.0-rc.1 - 2026-09-19

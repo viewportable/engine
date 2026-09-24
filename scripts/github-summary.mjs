@@ -168,6 +168,10 @@ function projectScopeReasonText(reason) {
 
 function renderProjectGitHubSummary(results, agentEvidence = null) {
   const summary = results.summary ?? {};
+  const discovery = results.discovery ?? null;
+  const discoveryText = discovery
+    ? `${discovery.mode} · ${discovery.routeCount ?? 0} routes · ${discovery.sources?.length ?? 0} sources`
+    : null;
   const scope = results.scope ?? null;
   const scopeText =
     scope?.mode === 'changed'
@@ -182,6 +186,7 @@ function renderProjectGitHubSummary(results, agentEvidence = null) {
     `**${summary.cleanRoutes ?? 0} clean / ${summary.findingRoutes ?? 0} findings / ` +
       `${summary.infraFailureRoutes ?? 0} infra · ${summary.routesChecked ?? 0} routes · ` +
       `${summary.viewportsChecked ?? 0} viewports checked**`,
+    ...(discoveryText ? ['', `**Discovery:** ${discoveryText}`] : []),
     ...(scopeText ? ['', `**Scope:** ${scopeText}`] : []),
     '',
     '| Route | Status | Viewports | Findings | Repair | Selection reason |',

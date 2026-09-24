@@ -249,6 +249,15 @@ describe('GitHub summary', () => {
     const markdown = renderGitHubSummary(
       {
         mode: 'project-scan',
+        discovery: {
+          mode: 'mixed',
+          routeCount: 3,
+          sources: [
+            { kind: 'config', source: 'slice.config.json#routes', discoveredRoutes: 1 },
+            { kind: 'file', source: 'routes.txt', discoveredRoutes: 1 },
+            { kind: 'sitemap', source: '/sitemap.xml', discoveredRoutes: 1 },
+          ],
+        },
         scope: {
           mode: 'changed',
           configuredRoutes: 3,
@@ -325,6 +334,7 @@ describe('GitHub summary', () => {
     expect(markdown).toContain(
       '**1 clean / 1 findings / 0 infra · 2 routes · 2 viewports checked**',
     );
+    expect(markdown).toContain('**Discovery:** mixed · 3 routes · 3 sources');
     expect(markdown).toContain('**Scope:** Changed scope: 2/3 routes');
     expect(markdown).toContain('| `/` | PASS | 1 | 0 | - | src/home/Hero.tsx -> src/home/ |');
     expect(markdown).toContain(

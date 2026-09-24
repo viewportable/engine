@@ -5,6 +5,26 @@ import { describe, expect, it } from 'vitest';
 import { writeCanonicalAgentEvidenceV5 } from '../src/contracts/write-agent-evidence-v5.js';
 import { planProjectScope } from '../src/changed-scope.js';
 import { resolveProjectRoute, runProjectScan } from '../src/project-scan.js';
+import type { RouteDiscoveryResult } from '../src/route-discovery.js';
+
+function explicitDiscovery(routes: string[]): RouteDiscoveryResult {
+  return {
+    mode: 'explicit',
+    routeCount: routes.length,
+    routes,
+    entries: routes.map((route) => ({
+      route,
+      sources: [{ kind: 'config' }],
+    })),
+    sources: [
+      {
+        kind: 'config',
+        source: 'slice.config.json#routes',
+        discoveredRoutes: routes.length,
+      },
+    ],
+  };
+}
 
 async function writeRouteResult(
   outDir: string,
@@ -61,6 +81,7 @@ describe('multi-page project scan', () => {
     try {
       const execution = await runProjectScan({
         baseUrl: 'http://127.0.0.1:4173/app',
+        discovery: explicitDiscovery(['/', '/dashboard']),
         scope: planProjectScope({ routes: ['/', '/dashboard'] }),
         outDir,
         runRoute: async (url, routeOut) => {
@@ -103,6 +124,10 @@ describe('multi-page project scan', () => {
 
       const persisted = JSON.parse(await readFile(execution.agentEvidencePath, 'utf8'));
       expect(persisted.schemaVersion).toBe('viewportable.project-agent-evidence.v1');
+      expect(execution.report.discovery).toMatchObject({
+        mode: 'explicit',
+        routeCount: 2,
+      });
       expect(execution.report.scope.mode).toBe('full');
       expect(execution.report.routes[0]?.selectionReasons).toEqual([{ kind: 'full-project-scan' }]);
       expect(execution.report.routes[0]?.reportPath).toContain('routes/001-root/results.json');
@@ -118,6 +143,7 @@ describe('multi-page project scan', () => {
     try {
       const execution = await runProjectScan({
         baseUrl: 'http://127.0.0.1:4173',
+        discovery: explicitDiscovery(['/missing', '/fixed']),
         scope: planProjectScope({ routes: ['/missing', '/fixed'] }),
         outDir,
         runRoute: async (url, routeOut) => {

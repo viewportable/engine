@@ -30,6 +30,7 @@ import { groupHorizontalOverflow } from './grouping.js';
 import { writeResults } from './report.js';
 import { writeCanonicalAgentEvidenceV5 } from './contracts/write-agent-evidence-v5.js';
 import { runProjectScan } from './project-scan.js';
+import { discoverProjectRoutes } from './route-discovery.js';
 import { writeElementProtrusionResearch } from './research/element-protrusion-output.js';
 import { writeSmallRangeOverlapResearch } from './research/small-range-output.js';
 import { buildStableSelector, makePageUniquenessCheck } from './selector.js';
@@ -1300,14 +1301,22 @@ program
       return;
     }
 
-    if (loaded.config.routes?.length) {
+    if (loaded.config.routes?.length || loaded.config.routeDiscovery) {
+      const discovery = await discoverProjectRoutes({
+        baseUrl: url,
+        explicitRoutes: loaded.config.routes,
+        discovery: loaded.config.routeDiscovery,
+        rootDir: process.cwd(),
+        timeoutMs: parsePositiveInteger(resolved.timeout, '--timeout'),
+      });
       const scope = planProjectScope({
-        routes: loaded.config.routes,
+        routes: discovery.routes,
         routeImpact: loaded.config.routeImpact,
         changedFiles: resolved.changedFile,
       });
       const execution = await runProjectScan({
         baseUrl: url,
+        discovery,
         scope,
         outDir: resolved.out,
         runRoute: (routeUrl, routeOut) =>
@@ -1325,6 +1334,10 @@ program
         process.stdout.write(`${JSON.stringify(execution.report, null, 2)}\n`);
       } else {
         process.stdout.write(`\n  Viewportable Engine project scan | ${url}\n`);
+        const discovery = execution.report.discovery;
+        process.stdout.write(
+          `  routes: ${discovery.routeCount} | discovery: ${discovery.mode} | sources: ${discovery.sources.length}\n`,
+        );
         const scope = execution.report.scope;
         const scopeText =
           scope.mode === 'full'
@@ -1355,7 +1368,9 @@ program
     }
 
     if (resolved.changedFile.length > 0) {
-      throw new SliceCliError('--changed-file requires routes in slice.config.json');
+      throw new SliceCliError(
+        '--changed-file requires routes or routeDiscovery in slice.config.json',
+      );
     }
 
     process.exitCode = await runSlice(url, resolved);

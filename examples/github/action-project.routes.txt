@@ -1,0 +1,2 @@
+# Additional bounded routes for the Action project-scan acceptance
+/broken.html

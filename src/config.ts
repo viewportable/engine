@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
+import { isOriginRelativeProjectRoute } from './project-route.js';
 
 export const DEFAULT_CONFIG_FILENAME = 'slice.config.json';
 
@@ -35,18 +36,42 @@ export const suppressionRuleSchema = z.discriminatedUnion('type', [
   wrappingSuppressionSchema,
 ]);
 
-const projectRouteSchema = z
-  .string()
-  .min(1)
-  .refine((route) => /^\/(?!\/)/.test(route), {
-    message: 'route must be an origin-relative path beginning with one /',
-  });
+const projectRouteSchema = z.string().min(1).refine(isOriginRelativeProjectRoute, {
+  message: 'route must be an origin-relative path beginning with one /',
+});
 
 const projectRoutesSchema = z
   .array(projectRouteSchema)
   .min(1)
   .refine((routes) => new Set(routes).size === routes.length, {
     message: 'routes must not contain duplicates',
+  });
+
+const routeDiscoveryFileSchema = z
+  .string()
+  .min(1)
+  .refine(
+    (value) =>
+      !value.startsWith('/') &&
+      !value.startsWith('./') &&
+      !value.endsWith('/') &&
+      !value.includes('\\') &&
+      !value.includes('//') &&
+      !value.split('/').includes('..'),
+    {
+      message:
+        'route discovery file must be a normalized repo-relative file path without ./, .., //, trailing /, or backslashes',
+    },
+  );
+
+const routeDiscoverySchema = z
+  .object({
+    files: z.array(routeDiscoveryFileSchema).min(1).optional(),
+    sitemaps: z.array(projectRouteSchema).min(1).optional(),
+  })
+  .strict()
+  .refine((value) => (value.files?.length ?? 0) + (value.sitemaps?.length ?? 0) > 0, {
+    message: 'routeDiscovery requires at least one file or sitemap',
   });
 
 const routeImpactPathSchema = z
@@ -82,6 +107,7 @@ const sliceConfigSchema = z
     wait: z.number().int().nonnegative().optional(),
     readySelector: z.string().min(1).optional(),
     routes: projectRoutesSchema.optional(),
+    routeDiscovery: routeDiscoverySchema.optional(),
     routeImpact: z.array(routeImpactRuleSchema).min(1).optional(),
     ignore: z.array(suppressionRuleSchema).default([]),
   })
@@ -89,16 +115,18 @@ const sliceConfigSchema = z
   .superRefine((config, context) => {
     if (!config.routeImpact) return;
 
-    if (!config.routes) {
+    if (!config.routes && !config.routeDiscovery) {
       context.addIssue({
         code: 'custom',
         path: ['routeImpact'],
-        message: 'routeImpact requires routes',
+        message: 'routeImpact requires routes or routeDiscovery',
       });
       return;
     }
 
-    const configuredRoutes = new Set(config.routes);
+    if (config.routeDiscovery) return;
+
+    const configuredRoutes = new Set(config.routes ?? []);
     for (const [ruleIndex, rule] of config.routeImpact.entries()) {
       if (rule.routes === 'all') continue;
 
@@ -116,6 +144,7 @@ const sliceConfigSchema = z
 
 export type SuppressionRule = z.infer<typeof suppressionRuleSchema>;
 export type RouteImpactRule = z.infer<typeof routeImpactRuleSchema>;
+export type RouteDiscoveryConfig = z.infer<typeof routeDiscoverySchema>;
 export type SliceConfig = z.infer<typeof sliceConfigSchema>;
 
 export interface LoadedSliceConfig {
