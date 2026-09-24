@@ -60,7 +60,7 @@ export function createViewportableMcpServer({
     },
     {
       instructions:
-        'Use viewportable_scan for one rendered application state or an explicit project route set from slice.config.json, and viewportable_compare to compare baseline and candidate versions. Treat exitCode 1 as product evidence, not a tool failure; exitCode 2 is scanner/setup failure. Per-route finding.repair remains the canonical auto-repair eligibility decision; do not infer repairability from source fields independently.',
+        'Use viewportable_scan for one rendered application state or a bounded project route set from slice.config.json, including explicit routes, repo route files, and same-origin sitemaps; use viewportable_compare to compare baseline and candidate versions. Treat exitCode 1 as product evidence, not a tool failure; exitCode 2 is scanner/setup failure. Per-route finding.repair remains the canonical auto-repair eligibility decision; do not infer repairability from source fields independently.',
     },
   );
 
@@ -69,7 +69,7 @@ export function createViewportableMcpServer({
     {
       title: 'Scan responsive UI',
       description:
-        'Run deterministic Viewportable Engine responsive QA against one URL or the explicit routes configured in slice.config.json, returning canonical evidence plus retained report paths.',
+        'Run deterministic Viewportable Engine responsive QA against one URL or a bounded project route set configured or discovered from slice.config.json, returning canonical evidence plus retained report paths.',
       inputSchema: z.object({
         url: z.string().url().describe('Application URL to inspect'),
         ...commonShape,
