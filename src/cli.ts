@@ -1368,7 +1368,9 @@ program
     }
 
     if (resolved.changedFile.length > 0) {
-      throw new SliceCliError('--changed-file requires routes or routeDiscovery in slice.config.json');
+      throw new SliceCliError(
+        '--changed-file requires routes or routeDiscovery in slice.config.json',
+      );
     }
 
     process.exitCode = await runSlice(url, resolved);
